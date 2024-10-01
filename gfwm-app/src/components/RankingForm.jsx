@@ -4,7 +4,7 @@ import "./RankingForm.css"; // Import the CSS file
 const RankingForm = () => {
   const questions = [
     {
-      id: "fossil-fuels",
+      id: "fossilFuels",
       text: "Minimizing investment in fossil fuel producers:",
     },
     { id: "weapons", text: "Minimizing investment in weapons manufacturers:" },
@@ -35,7 +35,29 @@ const RankingForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(responses); // TODO Handle form submission (send data to server)
+    console.log(responses);
+
+    // Send the data to the server
+    fetch("/submitForm", {
+      method: "POST", // or 'PUT' if updating existing data
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(responses),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log("Success:", data);
+        alert("Questionnaire submitted successfully!");
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   };
 
   return (
