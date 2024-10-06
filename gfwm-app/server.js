@@ -4,7 +4,7 @@ const vite = require("vite");
 const app = express();
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const PythonShell = require("python-shell");
+let {PythonShell} = require("python-shell");
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
@@ -65,6 +65,10 @@ app.post("/submitForm", async (req, res) => {
   }
 
   //run python script
+
+  PythonShell.runString('x=1+1;print(x)', null).then(messages=>{
+    console.log('finished');
+  });
 
   const scriptPath = "src/test_script.py";
 
