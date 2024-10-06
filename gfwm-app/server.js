@@ -54,7 +54,7 @@ app.post("/submitForm", async (req, res) => {
     governance: clientResponses.governance,
   };
 
-  //console.log(data);
+  console.log(data);
 
   try {
     // Use Prisma's create method to add new item to the database
@@ -71,46 +71,21 @@ app.post("/submitForm", async (req, res) => {
   }
 
   //run python script
-
-  PythonShell.runString("x=1+1;print(x)", null).then((messages) => {
-    console.log("finished");
-  });
-
-  const scriptPath = "src/test_script.py";
+  
+  const scriptPath = "pqp_prototype.py";
 
   let options = {
     mode: "text",
     pythonPath:
       "C:/Users/User/AppData/Local/Programs/Python/Python312/python.exe",
     pythonOptions: ["-u"], // get print results in real-time
-    scriptPath: "",
+    scriptPath: "data_science/",
     args: [data.environmental, data.social, data.governance],
   };
 
-  PythonShell.run(scriptPath, options, function (err, pythonResults) {
-    
+  PythonShell.run(scriptPath, options).then(results=>{
     // results is an array consisting of messages collected during execution
-    if (err) {
-      console.log("error with python script", err);
-      res.status(500).json("Python script failed");
-    }
-
-    pythonResults = pythonResults[0];
-
-    console.log("python results: %j", pythonResults);
-
-    // Create an object with keys as "line1", "line2", etc.
-    /*
-    const pythonResults = results.reduce((acc, line, index) => {
-      acc[`line${index + 1}`] = line;
-      return acc;
-    }, {});
-    */
-
-    //by this point everything went well!
-    res.status(200).json({
-      message: "Questionnaire responses saved and Python results provided!",
-      results: pythonResults,
-    });
+    console.log('results: %j', results);
   });
+
 });
