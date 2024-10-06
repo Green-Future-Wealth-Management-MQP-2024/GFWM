@@ -40,28 +40,37 @@ app.get("/api/hello", (req, res) => {
 app.post("/submitForm", async (req, res) => {
   console.log("received client responses");
 
-  const clientResponses = req.body;
+  const clientResponses = {};
+
+  // Iterate over each key in the req.body object and parse the values as integers
+  for (const [key, value] of Object.entries(req.body)) {
+    clientResponses[key] = parseInt(value, 10); // Base 10 parsing
+  }
 
   const data = {
-    environmentalScore:
+    environmental:
       (clientResponses.fossilFuels + clientResponses.environment) / 2,
-    socialScore: (clientResponses.weapons + clientResponses.social) / 2,
-    governanceScore: clientResponses.governance,
+    social: (clientResponses.weapons + clientResponses.social) / 2,
+    governance: clientResponses.governance,
   };
 
-  console.log(data);
+  //console.log(data);
 
-  //post data to the database using prisma
   try {
+    
+    // Use Prisma's create method to add new item to the database  
     const newResponse = await prisma.SurveyResponse.create({
       data: data,
     });
-    res.json("Questionnaire responses saved");
+    let msg = "Questionnaire responses saved";
+    console.log(msg);
+    res.json(msg);
   } catch (error) {
-    console.error("error with saving responses to database", error);
+    let msg = "Error with saving responses to database";
+    console.error(msg, error);
     res
       .status(500)
-      .json({ message: "Saving questionnaire responses to database failed" });
+      .json({ message: msg });
   }
 
   //run python script

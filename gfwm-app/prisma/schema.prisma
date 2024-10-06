@@ -13,11 +13,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 model SurveyResponse {
   id        Int       @id @default(autoincrement())
-  enviromental    Int
+  environmental    Int
   social   Int
   governance   Int
   createdAt DateTime  @default(now())
