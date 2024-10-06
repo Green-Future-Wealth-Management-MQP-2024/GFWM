@@ -4,7 +4,7 @@ const vite = require("vite");
 const app = express();
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-let {PythonShell} = require("python-shell");
+let { PythonShell } = require("python-shell");
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
@@ -57,8 +57,7 @@ app.post("/submitForm", async (req, res) => {
   //console.log(data);
 
   try {
-    
-    // Use Prisma's create method to add new item to the database  
+    // Use Prisma's create method to add new item to the database
     const newResponse = await prisma.SurveyResponse.create({
       data: data,
     });
@@ -68,28 +67,28 @@ app.post("/submitForm", async (req, res) => {
   } catch (error) {
     let msg = "Error with saving responses to database";
     console.error(msg, error);
-    res
-      .status(500)
-      .json({ message: msg });
+    res.status(500).json({ message: msg });
   }
 
   //run python script
 
-  PythonShell.runString('x=1+1;print(x)', null).then(messages=>{
-    console.log('finished');
+  PythonShell.runString("x=1+1;print(x)", null).then((messages) => {
+    console.log("finished");
   });
 
   const scriptPath = "src/test_script.py";
 
   let options = {
     mode: "text",
-    pythonPath: "C:\Users\User\AppData\Local\Programs\Python\Python312\python.exe",
+    pythonPath:
+      "C:/Users/User/AppData/Local/Programs/Python/Python312/python.exe",
     pythonOptions: ["-u"], // get print results in real-time
-    scriptPath: scriptPath,
-    args: [data.environmentalScore, data.socialScore, data.governanceScore],
+    scriptPath: "",
+    args: [data.environmental, data.social, data.governance],
   };
 
-  PythonShell.run(scriptPath, options).then((pythonResults) => {
+  PythonShell.run(scriptPath, options, function (err, pythonResults) {
+    
     // results is an array consisting of messages collected during execution
     if (err) {
       console.log("error with python script", err);
