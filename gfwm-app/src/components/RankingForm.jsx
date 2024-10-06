@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./RankingForm.css"; // Import the CSS file
+import RankingFormResults from "./RankingFormResults";
 
 const RankingForm = () => {
   const questions = [
@@ -28,6 +29,8 @@ const RankingForm = () => {
       return acc;
     }, {})
   );
+
+  const [showResults, setShowResults] = useState(false);
 
   const handleChange = (questionId, value) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }));
@@ -58,9 +61,12 @@ const RankingForm = () => {
       .catch((error) => {
         console.error("Error:", error);
       });
+
+      setShowResults(true);
   };
 
   return (
+    <div> 
     <form onSubmit={handleSubmit} className="ranking-form">
       {questions.map((question) => (
         <div key={question.id} className="form-row">
@@ -87,6 +93,9 @@ const RankingForm = () => {
         Submit
       </button>
     </form>
+
+{ showResults && <RankingFormResults responses={responses} />}
+    </div>
   );
 };
 
