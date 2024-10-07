@@ -38,6 +38,17 @@ const RankingForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Check if all questions are answered
+    const allAnswered = Object.values(responses).every(
+      (response) => response !== ""
+    );
+
+    if (!allAnswered) {
+      alert("Please answer all questions before submitting.");
+      return;
+    }
+
     console.log(responses);
 
     // Send the data to the server
