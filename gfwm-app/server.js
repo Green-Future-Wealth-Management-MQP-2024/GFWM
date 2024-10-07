@@ -97,7 +97,7 @@ app.post("/submitForm", async (req, res) => {
       rowObject[headers[0]] = columns[1].trim();
 
       //company name
-      rowObject[headers[1]] = columns[2];
+      rowObject[headers[1]] = columns[2].trim();
 
       //compatibility score
       rowObject[headers[2]] = columns[4];
