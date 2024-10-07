@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./RankingForm.css"; // Import the CSS file
 import RankingFormResults from "./RankingFormResults";
+import { useRef } from "react";
 
 const RankingForm = () => {
   const questions = [
@@ -23,9 +24,9 @@ const RankingForm = () => {
     },
   ];
 
-  const [responses, setResponses] = useState(
+  const formRefs = useRef(
     questions.reduce((acc, question) => {
-      acc[question.id] = "";
+      acc[question.id] = React.createRef();
       return acc;
     }, {})
   );
@@ -34,12 +35,17 @@ const RankingForm = () => {
 
   const [showResults, setShowResults] = useState(false);
 
-  const handleChange = (questionId, value) => {
-    setResponses((prev) => ({ ...prev, [questionId]: value }));
-  };
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const responses = questions.reduce((acc, question) => {
+      const selectedOption = formRefs.current[question.id].current.querySelector(
+        'input[name="question-' + question.id + '"]:checked'
+      );
+      acc[question.id] = selectedOption ? selectedOption.value : "";
+      return acc;
+    }, {});
 
     // Check if all questions are answered
     const allAnswered = Object.values(responses).every(
@@ -81,7 +87,7 @@ const RankingForm = () => {
     <div>
       <form onSubmit={handleSubmit} className="ranking-form">
         {questions.map((question) => (
-          <div key={question.id} className="form-row">
+          <div key={question.id} className="form-row" ref={formRefs.current[question.id]}>
             <label className="form-question">{question.text}</label>
             <div className="radio-group">
               <span className="rating-label">1 (Not Important)</span>
@@ -91,8 +97,7 @@ const RankingForm = () => {
                     type="radio"
                     name={`question-${question.id}`}
                     value={rank}
-                    checked={responses[question.id] === String(rank)}
-                    onChange={() => handleChange(question.id, String(rank))}
+            
                   />
                   {rank}
                 </label>

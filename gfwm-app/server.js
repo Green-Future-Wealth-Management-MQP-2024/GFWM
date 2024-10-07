@@ -108,7 +108,7 @@ app.post("/submitForm", async (req, res) => {
       jsonResult.push(rowObject);
     }
 
-    console.log(jsonResult)
+    //console.log(jsonResult)
 
     res.status(200).json(jsonResult);
   });
