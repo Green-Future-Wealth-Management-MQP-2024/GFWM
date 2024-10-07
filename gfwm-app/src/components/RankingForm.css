@@ -17,6 +17,7 @@
   }
   
   .radio-group {
+    accent-color: #3f773a;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -32,7 +33,7 @@
   }
   
   .submit-btn {
-    background-color: #007bff;
+    background-color: #3f773a; /* Primary button color */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -41,6 +42,6 @@
   }
   
   .submit-btn:hover {
-    background-color: #0056b3;
+    background-color: #84c226;
   }
   

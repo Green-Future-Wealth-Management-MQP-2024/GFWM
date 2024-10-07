@@ -5,10 +5,10 @@
 }
 
 .top-bar {
-  background-color: #4caf50; /* Green */
+  background-color: #3f773a; /* Green */
   color: white;
   padding: 10px;
-  text-align: center;
+  text-align: left;
 }
 
 .top-bar nav a {
