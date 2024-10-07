@@ -60,9 +60,7 @@ const RankingForm = () => {
       })
       .catch((error) => {
         console.error("Error:", error);
-      });
-
-      setShowResults(true);
+      }).then(setShowResults(true));
   };
 
   return (

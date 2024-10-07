@@ -5,6 +5,7 @@ const app = express();
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 let { PythonShell } = require("python-shell");
+const dotenv = require("dotenv");
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
@@ -77,7 +78,7 @@ app.post("/submitForm", async (req, res) => {
   let options = {
     mode: "text",
     pythonPath:
-      "C:/Users/User/AppData/Local/Programs/Python/Python312/python.exe",
+      process.env.PYTHON_PATH , // path to python3
     pythonOptions: ["-u"], // get print results in real-time
     scriptPath: "data_science/",
     args: [data.environmental, data.social, data.governance],
