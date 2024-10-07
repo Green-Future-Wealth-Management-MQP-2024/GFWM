@@ -1,13 +1,13 @@
 import React from "react";
 
-const RankingFormResults = ({ responses }) => {
+const RankingFormResults = ({ data }) => {
     return (
         <div className="ranking-form-results">
         <h2>Results</h2>
         <ul>
-            {Object.entries(responses).map(([key, response]) => (
+            {Object.entries(data).map(([key, data]) => (
             <li key={key}>
-                 {response}
+                 <strong>{key}</strong>{data}
             </li>
             ))}
         </ul>
