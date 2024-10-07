@@ -25,7 +25,7 @@ const LandingPage = () => {
 const TopBar = () => {
   return (
     <header className="top-bar">
-      <h2>My Website</h2>
+      <h2 className='text-2xl font-bold'>My Website</h2>
       <nav>
         <a href="/">Home</a>
         <a href="https://www.greenfuturewealth.com/about">About</a>
