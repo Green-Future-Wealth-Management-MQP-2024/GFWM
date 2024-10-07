@@ -1,7 +1,6 @@
 import React from "react";
 
 const RankingFormResults = ({ data }) => {
-    console.log(data);
   return (
     <div className="ranking-form-results">
       <h2>Results</h2>
