@@ -30,6 +30,8 @@ const RankingForm = () => {
     }, {})
   );
 
+  const [returnData, setReturnData] = useState({});
+
   const [showResults, setShowResults] = useState(false);
 
   const handleChange = (questionId, value) => {
@@ -66,6 +68,7 @@ const RankingForm = () => {
         return res.json();
       })
       .then((data) => {
+        setReturnData(data);
         console.log("Server response:", data); // Use the server response if needed
         setShowResults(true); // Show results after successful response
       })
@@ -103,7 +106,7 @@ const RankingForm = () => {
         </button>
       </form>
 
-      {showResults && <RankingFormResults responses={responses} />}
+{ showResults && <RankingFormResults data={returnData} />}
     </div>
   );
 };
