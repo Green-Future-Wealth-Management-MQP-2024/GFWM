@@ -62,7 +62,7 @@ app.post("/submitForm", async (req, res) => {
     const newResponse = await prisma.SurveyResponse.create({
       data: data,
     });
-    console.log("Responses saved to database")
+    console.log("Responses saved to database");
   } catch (error) {
     let msg = "Error with saving responses to database";
     console.error(msg, error);
@@ -74,8 +74,7 @@ app.post("/submitForm", async (req, res) => {
 
   let options = {
     mode: "text",
-    pythonPath:
-      process.env.PYTHON_PATH , // path to python3
+    pythonPath: process.env.PYTHON_PATH, // path to python3
     pythonOptions: ["-u"], // get print results in real-time
     scriptPath: "data_science/",
     args: [data.environmental, data.social, data.governance],
@@ -84,16 +83,15 @@ app.post("/submitForm", async (req, res) => {
   PythonShell.run(scriptPath, options).then((results) => {
     // results is an array consisting of messages collected during execution
 
-    const headers = ['symbol', 'name', 'score', 'growth_estimate_5_yrs)']
+    const headers = ["symbol", "name", "score", "growth_estimate_5_yrs)"];
 
     const jsonResult = [];
 
     for (let i = 1; i < results.length; i++) {
-      
       //at least two spaces between columns
-      const columns = results[i].split("  ").filter(item => item !== '');
+      const columns = results[i].split("  ").filter((item) => item !== "");
 
-      let rowObject = []
+      let rowObject = [];
 
       //symbol
       rowObject[headers[0]] = columns[1].trim();
@@ -102,17 +100,16 @@ app.post("/submitForm", async (req, res) => {
       rowObject[headers[1]] = columns[2];
 
       //compatibility score
-      rowObject[headers[2]] = columns[4]
+      rowObject[headers[2]] = columns[4];
 
       //growth estimate
-      rowObject[headers[3]] = columns[3]
+      rowObject[headers[3]] = columns[3];
 
-      jsonResult.push(rowObject)
+      jsonResult.push(rowObject);
     }
 
-    console.log(jsonResult)
+    //console.log(jsonResult)
 
     res.status(200).json({ message: JSON.stringify(jsonResult) });
-
   });
 });
