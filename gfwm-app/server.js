@@ -61,17 +61,14 @@ app.post("/submitForm", async (req, res) => {
     const newResponse = await prisma.SurveyResponse.create({
       data: data,
     });
-    let msg = "Questionnaire responses saved";
-    console.log(msg);
-    res.json(msg);
+    console.log("Responses saved to database")
   } catch (error) {
     let msg = "Error with saving responses to database";
     console.error(msg, error);
-    res.status(500).json({ message: msg });
   }
 
   //run python script
-  
+
   const scriptPath = "pqp_prototype.py";
 
   let options = {
@@ -83,9 +80,38 @@ app.post("/submitForm", async (req, res) => {
     args: [data.environmental, data.social, data.governance],
   };
 
-  PythonShell.run(scriptPath, options).then(results=>{
+  PythonShell.run(scriptPath, options).then((results) => {
     // results is an array consisting of messages collected during execution
-    console.log('results: %j', results);
-  });
 
+    const headers = ['symbol', 'name', 'score', 'growth_estimate_5_yrs)']
+
+    const jsonResult = [];
+
+    for (let i = 1; i < results.length; i++) {
+      
+      //at least two spaces between columns
+      const columns = results[i].split("  ").filter(item => item !== '');
+
+      let rowObject = []
+
+      //symbol
+      rowObject[headers[0]] = columns[1].trim();
+
+      //company name
+      rowObject[headers[1]] = columns[2];
+
+      //compatibility score
+      rowObject[headers[2]] = columns[4]
+
+      //growth estimate
+      rowObject[headers[3]] = columns[3]
+
+      jsonResult.push(rowObject)
+    }
+
+    console.log(jsonResult)
+
+    res.status(200).json({ message: JSON.stringify(jsonResult) });
+
+  });
 });

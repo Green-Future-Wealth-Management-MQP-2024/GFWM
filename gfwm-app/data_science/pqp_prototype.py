@@ -3,7 +3,11 @@ import sys
 
 import os
 
-print(os.getcwd())
+# Set pandas options to display all rows and columns without truncation
+pd.set_option('display.max_rows', None)  # To display all rows
+pd.set_option('display.max_columns', None)  # To display all columns
+pd.set_option('display.max_colwidth', None)  # To display full column content without truncation
+pd.set_option('display.expand_frame_repr', False)  # To avoid breaking large dataframes into multiple lines
 
 data = pd.read_csv("data_science/preprocess.csv")
 
@@ -56,6 +60,6 @@ data['Final Score'] = (data['Growth Estimate (+5 years)']*10) + (data['Weighted 
 sorted_data = data.sort_values(by='Final Score', ascending=False)
 
 # Shows the top companies that match user preferences
-print(sorted_data[['Symbol', 'Name', 'Growth Estimate (+5 years)', 'Final Score',]].head(10))
+print(sorted_data[['Symbol', 'Name', 'Growth Estimate (+5 years)', 'Final Score']].head(10))
 
 sys.stdout.flush()
