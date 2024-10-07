@@ -83,7 +83,7 @@ app.post("/submitForm", async (req, res) => {
   PythonShell.run(scriptPath, options).then((results) => {
     // results is an array consisting of messages collected during execution
 
-    const headers = ["symbol", "name", "score", "growth_estimate_5_yrs)"];
+    const headers = ["symbol", "name", "score", "growth_estimate_5_yrs"];
 
     const jsonResult = [];
 
@@ -110,6 +110,6 @@ app.post("/submitForm", async (req, res) => {
 
     console.log(jsonResult)
 
-    res.status(200).json({ message: JSON.stringify(jsonResult) });
+    res.status(200).json(jsonResult);
   });
 });
