@@ -30,6 +30,8 @@ const RankingForm = () => {
     }, {})
   );
 
+  const [data, setData] = useState({});
+
   const [showResults, setShowResults] = useState(false);
 
   const handleChange = (questionId, value) => {
@@ -55,6 +57,7 @@ const RankingForm = () => {
         return res.json();
       })
       .then((data) => {
+        setData(data);
         console.log("Success:", data);
         alert("Questionnaire submitted successfully!");
       })
@@ -92,7 +95,7 @@ const RankingForm = () => {
       </button>
     </form>
 
-{ showResults && <RankingFormResults responses={responses} />}
+{ showResults && <RankingFormResults data={data} />}
     </div>
   );
 };
