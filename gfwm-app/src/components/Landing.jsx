@@ -28,8 +28,8 @@ const TopBar = () => {
       <h2>My Website</h2>
       <nav>
         <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
+        <a href="https://www.greenfuturewealth.com/about">About</a>
+        <a href="https://www.greenfuturewealth.com/contact">Contact</a>
       </nav>
     </header>
   );
