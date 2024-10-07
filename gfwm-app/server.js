@@ -91,7 +91,7 @@ app.post("/submitForm", async (req, res) => {
       //at least two spaces between columns
       const columns = results[i].split("  ").filter((item) => item !== "");
 
-      let rowObject = [];
+      let rowObject = {};
 
       //symbol
       rowObject[headers[0]] = columns[1].trim();
@@ -108,7 +108,7 @@ app.post("/submitForm", async (req, res) => {
       jsonResult.push(rowObject);
     }
 
-    //console.log(jsonResult)
+    console.log(jsonResult)
 
     res.status(200).json({ message: JSON.stringify(jsonResult) });
   });

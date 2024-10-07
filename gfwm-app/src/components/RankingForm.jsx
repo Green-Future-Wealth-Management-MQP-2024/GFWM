@@ -55,44 +55,44 @@ const RankingForm = () => {
         return res.json();
       })
       .then((data) => {
-        console.log("Success:", data);
-        alert("Questionnaire submitted successfully!");
+        console.log("Server response:", data); // Use the server response if needed
+        setShowResults(true); // Show results after successful response
       })
       .catch((error) => {
         console.error("Error:", error);
-      }).then(setShowResults(true));
+      });
   };
 
   return (
-    <div> 
-    <form onSubmit={handleSubmit} className="ranking-form">
-      {questions.map((question) => (
-        <div key={question.id} className="form-row">
-          <label className="form-question">{question.text}</label>
-          <div className="radio-group">
-            <span className="rating-label">1 (Not Important)</span>
-            {[1, 2, 3, 4, 5].map((rank) => (
-              <label key={rank}>
-                <input
-                  type="radio"
-                  name={`question-${question.id}`}
-                  value={rank}
-                  checked={responses[question.id] === String(rank)}
-                  onChange={() => handleChange(question.id, String(rank))}
-                />
-                {rank}
-              </label>
-            ))}
-            <span className="rating-label">5 (Very Important)</span>
+    <div>
+      <form onSubmit={handleSubmit} className="ranking-form">
+        {questions.map((question) => (
+          <div key={question.id} className="form-row">
+            <label className="form-question">{question.text}</label>
+            <div className="radio-group">
+              <span className="rating-label">1 (Not Important)</span>
+              {[1, 2, 3, 4, 5].map((rank) => (
+                <label key={rank}>
+                  <input
+                    type="radio"
+                    name={`question-${question.id}`}
+                    value={rank}
+                    checked={responses[question.id] === String(rank)}
+                    onChange={() => handleChange(question.id, String(rank))}
+                  />
+                  {rank}
+                </label>
+              ))}
+              <span className="rating-label">5 (Very Important)</span>
+            </div>
           </div>
-        </div>
-      ))}
-      <button type="submit" className="submit-btn">
-        Submit
-      </button>
-    </form>
+        ))}
+        <button type="submit" className="submit-btn">
+          Submit
+        </button>
+      </form>
 
-{ showResults && <RankingFormResults responses={responses} />}
+      {showResults && <RankingFormResults responses={responses} />}
     </div>
   );
 };
