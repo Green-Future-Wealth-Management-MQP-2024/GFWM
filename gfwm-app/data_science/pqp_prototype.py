@@ -46,7 +46,7 @@ esg_weight_multipliers = {
     'Governance': calculate_esg_weight_multiplier(user_preferences['Governance'])
 }
 
-# Calculates a weighted ESG risk score for each company based on user respinses to questinaaire
+# Calculates a weighted ESG risk score for each company based on user responses to questionnaire
 data['Weighted ESG Risk Score'] = (
     data['Environment Risk Score'] * weights['Environmental'] * esg_weight_multipliers['Environmental'] +
     data['Social Risk Score'] * weights['Social'] * esg_weight_multipliers['Social'] +
@@ -54,7 +54,8 @@ data['Weighted ESG Risk Score'] = (
 )
 
 # Calculates a final score based on both the ESG risk score and the growth estimate
-data['Final Score'] = (data['Growth Estimate (+5 years)']*10) + (data['Weighted ESG Risk Score'])
+# Better (higher scores) involve higher growth estimates and lower risk
+data['Final Score'] = (data['Growth Estimate (+5 years)']*10) - (data['Weighted ESG Risk Score'])
 
 # Sorts the companies by the final score 
 sorted_data = data.sort_values(by='Final Score', ascending=False)
