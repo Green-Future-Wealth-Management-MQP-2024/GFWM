@@ -1,0 +1,47 @@
+.ranking-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .form-row {
+    margin-bottom: 20px;
+  }
+  
+  .form-question {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  
+  .radio-group {
+    accent-color: #3f773a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .radio-group label {
+    margin: 0 5px;
+  }
+  
+  .rating-label {
+    font-weight: bold;
+    font-size: 12px;
+  }
+  
+  .submit-btn {
+    background-color: #3f773a; /* Primary button color */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .submit-btn:hover {
+    background-color: #84c226;
+  }
+  

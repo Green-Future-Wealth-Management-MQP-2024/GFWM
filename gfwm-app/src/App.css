@@ -1,38 +1,36 @@
-.App {
-  text-align: center;
+/* Reset some default browser styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body {
+  font-family: Arial, sans-serif; /* Use your preferred font */
+  background-color: #f4f4f4; /* Light background color */
+  color: #333; /* Text color */
+  line-height: 1.6; /* Improve text readability */
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* Center align the main container */
+#root {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  padding: 20px; /* Padding around the content */
 }
 
-.App-link {
-  color: #61dafb;
+/* Add some margin to the form */
+form {
+  margin: 20px 0;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Button styles */
+button {
+  background-color: #84c226; /* Primary button color */
+  color: #fff; /* Text color */
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
 }
