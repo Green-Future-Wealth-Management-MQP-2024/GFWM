@@ -59,12 +59,17 @@ data['Weighted ESG Risk Score'] = (
 
 # Calculates a final score based on both the ESG risk score and the growth estimate
 # Better (higher scores) involve higher growth estimates and lower risk
+# TODO find a way to convert final score into portfolio weights
 data['Final Score'] = (data['Growth Estimate (+5 years)']*10) - (data['Weighted ESG Risk Score'])
 
 # Sorts the companies by the final score 
 sorted_data = data.sort_values(by='Final Score', ascending=False)
 
+# TODO add in performance data as a whole
+
 # Shows the top companies that match user preferences
+# TODO clear up output
+# idea: print symbol, name, portfolio weight, past return, past risk
 print(sorted_data[['Symbol', 'Name', 'Growth Estimate (+5 years)', 'Final Score']].head(10))
 
 sys.stdout.flush()
