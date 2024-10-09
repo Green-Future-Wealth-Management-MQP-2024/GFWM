@@ -33,11 +33,15 @@ total_weight = sum(user_preferences.values())
 weights = {key: value / total_weight for key, value in user_preferences.items()}
 
 # Function to calculate ESG weight multiplier based on user preference
+# 1 -> -1
+# 2,3 -> 0
+# 4 -> 1
+# 5 -> 2
 def calculate_esg_weight_multiplier(user_preference):
-    if user_preference == 3:
-        return 0
+    if user_preference <= 2:
+        return user_preference - 2
     else:
-        return user_preference - 2 
+        return user_preference - 3 
 
 # Calculates the weights for each category
 esg_weight_multipliers = {
