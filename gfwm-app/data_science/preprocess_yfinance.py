@@ -27,6 +27,17 @@ for symbol in unique_symbols:
     else:
         growth_estimates_data[symbol] = None
         
+# Normalize the growth estimates to [0, 10]
+min = 5
+max = 0
+for val in growth_estimates_data.values():
+    if val < min:
+        min = val
+    if val > max:
+        max = val
+for (key, val) in growth_estimates_data.items():
+    growth_estimates_data[key] = 10 * (val - min)/(max-min)
+
 # Converts the growth estimates data into a DataFrame
 growth_estimates_df = pd.DataFrame.from_dict(growth_estimates_data, orient='index', columns=['Growth Estimate (+5 years)'])
 
