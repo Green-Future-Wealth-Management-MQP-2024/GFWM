@@ -83,7 +83,7 @@ app.post("/submitForm", async (req, res) => {
   PythonShell.run(scriptPath, options).then((results) => {
     // results is an array consisting of messages collected during execution
 
-    const headers = ["symbol", "name", "score", "growth_estimate_5_yrs"];
+    const headers = ["symbol", "name", "annual_return", "growth_estimate", "volatility", "score"];
 
     const jsonResult = [];
 
@@ -99,11 +99,17 @@ app.post("/submitForm", async (req, res) => {
       //company name
       rowObject[headers[1]] = columns[2].trim();
 
-      //compatibility score
-      rowObject[headers[2]] = columns[4];
+      //annualized return
+      rowObject[headers[2]] = columns[3];
 
       //growth estimate
-      rowObject[headers[3]] = columns[3];
+      rowObject[headers[3]] = columns[4];
+
+      //volatility estimate
+      rowObject[headers[4]] = columns[5];
+
+      //score
+      rowObject[headers[5]] = columns[6];
 
       jsonResult.push(rowObject);
     }
