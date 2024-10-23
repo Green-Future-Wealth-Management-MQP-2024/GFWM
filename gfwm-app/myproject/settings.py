@@ -29,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
-    config('API_DOMAIN'),
+    config('VITE_API_DOMAIN'),
 ]
 
 
