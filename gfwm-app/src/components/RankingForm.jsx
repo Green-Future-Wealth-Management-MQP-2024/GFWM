@@ -60,7 +60,7 @@ const RankingForm = () => {
     console.log(responses);
 
     // Send the data to the server
-    fetch(`${process.env.API_DOMAIN}/submitForm/`, {
+    fetch(`//${process.env.API_DOMAIN}/submitForm/`, {
       method: "POST", // or 'PUT' if updating existing data
       headers: {
         "Content-Type": "application/json",
