@@ -29,9 +29,9 @@ user_preferences = {
 }
 
 # Function to calculate ESG weight multiplier based on user preference
-weight_multiplier_dict = {1: 0, 2: 1.5, 3: 2.75, 4: 4.25, 5: 5}
+# https://www.desmos.com/calculator/fjiybcmpig
 def weight_multiplier(user_preference):
-    return weight_multiplier_dict.get(user_preference)
+    return (1.35 * user_preference) - 1.5 
 
 # Calculates the weights for each category
 esg_weight_multipliers = {
@@ -63,7 +63,7 @@ data['Weighted ESG Risk Score'] = weighted_esg_risk_score
 # Calculates a final score based on both the ESG risk score and the growth estimate
 # Better (higher scores) involve higher growth estimates and lower risk
 # TODO find a way to convert final score into portfolio weights
-data['Final Score'] = data['Growth Estimate'] / 5 - data['Weighted ESG Risk Score']
+data['Final Score'] = data['Growth Estimate'] * 5 - data['Weighted ESG Risk Score']
 
 # Sorts the companies by the final score 
 sorted_data = data.sort_values(by='Final Score', ascending=False)

@@ -12,8 +12,8 @@ data["Growth Estimate"] = 0
 data["Annual Return"] = 0
 data["Volatility"] = 0
 
-# constant used to annualize daily volatility. based off 252 trading days
-sqrt_T = np.sqrt(252)
+# constant used to annualize monthly volatility
+sqrt_T = np.sqrt(12)
 
 # Function to calculate growth estimate, annual return, and volatility for each ticker
 
@@ -39,19 +39,19 @@ def calculate_metrics(row):
     # next use 10y of prices to calculate volatility
 
     # https://github.com/ranaroussi/yfinance/wiki/Ticker
-    daily_prices = stock.history(interval="1mo", period="5y", actions=True)
+    monthly_prices = stock.history(interval="1mo", period="10y", actions=True)
 
     # https://www.macroption.com/historical-volatility-calculation/#log-returns
-    daily_prices["Log Return"] = np.log(
-        daily_prices['Close'] / daily_prices['Close'].shift(1))
+    monthly_prices["Log Return"] = np.log(
+        monthly_prices['Close'] / monthly_prices['Close'].shift(1))
 
     # ddof = 1 uses Bessel's correction, ie / n-1
-    volatility = sqrt_T * np.nanstd(daily_prices['Log Return'], ddof=1)
+    volatility = sqrt_T * np.nanstd(monthly_prices['Log Return'], ddof=1)
 
     # https://www.investopedia.com/terms/a/annualized-total-return.asp
-    cumulative_return = daily_prices['Close'].iloc[-1] / daily_prices['Close'].iloc[0]
+    cumulative_return = monthly_prices['Close'].iloc[-1] / monthly_prices['Close'].iloc[0]
     
-    dates = daily_prices.index
+    dates = monthly_prices.index
     days_held = (dates[-1] - dates[0]).days
     
     #print(days_held, volatility, cumulative_return)

@@ -9,7 +9,7 @@ const RankingFormResults = ({ data }) => {
           <tr>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Symbol</th>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Name</th>
-            <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Annualized Return (5 year average) (%)</th>
+            <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Annualized % Return (2014 - 2024)</th>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">5 Year Growth Estimate</th>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Volatility (%)</th>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Compatibility Score</th>
