@@ -44,7 +44,7 @@ const TopBar = () => {
 const FooterBar = () => {
   return (
     <footer className="footer-bar">
-      <p>&copy; 2024 My Website. All rights reserved.</p>
+      <p>2024 Green Future Wealth Managagement MQP</p>
     </footer>
   );
 };
