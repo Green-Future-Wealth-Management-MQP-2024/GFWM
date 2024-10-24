@@ -2,7 +2,7 @@ import pandas as pd
 
 def filter_stocks(environmental, social, governance):
 
-    data = pd.read_csv("data_science/preprocess.csv")
+    data = pd.read_csv("data_science/preprocessed.csv")
 
     environmental = 1
     social = 1
@@ -49,7 +49,7 @@ def filter_stocks(environmental, social, governance):
 
     # Calculates a final score based on both the ESG risk score and the growth estimate
     # Better (higher scores) involve higher growth estimates and lower risk
-    # TODO find a way to convert final score into portfolio weights
+    print(data.columns)
     data['Final Score'] = data['Growth Estimate'] * 5 - data['Weighted ESG Risk Score']
 
     # Sorts the companies by the final score 
