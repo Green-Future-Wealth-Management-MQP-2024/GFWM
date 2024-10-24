@@ -60,7 +60,7 @@ const RankingForm = () => {
     console.log(responses);
 
     // Send the data to the server
-    fetch("/submitForm", {
+    fetch(`//${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
       method: "POST", // or 'PUT' if updating existing data
       headers: {
         "Content-Type": "application/json",
@@ -69,12 +69,13 @@ const RankingForm = () => {
     })
       .then((res) => {
         if (!res.ok) {
+          console.log(res);
           throw new Error("Network response was not ok");
         }
         return res.json();
       })
       .then((data) => {
-        setReturnData(data);
+        setReturnData(data); 
         console.log("Server response:", data); // Use the server response if needed
         setShowResults(true); // Show results after successful response
       })
