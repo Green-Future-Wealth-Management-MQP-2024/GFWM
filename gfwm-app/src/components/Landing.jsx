@@ -30,7 +30,7 @@ const TopBar = () => {
   return (
     <header className="top-bar">
       <h2 className="text-2xl font-bold">
-        Green Future Wealth Management MQP Prototype
+        Green Future Wealth Management ESG Questionnaire
       </h2>
       <nav>
         <a href="/">Home</a>

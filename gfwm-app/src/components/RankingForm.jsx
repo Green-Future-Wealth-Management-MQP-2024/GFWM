@@ -7,20 +7,24 @@ const RankingForm = () => {
   const questions = [
     {
       id: "fossilFuels",
-      text: "Minimizing investment in fossil fuel producers:",
+      text: "Minimizing investment in fossil fuel producers",
+      link: "",
     },
-    { id: "weapons", text: "Minimizing investment in weapons manufacturers:" },
+    { id: "weapons", text: "Minimizing investment in weapons manufacturers" },
     {
       id: "environment",
-      text: "Investing in environmentally friendly companies:",
+      text: "Investing in environmentally friendly companies",
+      link: "https://www.greenfuturewealth.com/environmental",
     },
     {
       id: "social",
-      text: "Investing in companies with positive social impacts:",
+      text: "Investing in companies with positive social impacts",
+      link: "https://www.greenfuturewealth.com/social",
     },
     {
       id: "governance",
-      text: "Investing in companies with strong governance:",
+      text: "Investing in companies with strong governance",
+      link: "https://www.greenfuturewealth.com/governance",
     },
   ];
 
@@ -35,12 +39,12 @@ const RankingForm = () => {
 
   const [showResults, setShowResults] = useState(false);
 
-
-
   const handleSubmit = (e) => {
     e.preventDefault();
     const responses = questions.reduce((acc, question) => {
-      const selectedOption = formRefs.current[question.id].current.querySelector(
+      const selectedOption = formRefs.current[
+        question.id
+      ].current.querySelector(
         'input[name="question-' + question.id + '"]:checked'
       );
       acc[question.id] = selectedOption ? selectedOption.value : "";
@@ -75,7 +79,7 @@ const RankingForm = () => {
         return res.json();
       })
       .then((data) => {
-        setReturnData(data); 
+        setReturnData(data);
         console.log("Server response:", data); // Use the server response if needed
         setShowResults(true); // Show results after successful response
       })
@@ -88,8 +92,23 @@ const RankingForm = () => {
     <div>
       <form onSubmit={handleSubmit} className="ranking-form">
         {questions.map((question) => (
-          <div key={question.id} className="form-row" ref={formRefs.current[question.id]}>
-            <label className="form-question">{question.text}</label>
+          <div
+            key={question.id}
+            className="form-row"
+            ref={formRefs.current[question.id]}
+          >
+            <label className="form-question">
+              {question.text} {" "}
+              {question.link && ( //show more info if link is provided
+                <a
+                  href={question.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  (Learn more)
+                </a>
+              )}
+            </label>
             <div className="radio-group">
               <span className="rating-label">1 (Not Important)</span>
               {[1, 2, 3, 4, 5].map((rank) => (
@@ -98,7 +117,6 @@ const RankingForm = () => {
                     type="radio"
                     name={`question-${question.id}`}
                     value={rank}
-            
                   />
                   {rank}
                 </label>
@@ -112,7 +130,7 @@ const RankingForm = () => {
         </button>
       </form>
 
-{ showResults && <RankingFormResults data={returnData} />}
+      {showResults && <RankingFormResults data={returnData} />}
     </div>
   );
 };

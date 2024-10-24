@@ -4,10 +4,6 @@ def filter_stocks(environmental, social, governance):
 
     data = pd.read_csv("data_science/preprocessed.csv")
 
-    environmental = 1
-    social = 1
-    governance = 1
-
     # User responses to the questionnaire 
     user_preferences = {
         'Environmental': environmental,  # Based on Question 1 and 3
@@ -49,7 +45,6 @@ def filter_stocks(environmental, social, governance):
 
     # Calculates a final score based on both the ESG risk score and the growth estimate
     # Better (higher scores) involve higher growth estimates and lower risk
-    print(data.columns)
     data['Final Score'] = data['Growth Estimate'] * 5 - data['Weighted ESG Risk Score']
 
     # Sorts the companies by the final score 
