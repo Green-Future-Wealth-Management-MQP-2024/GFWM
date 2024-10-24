@@ -7,12 +7,6 @@ import json
 
 from data_science.stock_filter import filter_stocks
 
-# Set pandas options to display all rows and columns without truncation
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_colwidth', None)
-pd.set_option('display.expand_frame_repr', False)
-
 @csrf_exempt
 def hello_api(request):
     return JsonResponse({"message": f"Hello from the Django API! {request}"})
