@@ -18,13 +18,13 @@ data = data.rename(columns={"Name": "name",
                             "Total Returns": "annual_return",
                             "Standard Deviation": "sd"})
 last_complete_year = 2022
-#data = data[data['year'] <= last_complete_year]
+# data = data[data['year'] <= last_complete_year]
 
 preprocessed_data = {}
 
 for header in data.columns.values:
     preprocessed_data[header] = []
-    
+
 # rename the year column to represent the number of years the stock has been part of the sp500
 preprocessed_data["years_index"] = preprocessed_data.pop("year")
 
@@ -32,19 +32,22 @@ preprocessed_data["years_index"] = preprocessed_data.pop("year")
 # Apple | AAPL | last year present | weighted controversy score | weighted env score | weighted social score | weighted gov score | annualized returns | average sd
 
 # https://www.desmos.com/calculator/dip9x7liy0
+
+
 def weight(year):
     x = last_complete_year-year
-    w = 0.56 - 0.38* np.arctan(0.4*x - 2)
-    #w = -0.000217813 * x**3 + 0.00645862 * x**2 -0.0861945 * x + 1
+    w = 0.56 - 0.38 * np.arctan(0.4*x - 2)
+    # w = -0.000217813 * x**3 + 0.00645862 * x**2 -0.0861945 * x + 1
     return w
 
-    #return 1.5 - 0.5 * np.exp(x * 0.0475)
-    #return 1 - x/23.0
+    # return 1.5 - 0.5 * np.exp(x * 0.0475)
+    # return 1 - x/23.0
+
 
 for ticker, block in data.groupby("ticker"):
-    
+
     num_years = len(block)  # max in dataset is 22
-    
+
     # create annualized return from returns
     # https://www.investopedia.com/terms/a/annualized-total-return.asp
 
@@ -54,21 +57,21 @@ for ticker, block in data.groupby("ticker"):
     # average of standard deviations
 
     sd = pd.to_numeric(block["sd"]).mean()
-    
-    #remove last row (2023) since it doensn't have esg data
+
+    # remove last row (2023) since it doensn't have esg data
     esg_block = block.iloc[:-1]
-    
-    weights = weight(esg_block["year"].array) #recommended instead of .values
+
+    weights = weight(esg_block["year"].array)  # recommended instead of .values
     weights = weights/sum(weights)
-    
-    #print(len(weights), [round(w*100, 4) for w in weights])
+
+    # print(len(weights), [round(w*100, 4) for w in weights])
 
     # dot product weights with values to form one weighted average for each category
-    controversy = np.dot(pd.to_numeric(esg_block["controversy"], "coerce"), weights)
+    controversy = np.dot(pd.to_numeric(
+        esg_block["controversy"], "coerce"), weights)
     env = np.dot(pd.to_numeric(esg_block["environment"]), weights)
     social = np.dot(pd.to_numeric(esg_block["social"]), weights)
     gov = np.dot(pd.to_numeric(esg_block["governance"]), weights)
-    
 
     preprocessed_data["name"].append(block["name"].values[0])
     preprocessed_data["ticker"].append(ticker)
@@ -82,7 +85,15 @@ for ticker, block in data.groupby("ticker"):
     preprocessed_data["annual_return"].append(annual_return)
     preprocessed_data["sd"].append(sd)
 
+# normalize all the standard deviations from 0-100 for easier comparison
+
+min_value = min(preprocessed_data["sd"])
+max_value = max(preprocessed_data["sd"])
+
+preprocessed_data["risk"] = [(value - min_value) / (max_value - min_value) * 100
+                             for value in preprocessed_data["sd"]]
+
 # Save the DataFrame to a CSV file
 # Set index=False to avoid writing row indices
-df = pd.DataFrame(preprocessed_data).round(6)
+df = pd.DataFrame(preprocessed_data).round(4)
 df.to_csv('preprocessed.csv', index=False)
