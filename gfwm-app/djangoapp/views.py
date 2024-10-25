@@ -38,21 +38,9 @@ def submit_form(request):
 
         # Imported function from data science modules
         filtered_stocks = filter_stocks(environmental, social, governance)
-        #returns ['Symbol', 'Name', 'Annual Return', 'Growth Estimate', 'Volatility',  'Final Score']
-
-        json_result = []
-
-        for _, row in filtered_stocks.iterrows():
-            row_object = {
-                "symbol": row['Symbol'].strip(),
-                "name": row['Name'].strip(),
-                "annual_return": row['Annual Return'],
-                "growth_estimate": row['Growth Estimate'],
-                "volatility": row['Volatility'],
-                "score": row['Final Score']
-            }
-            json_result.append(row_object)
-
-        return JsonResponse(json_result, safe=False)
+        #returns ['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']
+        print(filtered_stocks)
+        
+        return JsonResponse(filtered_stocks.to_dict(orient = "records"), safe=False)
 
     return JsonResponse({"error": "Invalid request method."}, status=401)
