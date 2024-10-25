@@ -1,57 +1,46 @@
 import pandas as pd
 import numpy as np
+import yfinance as yf
 
-import requests
+tickers = pd.read_csv("../preprocessed.csv")["ticker"]
 
-api_key = "HWNPOV64EX80DSBA"
+# remove PEAK
+# remove PXD (pioneer energy, aquired by exxon mobil)
+# remove WRK
+tickers.remove("PEAK")
+tickers.remove("PXD")
+tickers.remove("WRK")
 
-tickers = pd.read_csv("../preprocessed.csv")["ticker"][:10]
+all_data = pd.DataFrame()
+all_daily_returns = {}
 
-all_df = []
-
-all_adj_close = {}
-
+# Loop through each ticker and fetch historical data
 for ticker in tickers:
+    # Fetch historical data for the ticker
+    data = yf.download(ticker, start="2000-01-01", end="2024-10-01")
+    
+    # Keep only the relevant columns and rename them
+    data = data[['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']]
+    data.columns = ['open', 'high', 'low', 'close', 'adjusted_close', 'volume']
+    
+    # Add the ticker column
+    data.insert(0, "ticker", ticker)
+    
+    data['log_return'] = np.log(data['adjusted_close'] / data['adjusted_close'].shift(1))
+    data = data.dropna(subset=['log_return'])
+    
+    all_daily_returns[ticker] = data["log_return"]
+    
+    # Append to the main DataFrame
+    all_data = pd.concat([all_data, data])
 
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol={ticker}&apikey={api_key}"
+# Reset the index
+all_data.reset_index(inplace=True)
 
-    alpha_vantage_data = requests.get(url).json()["Weekly Adjusted Time Series"]
-    df = pd.DataFrame.from_dict(alpha_vantage_data, orient="index")
-    
-    # Rename columns
-    # index -> date
-    # clean up alpha vantage headers
-    
-    df.reset_index(inplace=True)
-    df.rename(columns={"index": "date"}, inplace=True)
-    
-    new_column_names = {
-        "1. open": "open",
-        "2. high": "high",
-        "3. low": "low",
-        "4. close": "close",
-        "5. adjusted close": "adjusted_close",
-        "6. volume": "volume",
-        "7. dividend amount": "dividend_amount"
-    }
-    df.rename(columns=new_column_names, inplace=True)
-    
-    df.insert(1, "ticker", ticker)
-    
-    all_df.append(df)
-    all_adj_close["ticker"] = df["adjusted_close"]
-       
-    print(f"{ticker} done")
-    
+# Save the combined DataFrame to CSV
+all_data.to_csv("sp500_daily_data.csv", index=False)
 
 # Calculate the covariance matrix
-covariance_matrix = pd.DataFrame(all_adj_close).cov()
+covariance_matrix = pd.DataFrame(all_daily_returns).cov()
 
-print(covariance_matrix.head())
-
-# Optional: Set the index and columns to the tickers (already done in this case)
-covariance_matrix.index = tickers
-covariance_matrix.columns = tickers
-
-# Concatenate all dataframes and save to csv
-pd.concat(all_df).to_csv("sp500_weekly_adjusted.csv") 
+covariance_matrix.to_csv("sp500_covariance_matrix.csv", index = True)
