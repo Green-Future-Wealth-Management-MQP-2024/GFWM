@@ -2,82 +2,86 @@ import pandas as pd
 import yfinance as yf
 import numpy as np
 
-raw_data = pd.read_csv("Refinitiv ESG - Final Data for Analysis.csv")
+data = pd.read_csv("Refinitiv ESG Final Data for Analysis.csv")
 
 columns_to_keep = ["Name", "Symbol", "Year", "ESG Controversies Score", "Environment Pillar Score",
                    "Social Pillar Score", "Governance Pillar Score", "Total Returns", "Standard Deviation"]
-raw_data = raw_data[columns_to_keep]
+data = data[columns_to_keep]
+# pandas prefers single word columns. lowercase for simplicity with variable names
+data = data.rename(columns={"Name": "name",
+                            "Symbol": "ticker",
+                            "Year": "year",
+                            "ESG Controversies Score": "controversy",
+                            "Environment Pillar Score": "environment",
+                            "Social Pillar Score": "social",
+                            "Governance Pillar Score": "governance",
+                            "Total Returns": "annual_return",
+                            "Standard Deviation": "sd"})
+last_complete_year = 2022
+#data = data[data['year'] <= last_complete_year]
 
-data = {}
+preprocessed_data = {}
 
-for header in columns_to_keep:
-    data[header] = []
+for header in data.columns.values:
+    preprocessed_data[header] = []
 
 # build new columns under each header, example:
 # Apple | AAPL | last year present | weighted controversy score | weighted env score | weighted social score | weighted gov score | annualized returns | average sd
 
-# Gets unique stock symbols from the data
-unique_symbols = data['Symbol'].unique()
+# https://www.desmos.com/calculator/dip9x7liy0
+def weight(year):
+    x = last_complete_year-year
+    w = 0.56 - 0.38* np.arctan(0.4*x - 2)
+    #w = -0.000217813 * x**3 + 0.00645862 * x**2 -0.0861945 * x + 1
+    return w
 
-# Function to calculate growth estimate, annual return, and volatility for each ticker
+    #return 1.5 - 0.5 * np.exp(x * 0.0475)
+    #return 1 - x/23.0
 
+#TODO: add years in SP500
 
-def calculate_metrics(row):
-    # Initialize variables
-    growth_estimate_5yr = 0
-    annual_return = 0
-    volatility = 0
-
-    stock = yf.Ticker(row["Symbol"])
-
-    # Retrieves growth estimates data from yfinance
-    growth_estimates = stock.growth_estimates
-
-    # Checks if growth estimates data is available
-    if growth_estimates is not None and '+5y' in growth_estimates.index:
-        # Extracts the growth estimate for the next 5 years in the 'stock' column
-        growth_estimate_5yr = growth_estimates.loc['+5y', 'stock']
-
-    # next use 10y of prices to calculate volatility
-
-    # https://github.com/ranaroussi/yfinance/wiki/Ticker
-    monthly_prices = stock.history(interval="1mo", period="10y", actions=True)
-
-    # https://www.macroption.com/historical-volatility-calculation/#log-returns
-    monthly_prices["Log Return"] = np.log(
-        monthly_prices['Close'] / monthly_prices['Close'].shift(1))
-
-    # ddof = 1 uses Bessel's correction, ie / n-1
-    volatility = sqrt_T * np.nanstd(monthly_prices['Log Return'], ddof=1)
-
+for ticker, block in data.groupby("ticker"):
+    
+    num_years = len(block)  # max in dataset is 22
+    
+    # create annualized return from returns
     # https://www.investopedia.com/terms/a/annualized-total-return.asp
-    cumulative_return = monthly_prices['Close'].iloc[-1] / \
-        monthly_prices['Close'].iloc[0]
 
-    dates = monthly_prices.index
-    days_held = (dates[-1] - dates[0]).days
+    annual_return = pow(
+        (pd.to_numeric(block["annual_return"])+1).prod(), 1.0/num_years) - 1
 
-    # print(days_held, volatility, cumulative_return)
+    # average of standard deviations
 
-    annual_return = pow(cumulative_return, 365/days_held) - 1
+    sd = pd.to_numeric(block["sd"]).mean()
+    
+    #remove last row (2023) since it doensn't have esg data
+    esg_block = block.iloc[:-1]
+    
+    weights = weight(esg_block["year"].array) #recommended instead of .values
+    weights = weights/sum(weights)
+    
+    #print(len(weights), [round(w*100, 4) for w in weights])
 
-    print(growth_estimate_5yr, annual_return, volatility)
+    # dot product weights with values to form one weighted average for each category
+    controversy = np.dot(pd.to_numeric(esg_block["controversy"], "coerce"), weights)
+    env = np.dot(pd.to_numeric(esg_block["environment"]), weights)
+    social = np.dot(pd.to_numeric(esg_block["social"]), weights)
+    gov = np.dot(pd.to_numeric(esg_block["governance"]), weights)
+    
 
-    # change to percent
-    return pd.Series([growth_estimate_5yr, annual_return * 100, volatility * 100])
+    preprocessed_data["name"].append(block["name"].values[0])
+    preprocessed_data["ticker"].append(ticker)
+    preprocessed_data["year"].append(last_complete_year)
 
+    preprocessed_data["controversy"].append(controversy)
+    preprocessed_data["environment"].append(env)
+    preprocessed_data["social"].append(social)
+    preprocessed_data["governance"].append(gov)
 
-data[['Growth Estimate', 'Annual Return', 'Volatility']
-     ] = data.apply(calculate_metrics, axis=1)
-
-# note: i don't think it makes sense to normalize the data we will be displaying
-
-# Normalize the growth estimates to [0, 10]
-# min = data['Growth Estimate'].min()
-# max = data['Growth Estimate'].max()
-
-# data['Growth Estimate'] = 10 * (data['Growth Estimate'] - min) / (max - min)
+    preprocessed_data["annual_return"].append(annual_return)
+    preprocessed_data["sd"].append(sd)
 
 # Save the DataFrame to a CSV file
 # Set index=False to avoid writing row indices
-data.to_csv('preprocessed.csv', index=False)
+df = pd.DataFrame(preprocessed_data).round(6)
+df.to_csv('preprocessed.csv', index=False)
