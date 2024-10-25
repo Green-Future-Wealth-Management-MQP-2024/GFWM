@@ -1,14 +1,18 @@
 import React from "react";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { useEffect } from "react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const RankingFormResults = ({ data }) => {
+
+  const top20Data = data.slice(0, 20);
+  const sortedData = top20Data.sort((a, b) => b.annual_return - a.annual_return);
   // Prepare data for the chart
-  const labels = data.map(item => item.ticker);
-  const annualReturns = data.map(item => item.annual_return * 100);
-  const compatibilityScores = data.map(item => item.compatibility_score);
+  const labels = sortedData.map(item => item.ticker);
+  const annualReturns = sortedData.map(item => item.annual_return * 100);
+  const compatibilityScores = sortedData.map(item => item.compatibility_score);
 
   const chartData = {
     labels,
@@ -29,6 +33,12 @@ const RankingFormResults = ({ data }) => {
       },
     ],
   };
+  const rowRefs = React.useRef([]);
+  const [selectedTicker, setSelectedTicker] = React.useState(null);
+
+  useEffect(() => { 
+    setSelectedTicker(null);
+    }, [data]);
 
   const options = {
     responsive: true,
@@ -38,14 +48,26 @@ const RankingFormResults = ({ data }) => {
       },
       title: {
         display: true,
-        text: 'Stock Portfolio',
+        text: 'Top 20 Annualized Returns in Portfolio',
       },
+    },
+    onClick: (event, elements) => {
+      if (elements.length > 0) {
+        const index = elements[0].index;
+        const ticker = labels[index];
+        const rowRef = rowRefs.current[ticker];
+        setSelectedTicker(ticker);
+        if (rowRef) {
+          rowRef.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
     },
   };
 
   const openYahooFinance = (ticker) => {
     const url = `https://finance.yahoo.com/quote/${ticker}`;
     window.open(url, '_blank');
+    setSelectedTicker(ticker);
   };
 
 
@@ -67,8 +89,9 @@ const RankingFormResults = ({ data }) => {
           </tr>
         </thead>
         <tbody>
-          {data.map((item) => (
-            <tr key={item.ticker} className="hover:bg-gray-100 cursor-pointer" onClick={() => openYahooFinance(item.ticker)}>
+          {data.map((item, index) => (
+            <tr ref={(el) => (rowRefs.current[item.ticker] = el)} key={item.ticker} 
+            className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? 'bg-gray-100' : ''}`} onClick={() => openYahooFinance(item.ticker)}>
               <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.annual_return * 100}</td>
