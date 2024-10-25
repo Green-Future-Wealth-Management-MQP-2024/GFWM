@@ -24,6 +24,9 @@ preprocessed_data = {}
 
 for header in data.columns.values:
     preprocessed_data[header] = []
+    
+# rename the year column to represent the number of years the stock has been part of the sp500
+preprocessed_data["years_index"] = preprocessed_data.pop("year")
 
 # build new columns under each header, example:
 # Apple | AAPL | last year present | weighted controversy score | weighted env score | weighted social score | weighted gov score | annualized returns | average sd
@@ -37,8 +40,6 @@ def weight(year):
 
     #return 1.5 - 0.5 * np.exp(x * 0.0475)
     #return 1 - x/23.0
-
-#TODO: add years in SP500
 
 for ticker, block in data.groupby("ticker"):
     
@@ -71,7 +72,7 @@ for ticker, block in data.groupby("ticker"):
 
     preprocessed_data["name"].append(block["name"].values[0])
     preprocessed_data["ticker"].append(ticker)
-    preprocessed_data["year"].append(last_complete_year)
+    preprocessed_data["years_index"].append(num_years)
 
     preprocessed_data["controversy"].append(controversy)
     preprocessed_data["environment"].append(env)

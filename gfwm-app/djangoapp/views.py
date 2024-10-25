@@ -38,7 +38,7 @@ def submit_form(request):
 
         # Imported function from data science modules
         filtered_stocks = filter_stocks(environmental, social, governance)
-        #returns ['ticker', 'name', 'annual_return', 'sd',  'compatibility_score']
+        #returns ['ticker', 'name', 'annual_return', 'sd', 'years_index', 'compatibility_score']
         print(filtered_stocks)
         
         return JsonResponse(filtered_stocks.to_dict(orient = "records"), safe=False)

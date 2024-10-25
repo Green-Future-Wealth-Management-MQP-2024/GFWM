@@ -36,5 +36,5 @@ def filter_stocks(environmental, social, governance):
     # Shows the top companies that match user preferences
     # TODO clear up output
     # idea: print symbol, name, portfolio weight, past return, past risk
-    return(sorted_data[['ticker', 'name', 'annual_return', 'sd',  'compatibility_score']].head(50))
+    return(sorted_data[['ticker', 'name', 'annual_return', 'sd', 'years_index', 'compatibility_score']].head(50))
 

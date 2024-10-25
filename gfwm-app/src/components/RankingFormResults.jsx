@@ -12,6 +12,7 @@ const RankingFormResults = ({ data }) => {
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Name</th>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Annualized % Return</th>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Standard Deviation</th>
+            <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Years in S&P Index</th>
             <th className="py-2 px-4 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Compatibility Score</th>
           </tr>
         </thead>
@@ -22,6 +23,7 @@ const RankingFormResults = ({ data }) => {
               <td className="py-2 px-4 border-b border-gray-300">{item.name}</td>
               <td className="py-2 px-4 border-b border-gray-300">{item.annual_return * 100}</td>
               <td className="py-2 px-4 border-b border-gray-300">{item.sd}</td>
+              <td className="py-2 px-4 border-b border-gray-300">{item.years_index}</td>
               <td className="py-2 px-4 border-b border-gray-300">{item.compatibility_score}</td>
             </tr>
           ))}
