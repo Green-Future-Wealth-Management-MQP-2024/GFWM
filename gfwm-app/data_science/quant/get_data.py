@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 
-import matplotlib.pyplot as plt
-
 tickers = pd.read_csv("../preprocessed.csv")["ticker"]
 
 # remove PEAK, 

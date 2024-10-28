@@ -15,40 +15,41 @@
 import pandas as pd
 import numpy as np
 
-from data_science.stock_filter import filter_stocks
-
+from data_science import stock_filter
 
 # call filter stocks to come up with universe of 100 stocks
-tickers = filter_stocks(5, 5, 5)["ticker"]
+tickers = stock_filter.filter_stocks(5, 5, 5)["ticker"]
 
 # read csv for return and cov matrix
-price_data = pd.read_csv("sp500_weekly_data.csv")["ticker", "log_return", "volatility", "volume_100ma"]
+price_data = pd.read_csv("data_science/quant/sp500_weekly_data.csv")[["ticker", "log_return", "volatility"]]
+cov_matrix = pd.read_csv("data_science/quant/sp500_weekly_covariance_matrix.csv")
 
-cov_matrix = pd.read_csv("sp500_weekly_covariance_matrix")
+for ticker, block in price_data.groupby(by = "ticker"):
+    print(ticker, np.mean(block['log_return']))
 
 # generate 500 random portfolios under sd 2
 
-def random_portfolio(returns):
-    ''' 
-    Returns the mean and standard deviation of returns for a random portfolio
-    '''
+# def random_portfolio(returns):
+#     ''' 
+#     Returns the mean and standard deviation of returns for a random portfolio
+#     '''
 
-    p = np.asmatrix(np.mean(returns, axis=1))
-    w = np.asmatrix(rand_weights(returns.shape[0]))
-    C = np.asmatrix(np.cov(returns))
+#     p = np.asmatrix(np.mean(returns, axis=1))
+#     w = np.asmatrix(rand_weights(returns.shape[0]))
+#     C = np.asmatrix(np.cov(returns))
     
-    mu = w * p.T
-    sigma = np.sqrt(w * C * w.T)
+#     mu = w * p.T
+#     sigma = np.sqrt(w * C * w.T)
     
-    # This recursion reduces outliers to keep plots pretty
-    if sigma > 2:
-        return random_portfolio(returns)
-    return mu, sigma
+#     # This recursion reduces outliers to keep plots pretty
+#     if sigma > 2:
+#         return random_portfolio(returns)
+#     return mu, sigma
 
-n_portfolios = 500
-means, stds = np.column_stack([
-    random_portfolio(return_vec) 
-    for _ in xrange(n_portfolios)
-])
+# n_portfolios = 500
+# means, stds = np.column_stack([
+#     random_portfolio(return_vec) 
+#     for _ in xrange(n_portfolios)
+# ])
 
 # plot markowitz bullet

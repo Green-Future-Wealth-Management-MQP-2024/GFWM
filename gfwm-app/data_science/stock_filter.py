@@ -24,7 +24,7 @@ def filter_stocks(environmental, social, governance):
         data['governance'] * weight_multiplier(user_preferences['governance'])
     )
     
-    print(weighted_esg_risk_score)
+    #print(weighted_esg_risk_score)
     
     # this makes it the combined esg score is [0, 100]
     data['combined esg'] = weighted_esg_risk_score / 16.5 * data["controversy"] / 100
@@ -35,6 +35,4 @@ def filter_stocks(environmental, social, governance):
     # Sorts the companies by the final score 
     sorted_data = data.sort_values(by='compatibility_score', ascending=False)
 
-    # Shows the top companies that match user preferences
-    # idea: print symbol, name, portfolio weight, past return, past risk
     return(sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']].head(100))
