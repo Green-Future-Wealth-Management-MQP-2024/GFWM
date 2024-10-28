@@ -130,7 +130,7 @@ const RankingForm = () => {
         </button>
       </form>
 
-      {showResults && <RankingFormResults data={returnData} />}
+      {showResults && <RankingFormResults results={returnData} />}
     </div>
   );
 };
