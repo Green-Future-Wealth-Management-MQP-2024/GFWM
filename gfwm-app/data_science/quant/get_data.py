@@ -15,12 +15,12 @@ tickers = tickers[~tickers.isin(["PEAK", "PXD", "WRK", "CDAY", "FLT"])].reset_in
 
 
 all_data = pd.DataFrame()
-all_daily_returns = {}
+all_returns = {}
 
 # Loop through each ticker and fetch historical data
 for ticker in tickers:
     # Fetch historical data for the ticker
-    data = yf.download(ticker, start="2000-01-01", end="2024-10-01")
+    data = yf.download(ticker, interval = "1wk", start="2002-01-01", end="2024-10-01")
 
     # Keep only the relevant columns and rename them
     data = data[['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']]
@@ -45,7 +45,7 @@ for ticker in tickers:
     # drops the first 200 rows (largest moving average window)
     data = data.dropna(subset=['volume_100ma'])
 
-    all_daily_returns[ticker] = data['log_return']
+    all_returns[ticker] = data['log_return']
 
     # Append to the main DataFrame
     all_data = pd.concat([all_data, data])
@@ -53,10 +53,10 @@ for ticker in tickers:
 all_data.drop(columns=['squared_log_return'], inplace=True)
 
 # Save the combined DataFrame to CSV
-all_data.to_csv("sp500_daily_data.csv", index=True)
+all_data.to_csv("sp500_weekly_data.csv", index=True)
 
 
 # Calculate the covariance matrix
-covariance_matrix = pd.DataFrame(all_daily_returns).cov()
+covariance_matrix = pd.DataFrame(all_returns).cov()
 
-covariance_matrix.to_csv("sp500_covariance_matrix.csv", index=True)
+covariance_matrix.to_csv("sp500_weekly_covariance_matrix.csv", index=True)

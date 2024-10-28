@@ -17,14 +17,16 @@ import numpy as np
 
 from data_science.stock_filter import filter_stocks
 
-tickers = filter_stocks(5, 5, 5)["ticker"]
 
 # call filter stocks to come up with universe of 100 stocks
+tickers = filter_stocks(5, 5, 5)["ticker"]
 
 # read csv for return and cov matrix
+price_data = pd.read_csv("sp500_weekly_data.csv")["ticker", "log_return", "volatility", "volume_100ma"]
+
+cov_matrix = pd.read_csv("sp500_weekly_covariance_matrix")
 
 # generate 500 random portfolios under sd 2
-# plot markowitz bullet
 
 def random_portfolio(returns):
     ''' 
@@ -48,3 +50,5 @@ means, stds = np.column_stack([
     random_portfolio(return_vec) 
     for _ in xrange(n_portfolios)
 ])
+
+# plot markowitz bullet
