@@ -6,8 +6,13 @@ import matplotlib.pyplot as plt
 
 tickers = pd.read_csv("../preprocessed.csv")["ticker"]
 
-# remove PEAK, PXD (pioneer energy, aquired by exxon mobil), WRK (sidney australia listing)
-tickers = tickers[~tickers.isin(["PEAK", "PXD", "WRK"])].reset_index(drop=True)
+# remove PEAK, 
+# PXD (pioneer energy, aquired by exxon mobil), 
+# WRK (sidney australia listing)
+#CDAY renamed to DAY
+#FLT listed in australia
+tickers = tickers[~tickers.isin(["PEAK", "PXD", "WRK", "CDAY", "FLT"])].reset_index(drop=True)
+
 
 all_data = pd.DataFrame()
 all_daily_returns = {}
