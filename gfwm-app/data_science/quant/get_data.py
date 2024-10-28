@@ -2,15 +2,14 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 
-tickers = pd.read_csv("../preprocessed.csv")["ticker"]
+tickers = pd.read_csv("data_science/quant/constituents.csv")["Symbol"]
 
 # remove PEAK, 
 # PXD (pioneer energy, aquired by exxon mobil), 
 # WRK (sidney australia listing)
 #CDAY renamed to DAY
 #FLT listed in australia
-tickers = tickers[~tickers.isin(["PEAK", "PXD", "WRK", "CDAY", "FLT"])].reset_index(drop=True)
-
+tickers = tickers[~tickers.isin(["PEAK", "PXD", "WRK", "CDAY", "FLT", "BRK.B", "BF.B"])].reset_index(drop=True)
 
 all_data = pd.DataFrame()
 all_returns = {}

@@ -22,10 +22,14 @@ tickers = stock_filter.filter_stocks(5, 5, 5)["ticker"]
 
 # read csv for return and cov matrix
 price_data = pd.read_csv("data_science/quant/sp500_weekly_data.csv")[["ticker", "log_return", "volatility"]]
-cov_matrix = pd.read_csv("data_science/quant/sp500_weekly_covariance_matrix.csv")
+cov_matrix = pd.read_csv("data_science/quant/sp500_weekly_covariance_matrix.csv").to_numpy()
+
+print(cov_matrix)
+
+mean_log_returns = {}
 
 for ticker, block in price_data.groupby(by = "ticker"):
-    print(ticker, np.mean(block['log_return']))
+    mean_log_returns[ticker] = np.mean(block['log_return'])
 
 # generate 500 random portfolios under sd 2
 
