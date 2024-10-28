@@ -30,7 +30,7 @@ def filter_stocks(environmental, social, governance):
     data['combined esg'] = weighted_esg_risk_score / 16.5 * data["controversy"] / 100
 
     # Calculates a compatibility score based off esg, annual returns, and risk (ranking of sd)
-    data['compatibility_score'] = data['combined esg'] + 8 * data['annual_return'] - 0.2 * data["risk"]
+    data['compatibility_score'] = data['combined esg']# + 8 * data['annual_return'] - 0.2 * data["risk"]
 
     # Sorts the companies by the final score 
     sorted_data = data.sort_values(by='compatibility_score', ascending=False)

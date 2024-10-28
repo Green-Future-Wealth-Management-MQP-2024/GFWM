@@ -5,7 +5,7 @@
 
 # exp weighted moving average of volatility
 
-# garsch model for volatility modeling
+# garch model for volatility modeling
 
 # covered calls
 # short term atm options to model volatility
@@ -17,3 +17,34 @@ import numpy as np
 
 from data_science.stock_filter import filter_stocks
 
+tickers = filter_stocks(5, 5, 5)["ticker"]
+
+# call filter stocks to come up with universe of 100 stocks
+
+# read csv for return and cov matrix
+
+# generate 500 random portfolios under sd 2
+# plot markowitz bullet
+
+def random_portfolio(returns):
+    ''' 
+    Returns the mean and standard deviation of returns for a random portfolio
+    '''
+
+    p = np.asmatrix(np.mean(returns, axis=1))
+    w = np.asmatrix(rand_weights(returns.shape[0]))
+    C = np.asmatrix(np.cov(returns))
+    
+    mu = w * p.T
+    sigma = np.sqrt(w * C * w.T)
+    
+    # This recursion reduces outliers to keep plots pretty
+    if sigma > 2:
+        return random_portfolio(returns)
+    return mu, sigma
+
+n_portfolios = 500
+means, stds = np.column_stack([
+    random_portfolio(return_vec) 
+    for _ in xrange(n_portfolios)
+])
