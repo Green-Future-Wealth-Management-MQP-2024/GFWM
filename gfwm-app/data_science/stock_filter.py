@@ -35,8 +35,23 @@ def filter_stocks(environmental, social, governance):
     # Sorts the companies by the final score 
     sorted_data = data.sort_values(by='compatibility_score', ascending=False)
 
+    # Top 100
+    top_100 = sorted_data.head(100)
+
+    # Average ESG Score for the top 100 companies
+    avg_esg = top_100['combined esg'].mean()
+
+    # Average Annual Return for the top 100 companies
+    avg_return = top_100['annual_return'].mean()
+
+    result = {
+        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']].to_dict(orient='records'),
+        'avg_esg': avg_esg,
+        'avg_return': avg_return
+    }
+
     # Shows the top companies that match user preferences
     # TODO clear up output
     # idea: print symbol, name, portfolio weight, past return, past risk
-    return(sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']].head(100))
+    return(result)
 
