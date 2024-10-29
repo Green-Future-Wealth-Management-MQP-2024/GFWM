@@ -2,21 +2,25 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 
-tickers = pd.read_csv("data_science/quant/constituents.csv")["Symbol"]
-
+tickers = pd.read_csv("data_science/Refinitiv ESG Final Data for Analysis.csv")["Symbol"].unique()
+tickers = pd.Series(tickers)
 # remove PEAK, 
 # PXD (pioneer energy, aquired by exxon mobil), 
 # WRK (sidney australia listing)
 #CDAY renamed to DAY
 #FLT listed in australia
-tickers = tickers[~tickers.isin(["PEAK", "PXD", "WRK", "CDAY", "FLT", "BRK.B", "BF.B"])].reset_index(drop=True)
+
+# Filter out bad tickers using mask
+tickers = tickers[~tickers.isin(["PEAK", "PXD", "WRK", "CDAY", "FLT", "BRK.B", "BF.B"])]
+print(tickers)
 
 all_data = pd.DataFrame()
 
 # Loop through each ticker and fetch historical data
 for ticker in tickers:
     # Fetch historical data for the ticker
-    data = yf.download(ticker, interval = "1wk", start="2002-01-01", end="2024-10-01")
+    print(ticker)
+    data = yf.download(ticker, interval = "1d", start="2018-01-01", end="2024-10-01")
 
     # Keep only the relevant columns and rename them
     data = data[['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']]
@@ -47,4 +51,4 @@ for ticker in tickers:
 all_data.drop(columns=['squared_log_return'], inplace=True)
 
 # Save the combined DataFrame to CSV
-all_data.to_csv("data_science/quant/sp500_weekly_data.csv", index=True)
+all_data.to_csv("data_science/quant/sp500_daily_data.csv", index=True)
