@@ -20,7 +20,7 @@ all_data = pd.DataFrame()
 for ticker in tickers:
     # Fetch historical data for the ticker
     print(ticker)
-    data = yf.download(ticker, interval = "1d", start="2018-01-01", end="2024-10-01")
+    data = yf.download(ticker, interval = "1d", start="2000-01-01", end="2024-10-01")
 
     # Keep only the relevant columns and rename them
     data = data[['Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume']]
@@ -51,4 +51,4 @@ for ticker in tickers:
 all_data.drop(columns=['squared_log_return'], inplace=True)
 
 # Save the combined DataFrame to CSV
-all_data.to_csv("data_science/quant/sp500_daily_data.csv", index=True)
+all_data.to_csv("data_science/quant/sp500_daily_data_backup.csv", index=True)
