@@ -40,7 +40,7 @@ def submit_form(request):
         results = filter_stocks(environmental, social, governance)
         #returns ['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']
         
-        print(results)
+        #print(results)
         
         return JsonResponse(results, safe=False)
 
