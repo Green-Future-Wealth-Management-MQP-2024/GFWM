@@ -19,7 +19,7 @@ def submit_form(request):
         # Parse form data
         client_responses_parsed = {key: int(value) for key, value in client_responses.items()}
 
-        print(client_responses_parsed)
+        #print(client_responses_parsed)
 
         # Check for required keys
         required_keys = ['fossilFuels', 'environment', 'weapons', 'social', 'governance']

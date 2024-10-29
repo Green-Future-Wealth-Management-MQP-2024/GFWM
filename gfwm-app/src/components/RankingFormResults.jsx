@@ -67,7 +67,7 @@ const RankingFormResults = ({ results }) => {
 
   const openYahooFinance = (ticker) => {
     const url = `https://finance.yahoo.com/quote/${ticker}`;
-    window.open(url, '_blank');
+    window.open(url, 'popup', 'width=800,height=600');
     setSelectedTicker(ticker);
   };
 
@@ -80,8 +80,9 @@ const RankingFormResults = ({ results }) => {
           <Bar data={chartData} options={options} />
         </div>
         <div className="flex-2 ml-5 ">
-          <p className="pb-1">Average ESG Score: <span className="text-green-500 text-2xl font-bold">{results.avg_esg.toFixed(2)}</span></p>
-          <p>Value of $10,000 invested 10 years ago: <span className="text-green-500 text-2xl font-bold">${investment_value.toFixed(2)}</span></p>
+          <p className="pb-1">Average ESG Score: <span className="text-green-700 text-2xl font-bold">{results.avg_esg.toFixed(2)}</span></p>
+          <p className="pb-1">Average Annual Return: <span className="text-green-700 text-2xl font-bold">{(results.avg_return * 100).toFixed(2)}%</span></p>
+          <p>Value of $10,000 invested 10 years ago: <span className="text-green-700 text-2xl font-bold">${investment_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
         </div>
       </div>
       <table className="min-w-full bg-white mb-2 text-sm">
@@ -89,7 +90,7 @@ const RankingFormResults = ({ results }) => {
           <tr>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Ticker</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Name</th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Annualized % Return</th>
+            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Annualized Return</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Years in S&P Index</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Risk (0-100)</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Compatibility Score</th>
@@ -101,10 +102,10 @@ const RankingFormResults = ({ results }) => {
             className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? 'bg-gray-100' : ''}`} onClick={() => openYahooFinance(item.ticker)}>
               <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.annual_return * 100}</td>
+              <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.years_index}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.risk}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score}</td>
+              <td className="py-1 px-2 border-b border-gray-300">{item.risk.toFixed(2)}</td>
+              <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
