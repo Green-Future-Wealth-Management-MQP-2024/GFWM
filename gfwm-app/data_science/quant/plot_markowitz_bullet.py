@@ -1,17 +1,3 @@
-# TODO
-# equal weights
-# markowitz no short to see what happens
-# add upper bound to each weight
-
-# exp weighted moving average of volatility
-
-# garch model for volatility modeling
-
-# covered calls
-# short term atm options to model volatility
-
-# bloomberg terminal - stratton hall 4th floor
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,7 +20,7 @@ unique_tickers = pd.Series(all_price_data['ticker'].unique())
 # Function to generate a plot
 def generate_plot(ax, i):
     num_tickers = 3 + (i//3)
-    tickers = unique_tickers.sample(frac=num_tickers/500, random_state=i).reset_index(drop = True)
+    tickers = unique_tickers.sample(frac=100/500, random_state=i).reset_index(drop = True)
     
     # keep selected tickers
     price_data = all_price_data[all_price_data['ticker'].isin(tickers)]
@@ -68,12 +54,13 @@ def generate_plot(ax, i):
     
     ax.scatter(stds, means, s = 2, alpha = 0.7)
     
-    formatted_tickers = ', '.join(tickers)
-    ax.set_title(f'Tickers: {formatted_tickers}')
+    #formatted_tickers = ', '.join(tickers)
+    #ax.set_title(f'Tickers: {formatted_tickers}')
+    ax.set_title("Portfolio of 100 random SP 500 component stocks")
 
 # Define the grid size
-nrows = 3
-ncols = 3
+nrows = 2
+ncols = 2
 
 # Create subplots
 fig, axs = plt.subplots(nrows, ncols, figsize=(15, 10))
