@@ -16,6 +16,7 @@ entire_cov_matrix = entire_cov_matrix.set_index('ticker')
 
 unique_tickers = pd.Series(all_price_data['ticker'].unique())
 
+# https://plotly.com/python/v3/ipython-notebooks/markowitz-portfolio-optimization/
 
 # Function to generate a plot
 def generate_plot(ax, i):

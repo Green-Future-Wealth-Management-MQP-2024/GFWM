@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 import cvxopt as opt
 from cvxopt import blas, solvers
@@ -11,57 +10,30 @@ from cvxopt import blas, solvers
 # tickers = stock_filter.filter_stocks(5, 5, 5)["ticker"]
 
 
-# read csv for return and cov matrix
-all_price_data = pd.read_csv(
-    "data_science/quant/sp500_daily_data.csv")[["ticker", "log_return", "volatility"]]
-
-entire_cov_matrix = pd.read_csv(
-    "data_science/quant/sp500_covariance_matrix.csv")
-entire_cov_matrix = entire_cov_matrix.set_index('ticker')
-
-unique_tickers = pd.Series(all_price_data['ticker'].unique())
-
-
-tickers = unique_tickers.sample(
-    frac=75/500, random_state=1).reset_index(drop=True)
-n = len(tickers)
-
-# keep selected tickers
-price_data = all_price_data[all_price_data['ticker'].isin(tickers)]
-
-# keep entries where both tickers are present
-cov_matrix = entire_cov_matrix.loc[tickers, tickers].to_numpy()
-
-mean_log_returns = price_data.groupby(by="ticker").log_return.agg("mean")
-mu_bar = np.mean(mean_log_returns)
-mu_sd = np.std(mean_log_returns)
-
-# Convert to cvxopt matrices
-cov = opt.matrix(cov_matrix)
-mean_returns = opt.matrix(mean_log_returns)
-
-# daily target returns. scale to annual for graphing
-target_returns = np.linspace(
-    start=mu_bar - mu_sd, stop=mu_bar + mu_sd, num=80)
-
-empty = np.empty(len(target_returns))
-optimal_portfolios = pd.DataFrame({'target_return': target_returns,
+def calculate_optimal_portfolios(mean_returns, cov, target_returns, bounds = None):
+    
+    n = len(mean_returns)
+    
+    # results df
+    empty = np.empty(len(target_returns))
+    optimal_portfolios = pd.DataFrame({'target_return': target_returns,
                                    'annual_return': empty,
                                    'annual_volatility': empty,
                                    'weights': empty})
 
-
-def calculate_optimal_portfolios():
-
-    # minimize x cov x
+    # minimize x * cov * x
     # subject to:
     # Gx <= h:  0 <= x <= upper_bound
     #               -x <= 0, x <= upper_bound
     # Ax = b: 1.x = 1, mean_returns * x = target_return
 
-    upper_bound = 2.5/n
+    # make sure these are floats    
+    if bounds is None:
+        bounds[0] = 0.0
+        bounds[1] = 2.5/n
 
-    # Create the G matrix to enforce 0 <= x_i <= 2/n
+    # Create the matrices to enforce lower_bound <= x_i <= upper_bound
+    
     # This will require 2 * n constraints (one for each bound on each variable)
     G = opt.matrix(0.0, (2 * n, n))
     for i in range(n):
@@ -69,13 +41,13 @@ def calculate_optimal_portfolios():
         G[n + i, i] = 1.0
 
     # Create the h vector for the bounds
-    h = opt.matrix(0.0, (2 * n, 1))
+    h = opt.matrix(-bounds[0], (2 * n, 1))
     for i in range(n):
-        h[i + n] = upper_bound
+        h[i + n] = bounds[1]
 
     A = opt.matrix(1.0, (2, n))
     for i in range(n):
-        A[1, i] = mean_log_returns[i]
+        A[1, i] = mean_returns[i]
 
     # Calculate efficient frontier weights using quadratic programming
     optimal_portfolios['weights'] = optimal_portfolios['target_return'].map(
@@ -91,20 +63,28 @@ def calculate_optimal_portfolios():
 
     # Calculate quadratic best fit
     # annual_return as independent variable, annual_volatility as dependent variable
-    return np.polynomial.Polynomial.fit(optimal_portfolios['annual_return'], optimal_portfolios['annual_volatility'], 2)
+    best_fit = np.polynomial.Polynomial.fit(
+        optimal_portfolios['annual_return'], 
+        optimal_portfolios['annual_volatility'], 4)
+    
+    return optimal_portfolios, best_fit
 
 
-rng = np.random.default_rng()
+def montecarlo_random_portfolios(mean_returns, cov, bounds = None):
+    
+    rng = np.random.default_rng()
+    
+    n = len(mean_returns)
 
-montecarlo_iterations = int(1e5)
-montecarlo_portfolios = pd.DataFrame(index=range(montecarlo_iterations))
-
-
-def montecarlo_random_portfolios():
+    montecarlo_iterations = int(1e5)
+    montecarlo_portfolios = pd.DataFrame(index=range(montecarlo_iterations))
+    
+    if(bounds is None):
+        bounds = [0.0, n/4.0]
 
     # Generate random weights array and assign to 'random_weights' column
     montecarlo_portfolios['random_weights'] = list(
-        rng.uniform(low=0, high=4.0/n, size=(montecarlo_iterations, n)))
+        rng.uniform(low=bounds[0], high=bounds[1], size=(montecarlo_iterations, n)))
     
     montecarlo_portfolios['random_weights'] = montecarlo_portfolios['random_weights'].map(
         lambda w: opt.matrix(w/sum(w))
@@ -117,30 +97,5 @@ def montecarlo_random_portfolios():
     montecarlo_portfolios['annual_volatility'] = montecarlo_portfolios['random_weights'].map(
         lambda w: np.sqrt(252.0 * blas.dot(w, cov*w))
     )
-
-
-# generate portfolios and plot results together
-
-montecarlo_random_portfolios()
-
-best_fit = calculate_optimal_portfolios()
-
-lowest_risk = optimal_portfolios.sort_values(by='annual_volatility').loc[0]
-print(lowest_risk['weights'])
-
-fig = plt.figure()
-
-plt.scatter(montecarlo_portfolios['annual_volatility'],
-            montecarlo_portfolios['annual_return'], s=1, alpha=0.2)
-
-plt.scatter(optimal_portfolios['annual_volatility'],
-            optimal_portfolios['annual_return'], s=2, c='orange', alpha=0.9)
-
-plt.ylabel('expected annualized log return')
-plt.xlabel('annual volatility')
-
-plt.plot([best_fit(tgt*252.0) for tgt in target_returns],
-         [tgt*252.0 for tgt in target_returns])
-
-plt.title(f"Portfolios of {n} SP500 stocks")
-plt.show()
+    
+    return montecarlo_portfolios
