@@ -117,6 +117,7 @@ const RankingForm = () => {
                     type="radio"
                     name={`question-${question.id}`}
                     value={rank}
+                    defaultChecked={rank === 3}
                   />
                   {rank}
                 </label>

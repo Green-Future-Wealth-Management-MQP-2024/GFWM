@@ -24,7 +24,7 @@ def filter_stocks(environmental, social, governance):
         data['governance'] * weight_multiplier(user_preferences['governance'])
     )
     
-    print(weighted_esg_risk_score)
+    #print(weighted_esg_risk_score)
     
     # this makes it the combined esg score is [0, 100]
     data['combined esg'] = weighted_esg_risk_score /16.5 * data["controversy"] / 100
@@ -44,10 +44,13 @@ def filter_stocks(environmental, social, governance):
     # Average Annual Return for the top 100 companies
     avg_return = top_100['annual_return'].mean()
 
+    volatility = top_100['sd'].mean()
+
     result = {
-        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']].to_dict(orient='records'),
+        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score', 'environment', 'social', 'governance']].to_dict(orient='records'),
         'avg_esg': avg_esg,
-        'avg_return': avg_return
+        'avg_return': avg_return,
+        'volatility': volatility
     }
 
     # Shows the top companies that match user preferences
