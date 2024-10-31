@@ -6,26 +6,44 @@ import { useRef } from "react";
 const RankingForm = () => {
   const questions = [
     {
-      id: "fossilFuels",
-      text: "Minimizing investment in fossil fuel producers",
-      link: "",
-    },
-    { id: "weapons", text: "Minimizing investment in weapons manufacturers" },
-    {
       id: "environment",
-      text: "Investing in environmentally friendly companies",
+      text: "How important is environmental protection to you?",
       link: "https://www.greenfuturewealth.com/environmental",
     },
+    { 
+      id: "humanRights",
+       text: "How important is human rights protection to you? " 
+      },
     {
-      id: "social",
-      text: "Investing in companies with positive social impacts",
-      link: "https://www.greenfuturewealth.com/social",
+      id: "employeeSatisfaction",
+      text: "How important is employee satisfaction to you?",
+    },
+    {
+      id: "productResponsibility",
+      text: "How important is product responsibility (Data privacy, Responsible Marketing, Product Quality) to you?",
     },
     {
       id: "governance",
-      text: "Investing in companies with strong governance",
-      link: "https://www.greenfuturewealth.com/governance",
+      text: "How important is shareholder satisfaction to you?",
     },
+    {
+      id: "community",
+      text: "How important is community involvement (Respecting business ethics, protecting public health, and being a good citizen) to you?",
+    },
+    {
+    id: "bestPractices",
+    text: "How important is best practices and corporate governance to you?",
+    },
+    {
+    id: "risk",
+    text: "What is the risk you are willing to take?",
+    },
+    {
+    id: "flexibility",
+    text: "How flexible are you with your preferences? ",
+    }
+
+    
   ];
 
   const formRefs = useRef(

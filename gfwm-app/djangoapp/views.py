@@ -22,23 +22,18 @@ def submit_form(request):
         #print(client_responses_parsed)
 
         # Check for required keys
-        required_keys = ['fossilFuels', 'environment', 'weapons', 'social', 'governance']
+        required_keys = ["environment", "humanRights", "employeeSatisfaction", "productResponsibility", "governance", "community", "bestPractices", "risk"]
         for key in required_keys:
             if key not in client_responses_parsed:
                 return JsonResponse({"error": f"Missing key: {key}"}, status=400)
 
-        # Calculate ESG values
-        environmental = (client_responses_parsed['fossilFuels'] + client_responses_parsed['environment']) / 2
-        social = (client_responses_parsed['weapons'] + client_responses_parsed['social']) / 2
-        governance = client_responses_parsed['governance']
-
         # Save to database
-        response = SurveyResponse(environmental=environmental, social=social, governance=governance)
-        response.save()
+        # response = SurveyResponse(environmental=environmental, social=social, governance=governance)
+        # response.save()
 
         # Imported function from data science modules
-        results = filter_stocks(environmental, social, governance)
-        #returns ['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']
+        # results = filter_stocks(client_responses_parsed["environment"], client_responses_parsed["humanRights"], client_responses_parsed["employeeSatisfaction"], client_responses_parsed["productResponsibility"], client_responses_parsed["governance"], client_responses_parsed["community"], client_responses_parsed["bestPractices"], client_responses_parsed["risk"])
+        results = filter_stocks(3,3,3)
         
         #print(results)
         

@@ -10,8 +10,8 @@ const RankingFormResults = ({ results }) => {
   const data = results.top_100;
 
 //ANNUAL RETURN AND COMPATIBILITY SCORE BAR CHART
-  const top20Data = data.slice(0, 20);
-  const sortedDataAnnualRet = top20Data.sort((a, b) => b.annual_return - a.annual_return);
+  const topData = data.slice(0, 20);
+  const sortedDataAnnualRet = topData.sort((a, b) => b.annual_return - a.annual_return);
   const labels = sortedDataAnnualRet.map(item => item.ticker);
   const annualReturns = sortedDataAnnualRet.map(item => item.annual_return * 100);
   const compatibilityScores = sortedDataAnnualRet.map(item => item.compatibility_score);
@@ -101,11 +101,11 @@ const RankingFormResults = ({ results }) => {
     setSelectedTicker(null);
     }, [data]);
 
-
-  const openYahooFinance = (ticker) => {
-    const url = `https://finance.yahoo.com/quote/${ticker}`;
-    window.open(url, 'popup', 'width=800,height=600');
+    
+  const openTableauDashboard = (ticker) => {
     setSelectedTicker(ticker);
+    const popup = window.open('', 'popup', 'width=1200,height=800');
+    popup.location.href = `https://public.tableau.com/app/profile/andrew.kovacs/viz/shared/8HY5SWFTS?Symbol=${ticker}`;
   };
 
 
@@ -129,18 +129,9 @@ const RankingFormResults = ({ results }) => {
           <p className="pb-1">Average S&P Annual Return: <span className="text-green-700 text-2xl font-bold">10.20%</span></p>
           <p>Value of $10,000 invested 10 years ago: <span className="text-green-700 text-2xl font-bold">${investment_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
           <p className="pb-1">Volatility: <span className="text-green-700 text-2xl font-bold">{results.volatility.toFixed(2)}</span></p>
-
-
-
-
-
-
-
-
-
-
         </div>
       </div>
+
       <table className="min-w-full bg</table>-white mb-2 text-sm">
         <thead className="sticky top-0 bg-white </tr>z-10">
           <tr>
@@ -154,14 +145,12 @@ const RankingFormResults = ({ results }) => {
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">G Score</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Compatibility Score</th>
 
-
-
           </tr>
         </thead>
         <tbody>
           {data.map((item, index) => (
             <tr ref={(el) => (rowRefs.current[item.ticker] = el)} key={item.ticker} 
-            className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? 'bg-gray-100' : ''}`} onClick={() => openYahooFinance(item.ticker)}>
+            className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? 'bg-gray-100' : ''}`} onClick={() => openTableauDashboard(item.ticker)}>
               <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
               <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
