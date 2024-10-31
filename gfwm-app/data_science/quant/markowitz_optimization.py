@@ -102,7 +102,7 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
     # annual_return as independent variable, annual_volatility as dependent variable
     best_fit = np.polynomial.Polynomial.fit(
         optimal_portfolios['annual_return'], 
-        optimal_portfolios['annual_volatility'], 4)
+        optimal_portfolios['annual_volatility'], 2)
     
     return optimal_portfolios, best_fit
 
