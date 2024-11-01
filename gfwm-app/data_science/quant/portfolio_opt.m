@@ -10,8 +10,21 @@ col_tickers = Omega{:, 1}; % First column as tickers
 % Convert the table to a numeric matrix, excluding the first column
 Omega = Omega{:, 2:end};
 
+threshold = 0.0008; % Set an appropriate threshold based on your data scale
+[row, col] = find(abs(Omega) > threshold & ~eye(size(Omega)));
+pairs = unique(sort([row, col], 2), 'rows');
+tickers_to_remove = unique(pairs(:, 2)); % Choose to remove the second ticker in each pair
+
+%remove those rows and columns from cov matrix
+Omega(:, tickers_to_remove) = [];
+Omega(tickers_to_remove, :) = [];
+
+epsilon = 0.0003; % Small regularization term
+Omega = Omega + epsilon * eye(size(Omega));
+
 % Group by ticker and calculate the mean of the 'log_return' column
 mu = varfun(@mean, data, 'InputVariables', 'log_return', 'GroupingVariables', 'ticker');
+mu(tickers_to_remove,:) = [];
 
 % Display the table of ticker means
 disp(mu);
@@ -23,7 +36,7 @@ p = setSolver(p, 'fmincon', 'Display', 'off', 'Algorithm', 'sqp', ...
         'SpecifyObjectiveGradient', true, 'SpecifyConstraintGradient', true, ...
         'ConstraintTolerance', 1.0e-8, 'OptimalityTolerance', 1.0e-8, 'StepTolerance', 1.0e-8); 
 
-weights = estimateMaxSharpeRatio(p)       
+weights = estimateMaxSharpeRatio(p);       
 
 te = 0.08;
 p = setTrackingError(p,te,weights);
