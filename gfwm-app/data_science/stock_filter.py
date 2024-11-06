@@ -47,7 +47,7 @@ def filter_stocks(environmental, social, governance):
     volatility = top_100['sd'].mean()
 
     result = {
-        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score', 'environment', 'social', 'governance']].to_dict(orient='records'),
+        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
         'avg_esg': avg_esg,
         'avg_return': avg_return,
         'volatility': volatility

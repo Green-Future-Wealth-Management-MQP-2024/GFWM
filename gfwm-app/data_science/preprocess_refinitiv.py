@@ -4,13 +4,14 @@ import numpy as np
 
 data = pd.read_csv("Refinitiv ESG Final Data for Analysis.csv")
 
-columns_to_keep = ["Name", "Symbol", "Year", "ESG Controversies Score", "Environment Pillar Score",
+columns_to_keep = ["Name", "Symbol", "Year", "ESG Score", "ESG Controversies Score", "Environment Pillar Score",
                    "Social Pillar Score", "Governance Pillar Score", "Total Returns", "Standard Deviation"]
 data = data[columns_to_keep]
 # pandas prefers single word columns. lowercase for simplicity with variable names
 data = data.rename(columns={"Name": "name",
                             "Symbol": "ticker",
                             "Year": "year",
+                            "ESG Score": "esg",
                             "ESG Controversies Score": "controversy",
                             "Environment Pillar Score": "environment",
                             "Social Pillar Score": "social",
@@ -85,6 +86,9 @@ for ticker, block in data.groupby("ticker"):
     preprocessed_data["annual_return"].append(annual_return)
     preprocessed_data["sd"].append(sd)
 
+    preprocessed_data["esg"].append(np.dot(pd.to_numeric(
+        esg_block["esg"]), weights))
+
 # normalize all the standard deviations from 0-100 for easier comparison
 
 min_value = min(preprocessed_data["sd"])
@@ -92,6 +96,7 @@ max_value = max(preprocessed_data["sd"])
 
 preprocessed_data["risk"] = [(value - min_value) / (max_value - min_value) * 100
                              for value in preprocessed_data["sd"]]
+
 
 # Save the DataFrame to a CSV file
 # Set index=False to avoid writing row indices

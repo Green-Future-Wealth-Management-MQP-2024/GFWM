@@ -61,7 +61,7 @@ const RankingFormResults = ({ results }) => {
   const rowRefs = React.useRef([]);
 
   //PORTFILO RETURNS VS S&P INDEX
-  const sp500_return = 0.102;
+  const sp500_return = 0.1035;
   const sp500_value = 10000 * ((1+ sp500_return)**10 );
   const sp500_return_data = {
     labels: ['Portfolio', 'S&P 500'],
@@ -94,20 +94,68 @@ const RankingFormResults = ({ results }) => {
     },
   };
 
-  //SELECTED TICKER AND OPEN YAHOO FINANCE
+  //SELECTED TICKER AND OPEN TABLEAU DASHBOARD
   const [selectedTicker, setSelectedTicker] = React.useState(null);
 
   useEffect(() => { 
     setSelectedTicker(null);
     }, [data]);
 
-    
-  const openTableauDashboard = (ticker) => {
-    setSelectedTicker(ticker);
-    const popup = window.open('', 'popup', 'width=1200,height=800');
-    popup.location.href = `https://public.tableau.com/app/profile/andrew.kovacs/viz/shared/8HY5SWFTS?Symbol=${ticker}`;
-  };
+    const openTableauDashboard = (ticker) => {
+      setSelectedTicker(ticker);
 
+      const popup = window.open('', '_blank', 'width=1200,height=800');
+      const embedCode = `
+        <div class='tableauPlaceholder' id='viz1730415162190' style='position: relative'>
+          <noscript>
+            <a href='#'>
+              <img alt='Dashboard 1 ' src='https://public.tableau.com/static/images/PC/PCFFZMD54/1_rss.png' style='border: none' />
+            </a>
+          </noscript>
+          <object class='tableauViz' style='display:none;'>
+            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+            <param name='embed_code_version' value='3' />
+            <param name='path' value='shared/PCFFZMD54' />
+            <param name='toolbar' value='yes' />
+            <param name='static_image' value='https://public.tableau.com/static/images/PC/PCFFZMD54/1.png' />
+            <param name='animate_transition' value='yes' />
+            <param name='display_static_image' value='yes' />
+            <param name='display_spinner' value='yes' />
+            <param name='display_overlay' value='yes' />
+            <param name='display_count' value='yes' />
+            <param name='language' value='en-US' />
+            <param name='filter' value='Symbol=${ticker}' />
+          </object>
+        </div>
+        <script type='text/javascript'>
+          var divElement = document.getElementById('viz1730415162190');
+          var vizElement = divElement.getElementsByTagName('object')[0];
+          if (divElement.offsetWidth > 800) {
+            vizElement.style.width='100%';
+            vizElement.style.maxWidth='2250px';
+            vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+            vizElement.style.maxHeight='800px';
+          } else if (divElement.offsetWidth > 500) {
+            vizElement.style.width='100%';
+            vizElement.style.maxWidth='2250px';
+            vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+            vizElement.style.maxHeight='1387px';
+          } else {
+            vizElement.style.width='100%';
+            vizElement.style.height='3227px';
+          }
+          var scriptElement = document.createElement('script');
+          scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';
+          vizElement.parentNode.insertBefore(scriptElement, vizElement);
+          
+        </script>
+      `;
+      popup.document.open();
+      popup.document.write(embedCode);
+      popup.document.close();
+
+    };
+  
 
   return (
     <div className="ranking-form-results p-4 bg-white rounded-lg">
@@ -126,7 +174,7 @@ const RankingFormResults = ({ results }) => {
         
           <p className="pb-1">Average ESG Score: <span className="text-green-700 text-2xl font-bold">{results.avg_esg.toFixed(2)}</span></p>
           <p className="pb-1">Average Annual Return: <span className="text-green-700 text-2xl font-bold">{(results.avg_return * 100).toFixed(2)}%</span></p>
-          <p className="pb-1">Average S&P Annual Return: <span className="text-green-700 text-2xl font-bold">10.20%</span></p>
+          <p className="pb-1">Average S&P Annual Return: <span className="text-green-700 text-2xl font-bold">10.35%</span></p>
           <p>Value of $10,000 invested 10 years ago: <span className="text-green-700 text-2xl font-bold">${investment_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
           <p className="pb-1">Volatility: <span className="text-green-700 text-2xl font-bold">{results.volatility.toFixed(2)}</span></p>
         </div>
@@ -140,6 +188,7 @@ const RankingFormResults = ({ results }) => {
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Annualized Return</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Years in S&P Index</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Risk (0-100)</th>
+            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">ESG Score</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">E Score</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">S Score</th>
             <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">G Score</th>
@@ -156,6 +205,7 @@ const RankingFormResults = ({ results }) => {
               <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.years_index}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.risk.toFixed(2)}</td>
+              <td className="py-1 px-2 border-b border-gray-300">{item.esg.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
