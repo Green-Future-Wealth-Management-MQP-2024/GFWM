@@ -17,7 +17,9 @@ price_data = pd.read_csv("data_science/quant/sp500_daily_data.csv", parse_dates=
 # pivot to make 500 columns
 price_data = price_data.pivot(index = 'Date', columns='ticker', values='log_return')
 
-# pandas covariance function
-covariance_matrix = price_data.cov()
+print(price_data.head(5))
 
-covariance_matrix.to_csv("data_science/quant/sp500_covariance_matrix.csv", index=True)
+# pandas covariance function
+#covariance_matrix = price_data.cov()
+
+#covariance_matrix.to_csv("data_science/quant/sp500_covariance_matrix.csv", index=True)
