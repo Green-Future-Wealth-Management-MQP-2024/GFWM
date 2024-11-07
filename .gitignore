@@ -698,3 +698,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+gfwm-app/data_science/quant/SP500_ticker_metadata.csv
+gfwm-app/data_science/quant/SP500_timeseries_1-1-14--12-31-19.csv
+gfwm-app/data_science/quant/SP500_timeseries_1-1-19--11-1-24.csv
