@@ -2,8 +2,10 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 
-esg_tickers = pd.read_csv("data_science/Refinitiv ESG Final Data for Analysis.csv")["Symbol"].unique()
-tickers = pd.read_csv("data_science/quant/SP500_ticker_metadata.csv")['ticker']
+esg_tickers = pd.read_csv("data_science/Refinitiv ESG Final Data for Analysis.csv")["Symbol"]
+ticker_metadata = pd.read_csv("data_science/quant/SP500_ticker_metadata.csv")
+
+tickers = ticker_metadata[ticker_metadata['days_since_ipo'] > 180]['ticker']
 
 #intersection of tickers in ESG data and the SP500 data we have
 #todo: only get the timeseries data for the ESG tickers we have
@@ -35,7 +37,10 @@ timeseries_19_24.columns.name = None
 # Concatenate along the rows (axis=0)
 timeseries = pd.concat([timeseries_13_18, timeseries_19_24], axis=0)#.reset_index(drop = True)
 
-#print(timeseries.shape)
+# replace each entry with the log return compared to the previous day
+# first row will turn into NaN so remove it
+timeseries = np.log(timeseries/timeseries.shift(1).iloc[1:])
 
+#print(timeseries.shape)
 # Save the combined DataFrame to CSV
 timeseries.to_csv("data_science/quant/sp500_timeseries_13-24.csv", index=True)
