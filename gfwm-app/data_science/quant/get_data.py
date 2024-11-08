@@ -35,11 +35,17 @@ timeseries_19_24 = timeseries_19_24.set_index('ticker').T.iloc[::-1]
 timeseries_19_24.columns.name = None
 
 # Concatenate along the rows (axis=0)
-timeseries = pd.concat([timeseries_13_18, timeseries_19_24], axis=0)#.reset_index(drop = True)
+timeseries = pd.concat([timeseries_13_18.reset_index(), timeseries_19_24.reset_index()], 
+                       ignore_index=True, sort=False)
+
+timeseries.rename(columns={timeseries.columns[0]: 'date'}, inplace=True)
+timeseries.set_index('date', inplace=True)
 
 # replace each entry with the log return compared to the previous day
 # first row will turn into NaN so remove it
-timeseries = np.log(timeseries/timeseries.shift(1).iloc[1:])
+timeseries = np.log((timeseries/timeseries.shift(1)).iloc[1:])
+
+print(timeseries.head())
 
 #print(timeseries.shape)
 # Save the combined DataFrame to CSV
