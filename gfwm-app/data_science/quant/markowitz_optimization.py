@@ -18,12 +18,11 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
     # convert to daily rate
     risk_free_rate = pow(annual_risk_free_rate+1, 1/365.0) - 1
     
-    target_excess_returns = target_returns - risk_free_rate
-    target_excess_returns = target_excess_returns[np.where(target_excess_returns > 0.0)]
+    target_returns = target_returns[np.where(target_returns > risk_free_rate)]
     
-    # results df
+    # initialize results dataframe
     empty = np.empty(len(target_returns))
-    optimal_portfolios = pd.DataFrame({'target_excess_return': target_excess_returns,
+    optimal_portfolios = pd.DataFrame({'target_return': target_returns,
                                    'annual_return': empty,
                                    'annual_volatility': empty,
                                    'weights': empty,
@@ -31,8 +30,11 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
 
     
     # make sure these are floats    
-    if bounds is None:
-        bounds = [0.0, 2.5/n]
+    if bounds is None or len(bounds) != 2:
+        bounds = [0.0, 2.0/n]
+    elif(len(bounds) ==2):
+        bounds[0] = float(bounds[0])
+        bounds[1] = float(bounds[1])
     
     # minimize w * cov * w
     # subject to:
@@ -54,17 +56,7 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
     '''
     
     # Aw = b: (1, n)(n, 1) = (1,1)
-    # mean_returns * w + (1 - w.1)risk_free = target_return
-    # mean_returns * w + risk_free - w.I.risk_free = target_return
-    # mean_returns * w - w.I.risk_free = target_return - risk_free
-    # (mean_returns - risk_free) * w = target_return - risk_free
-    
-    '''
-    m1-r    m2-r    m3-r    m4-r        w1      =       tgt-r
-                                        w2
-                                        w3
-                                        w4
-    '''
+    # mean_returns * w = target_return
 
     G = opt.matrix(0.0, (1 + 2 * n, n))
     for i in range(n):
@@ -77,25 +69,23 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
         h[i + n] = bounds[1]
     h[2*n] = 1.0
 
-    A = opt.matrix(1.0, (1, n))
-    for i in range(n):
-        A[i] = mean_returns[i] - risk_free_rate
+    A = opt.matrix(mean_returns, (1, n))
 
     # Calculate efficient frontier weights using quadratic programming
     optimal_portfolios['weights'] = optimal_portfolios['target_excess_return'].map(
-        lambda tgt_ex: solvers.qp(cov, -mean_returns, G, h, A, b=opt.matrix(tgt_ex))['x']
+        lambda tgt: solvers.qp(cov, -mean_returns, G, h, A, b=opt.matrix(tgt))['x']
     )
 
     # Calculate annual return and annual volatility metrics based off of weights
     optimal_portfolios['annual_return'] = optimal_portfolios['weights'].map(
-        lambda w: (252.0 * blas.dot(mean_returns, w)) + 365 * risk_free_rate * (1-sum(w))
+        lambda w: 252.0 * blas.dot(mean_returns, w)
     )
     optimal_portfolios['annual_volatility'] = optimal_portfolios['weights'].map(
         lambda w: np.sqrt(252.0 * blas.dot(w, cov*w))
     )
     
     optimal_portfolios['diversification'] = optimal_portfolios['weights'].map(
-        lambda w: 1 - 10*np.sum((w - 1.0/n)**2)
+        lambda w: 1 - 10*np.sum((w - 1.0/n)**4)
     )
 
     # Calculate quadratic best fit
