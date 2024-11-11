@@ -3,15 +3,11 @@ import numpy as np
 
 import cvxopt as opt
 from cvxopt import blas, solvers
-solvers.options["show_progress"] = True
 
-# from data_science import stock_filter
+#True to display progress in console
+solvers.options["show_progress"] = False
 
-# call filter stocks to come up with universe of 100 stocks
-# tickers = stock_filter.filter_stocks(5, 5, 5)["ticker"]
-
-
-def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_free_rate = 0.02, bounds = None):
+def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_free_rate = 0.02, bounds = None, calculate_best_fit = False):
     
     n = len(mean_returns)
     
@@ -86,14 +82,17 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
     optimal_portfolios['diversification'] = optimal_portfolios['weights'].map(
         lambda w: 1 - 1e4*np.sum((w - 1.0/n)**4)
     )
-
-    # Calculate quadratic best fit
-    # annual_return as independent variable, annual_volatility as dependent variable
-    best_fit = np.polynomial.Polynomial.fit(
-        optimal_portfolios['annual_return'], 
-        optimal_portfolios['annual_volatility'], 2, domain=[0.0, 0.5])
     
-    return optimal_portfolios, best_fit
+    if(calculate_best_fit):
+        # Calculate quadratic best fit
+        # annual_return as independent variable, annual_volatility as dependent variable
+        best_fit = np.polynomial.Polynomial.fit(
+            optimal_portfolios['annual_return'], 
+            optimal_portfolios['annual_volatility'], 2, domain=[0.0, 0.5])
+        
+        return optimal_portfolios, best_fit
+    
+    return optimal_portfolios
 
 
 def montecarlo_random_portfolios(mean_returns, cov, bounds = None, iterations = 1e4):
