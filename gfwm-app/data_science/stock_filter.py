@@ -1,38 +1,47 @@
+from functools import reduce
 import pandas as pd
 
-def filter_stocks(environmental, social, governance):
-
-    data = pd.read_csv("data_science/preprocessed.csv")
-
-    # User responses to the questionnaire 
-    user_preferences = {
-        'environmental': environmental,  # Based on Question 1 and 3
-        'social': social,         # Based on Question 2 and 4
-        'governance': governance      # Based on Question 5
-    }
-
-    # Function to calculate ESG weight multiplier based on user preference
-    # https://www.desmos.com/calculator/qiajcvxolv
-    def weight_multiplier(user_preference):
-        return (1.325 * user_preference) - 1.325 
-
-    # Calculates a weighted ESG risk score for each company based on user responses to questionnaire
-    # range: [0, 100*16.5]
-    weighted_esg_risk_score = (
-        data['environment'] * weight_multiplier(user_preferences['environmental']) +
-        data['social'] * weight_multiplier(user_preferences['social']) +
-        data['governance'] * weight_multiplier(user_preferences['governance'])
-    )
+'''
+user_preferences: dict of {feature: importance}
+                environment, human_rights, workforce, 
+                product_responsibility, shareholders, community, governance
+count: how many tickers to return
+flexibility: % by which to extend acceptable ranges. ex: 20 allows 20% more values
+'''
+def filter_stocks(user_preferences, count = 100, flexibility = 0, tickers_only = False):
     
-    #print(weighted_esg_risk_score)
+    #sort user preferences in order of decreasing importance
+    sorted_user_preferences = sorted(user_preferences.items(), 
+                                     key = lambda item: item[1],
+                                     reverse = True)
     
-    # this makes it the combined esg score is [0, 100]
-    data['combined esg'] = weighted_esg_risk_score / 16.5 * data["controversy"] / 100
+    data = pd.read_csv("data_science/preprocessed_refinitiv.csv")
 
-    # Calculates a compatibility score based off esg, annual returns, and risk (ranking of sd)
-    data['compatibility_score'] = data['combined esg']# + 8 * data['annual_return'] - 0.2 * data["risk"]
+    quantile_threshold = 0.5 * (1 - flexibility/100.0)
+    
+    #pair[0] is the name of the factor (column)
+    top_3_factors = {pair[0]: data[pair[0]].quantile(quantile_threshold) 
+                     for pair in sorted_user_preferences[:3]}
+    
+    print(top_3_factors)
 
-    # Sorts the companies by the final score 
-    sorted_data = data.sort_values(by='compatibility_score', ascending=False)
+    # filter rows where the selected factors are higher than their quantiles
+    masks = [data[factor[0]] >= factor[1] for factor in top_3_factors.items()]
+    # combine masks using element-wise AND
+    combined_mask = reduce(lambda mask1, mask2: [el1 and el2 for el1, el2 in zip(mask1, mask2)], masks)
+    print(sum(combined_mask))
+    filtered_data = data[combined_mask].reset_index(drop = True)
+    
+    if(tickers_only):
+        return filtered_data['ticker']
+    
+    return filtered_data
 
-    return(sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score']].head(100))
+test_dict = {'environment':10, 
+             'human_rights': 10,  
+             'workforce':1,
+             'product_responsibility':5,
+             'shareholders':1,
+             'community':10,
+             'governance':5}
+print(filter_stocks(test_dict, tickers_only=True))
