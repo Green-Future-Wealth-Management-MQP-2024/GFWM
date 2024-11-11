@@ -3,7 +3,17 @@ import pandas as pd
 def filter_stocks(environmental, social, governance):
 
     data = pd.read_csv("data_science/preprocessed.csv")
-
+    data = data.rename(columns={"Name": "name",
+                            "Symbol": "ticker",
+                            "Year": "years_index",
+                            "ESG Score": "esg",
+                            "ESG Controversies Score": "controversy",
+                            "Environment Pillar Score": "environment",
+                            "Social Pillar Score": "social",
+                            "Governance Pillar Score": "governance",
+                            "Total Returns": "annual_return",
+                            "Standard Deviation": "sd",
+                    })
     # User responses to the questionnaire 
     user_preferences = {
         'environmental': environmental,  # Based on Question 1 and 3
@@ -30,7 +40,7 @@ def filter_stocks(environmental, social, governance):
     data['combined esg'] = weighted_esg_risk_score /16.5 * data["controversy"] / 100
 
     # Calculates a compatibility score based off esg, annual returns, and risk (ranking of sd)
-    data['compatibility_score'] = data['combined esg'] + 8 * data['annual_return'] - 0.2 * data["risk"]
+    data['compatibility_score'] = data['combined esg'] + 8 * data['annual_return'] - 0.2 * data['sd']
 
     # Sorts the companies by the final score 
     sorted_data = data.sort_values(by='compatibility_score', ascending=False)
@@ -47,11 +57,12 @@ def filter_stocks(environmental, social, governance):
     volatility = top_100['sd'].mean()
 
     result = {
-        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'risk', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
+        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
         'avg_esg': avg_esg,
         'avg_return': avg_return,
         'volatility': volatility
     }
+
 
     # Shows the top companies that match user preferences
     # TODO clear up output
