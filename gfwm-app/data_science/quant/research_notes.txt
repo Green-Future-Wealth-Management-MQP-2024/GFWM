@@ -1,0 +1,24 @@
+10/25
+
+equal weights
+markowitz no short to see what happens
+add upper bound to each weight
+
+exp weighted moving average of volatility
+
+garch model for volatility modeling
+
+covered calls
+short term atm options to model volatility
+
+bloomberg terminal - stratton hall 4th floor
+
+11/8
+
+risk free is post markowitz
+frontier as given, tangent line
+    
+finding tangent line algorithm
+
+weights backed out of https://investor.vanguard.com/investment-products/list/all?strategy=all_in_one 
+    
