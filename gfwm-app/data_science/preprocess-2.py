@@ -33,7 +33,6 @@ columns_to_average = [
 # Group by 'Symbol' and calculate the mean for the specified columns
 averaged_data = data.groupby('Symbol').agg({
     'Name': 'first',
-    'Year': 'first',
     **{col: 'mean' for col in columns_to_average}
 }).reset_index()
 
