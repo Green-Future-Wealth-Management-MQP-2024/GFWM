@@ -21,7 +21,7 @@ def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False
 
     data = pd.read_csv("../preprocessed_refinitiv.csv")
 
-    quantile_threshold = 0.6 * (1 - flexibility/100.0)
+    quantile_threshold = 0.65 * (1 - flexibility/100.0)
 
     # pair[0] is the name of the factor (column)
     top_3_factors = {pair[0]: data[pair[0]].quantile(quantile_threshold)
@@ -55,24 +55,17 @@ def filter_stocks_mass(user_preference_dicts, count=100, flexibility=0):
     
     for user_preference_dict in user_preference_dicts:
         
-        # sort user preferences in order of decreasing importance
-        sorted_user_preferences = sorted(user_preference_dict.items(),
-                                     key=lambda item: item[1],
-                                     reverse=True)
-
-
-        # pair[0] is the name of the factor (column)
-        top_3_factors = {pair[0]: quantiles[pair[0]]
-                        for pair in sorted_user_preferences[:3]}
+        #select the factors that have a value of 10
+        top_factors = {factor:quantiles[factor] for factor, value in user_preference_dict.items() if value == 10}
 
         # filter rows where the selected factors are higher than their quantiles
-        masks = [data[factor[0]] >= factor[1] for factor in top_3_factors.items()]
+        masks = [data[factor] >= quantile for factor, quantile in top_factors.items()]
         # combine masks using element-wise AND
         combined_mask = reduce(lambda mask1, mask2: [
                             el1 and el2 for el1, el2 in zip(mask1, mask2)], masks)
         selected_tickers = data[combined_mask].reset_index(drop=True)['ticker']
         
-        combination = ', '.join(top_3_factors.keys())
+        combination = ', '.join(top_factors.keys())
         result.append((combination, selected_tickers))
 
     return result
