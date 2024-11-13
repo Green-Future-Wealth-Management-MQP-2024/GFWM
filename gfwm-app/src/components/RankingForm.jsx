@@ -128,7 +128,7 @@ const RankingForm = () => {
               )}
             </label>
             <div className="radio-group">
-              <span className="rating-label">1 (Not Important)</span>
+              <span className="rating-label">1 (Not)</span>
               {[1, 2, 3, 4, 5].map((rank) => (
                 <label key={rank}>
                   <input
@@ -140,12 +140,12 @@ const RankingForm = () => {
                   {rank}
                 </label>
               ))}
-              <span className="rating-label">5 (Very Important)</span>
+              <span className="rating-label">5 (Very)</span>
             </div>
           </div>
         ))}
         <button type="submit" className="submit-btn">
-          Submit
+          Get Results
         </button>
       </form>
 
