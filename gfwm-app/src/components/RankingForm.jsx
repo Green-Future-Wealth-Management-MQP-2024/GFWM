@@ -6,26 +6,44 @@ import { useRef } from "react";
 const RankingForm = () => {
   const questions = [
     {
-      id: "fossilFuels",
-      text: "Minimizing investment in fossil fuel producers",
-      link: "",
-    },
-    { id: "weapons", text: "Minimizing investment in weapons manufacturers" },
-    {
       id: "environment",
-      text: "Investing in environmentally friendly companies",
+      text: "How important is environmental protection to you?",
       link: "https://www.greenfuturewealth.com/environmental",
     },
+    { 
+      id: "humanRights",
+       text: "How important is human rights protection to you? " 
+      },
     {
-      id: "social",
-      text: "Investing in companies with positive social impacts",
-      link: "https://www.greenfuturewealth.com/social",
+      id: "employeeSatisfaction",
+      text: "How important is employee satisfaction to you?",
+    },
+    {
+      id: "productResponsibility",
+      text: "How important is product responsibility (Data privacy, Responsible Marketing, Product Quality) to you?",
     },
     {
       id: "governance",
-      text: "Investing in companies with strong governance",
-      link: "https://www.greenfuturewealth.com/governance",
+      text: "How important is shareholder satisfaction to you?",
     },
+    {
+      id: "community",
+      text: "How important is community involvement (Respecting business ethics, protecting public health, and being a good citizen) to you?",
+    },
+    {
+    id: "bestPractices",
+    text: "How important is best practices and corporate governance to you?",
+    },
+    {
+    id: "risk",
+    text: "What is the risk you are willing to take?",
+    },
+    {
+    id: "flexibility",
+    text: "How flexible are you with your preferences? ",
+    }
+
+    
   ];
 
   const formRefs = useRef(
@@ -110,27 +128,28 @@ const RankingForm = () => {
               )}
             </label>
             <div className="radio-group">
-              <span className="rating-label">1 (Not Important)</span>
+              <span className="rating-label">1 (Not)</span>
               {[1, 2, 3, 4, 5].map((rank) => (
                 <label key={rank}>
                   <input
                     type="radio"
                     name={`question-${question.id}`}
                     value={rank}
+                    defaultChecked={rank === 3}
                   />
                   {rank}
                 </label>
               ))}
-              <span className="rating-label">5 (Very Important)</span>
+              <span className="rating-label">5 (Very)</span>
             </div>
           </div>
         ))}
         <button type="submit" className="submit-btn">
-          Submit
+          Get Results
         </button>
       </form>
 
-      {showResults && <RankingFormResults data={returnData} />}
+      {showResults && <RankingFormResults results={returnData} />}
     </div>
   );
 };

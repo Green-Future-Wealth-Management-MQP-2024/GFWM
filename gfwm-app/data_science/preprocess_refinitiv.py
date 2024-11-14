@@ -4,20 +4,11 @@ import numpy as np
 
 data = pd.read_csv("data_science/Refinitiv ESG Final Data for Analysis.csv")
 
-# Mapping user preferences 
-preference_to_column_mapping = {
-    'How important is environmental protection to you': 'Environment Pillar Score',
-    'How important are human rights protection to you': 'Human Rights Score',
-    'How important is employee satisfaction': 'Workforce Score',
-    'How important is product responsibility (Data privacy, Responsible Marketing, Product Quality)': 'Product Responsibility Score',
-    'How important is shareholder satisfaction': 'Shareholders Score',
-    'How important is a high community score (Respecting business ethics, protecting public health, and being a good citizen)': 'Community Score',
-    'How important is best practices and corporate governance to you': 'Governance Pillar Score'
-}
 
 columns_to_keep = ["Name", "Symbol", "ESG Controversies Score", "Environment Pillar Score", 
                    'Human Rights Score', 'Workforce Score', 'Product Responsibility Score', 
                    'Shareholders Score','Community Score', "Governance Pillar Score"]
+
 data = data[columns_to_keep]
 # pandas prefers single word columns. lowercase for simplicity with variable names
 data = data.rename(columns={"Name": "name",
@@ -50,6 +41,6 @@ result = (
       .apply(ewma_summaries)
 )
 
-print(result)
+#print(result)
 
 result.to_csv('data_science/preprocessed_refinitiv.csv')

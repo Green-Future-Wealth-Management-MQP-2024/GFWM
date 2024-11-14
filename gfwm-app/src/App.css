@@ -27,7 +27,7 @@ form {
 
 /* Button styles */
 button {
-  background-color: #84c226; /* Primary button color */
+  background-color: #84c226; /* Tailwind equivalent: bg-lime-500 */
   color: #fff; /* Text color */
   border: none;
   padding: 10px 15px;

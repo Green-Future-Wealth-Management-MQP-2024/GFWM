@@ -2,7 +2,6 @@ import pandas as pd
 import os
 from functools import reduce
 
-
 '''
 user_preferences: dict of {feature: importance}
                 environment, human_rights, workforce, 
@@ -10,7 +9,6 @@ user_preferences: dict of {feature: importance}
 count: how many tickers to return
 flexibility: % by which to extend acceptable ranges. ex: 20 allows 20% more values
 '''
-
 
 def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False):
 
@@ -70,6 +68,36 @@ def filter_stocks_mass(user_preference_dicts, count=100, flexibility=0):
 
     return result
 
+'''
+TODO add compatibility score to filter_stocks return type
+
+    # Calculates a compatibility score based off esg, annual returns, and risk (ranking of sd)
+    data['compatibility_score'] = data['combined esg'] + 8 * data['annual_return'] - 0.2 * data['sd']
+  
+    # Top 100
+    top_100 = sorted_data.head(100)
+
+    # Average ESG Score for the top 100 companies
+    avg_esg = top_100['combined esg'].mean()
+
+    # Average Annual Return for the top 100 companies
+    avg_return = top_100['annual_return'].mean()
+
+    volatility = top_100['sd'].mean()
+
+    result = {
+        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
+        'avg_esg': avg_esg,
+        'avg_return': avg_return,
+        'volatility': volatility
+    }
+
+
+    # Shows the top companies that match user preferences
+    # TODO clear up output
+    # idea: print symbol, name, portfolio weight, past return, past risk
+    return(result)
+'''
 
 '''
 test_dict = {'environment':10, 

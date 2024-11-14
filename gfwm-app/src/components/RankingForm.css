@@ -17,7 +17,7 @@
   }
   
   .radio-group {
-    accent-color: #3f773a;
+    accent-color: theme('colors.green.700');
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -33,7 +33,7 @@
   }
   
   .submit-btn {
-    background-color: #3f773a; /* Primary button color */
+    @apply bg-green-700; /* Primary button color */
     color: white;
     border: none;
     padding: 10px 20px;
