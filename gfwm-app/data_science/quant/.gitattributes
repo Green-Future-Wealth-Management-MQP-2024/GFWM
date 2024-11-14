@@ -1,3 +1,0 @@
-sp500_daily_data.csv filter=lfs diff=lfs merge=lfs -text
-sp500_weekly_data.csv filter=lfs diff=lfs merge=lfs -text
-sp500_daily_data_backup.csv filter=lfs diff=lfs merge=lfs -text
