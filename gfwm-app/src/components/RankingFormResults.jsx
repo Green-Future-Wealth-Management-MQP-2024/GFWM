@@ -20,7 +20,7 @@ const RankingFormResults = ({ results }) => {
   useEffect(() => { 
     setData(results.top_100);
     }, [results]);
-    
+
 
 //ANNUAL RETURN AND COMPATIBILITY SCORE BAR CHART
   const topData = data.slice(0, 20);
@@ -272,7 +272,7 @@ const requestSort = key => {
               <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score.toFixed(2)}</td>
+              <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score.toFixed(0)}%</td>
               <td onClick={(e) => {e.stopPropagation(); handleRemoveFromPortfolio(item.ticker)}}> 
                 <button  className="bg-red-500 text-white px-1 rounded">X</button>
                 </td>
@@ -340,7 +340,7 @@ const requestSort = key => {
               <td className="py-1 px-2 border-b border-gray-300">{item.emissions.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.product_responsibility.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.human_rights.toFixed(2)}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score.toFixed(2)}</td>
+              <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score.toFixed(0)}%</td>
               <td onClick={(e) => {e.stopPropagation(); handleAddToPortfolio(item)}}>
               <button
             className={`px-1 rounded mr-2 ${isInPortfolio ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 text-white'}`}

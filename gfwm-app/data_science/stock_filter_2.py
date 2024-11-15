@@ -1,10 +1,7 @@
 import pandas as pd
-
 def filter_stocks(environment, humanRights, employeeSatisfaction, productResponsibility, governance, community, bestPractices, risk, flexibility):
-
-    averaged_data = pd.read_csv("data_science/preprocessed.csv") 
-
-    # User responses to the questionnaire 
+    averaged_data = pd.read_csv('data_science/preprocessed.csv')
+    # User responses to the questionnaire
     user_preferences = {
         'How important is environmental protection to you': environment,  # Question 1
         'How important are human rights protection to you': humanRights,   # Question 2
@@ -16,8 +13,7 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
         'What is the risk you are willing to take': risk,       # Question 8
         'How flexible are you with your preferences in stocks': flexibility   # Question 9
     }
-
-        # Mapping user preferences 
+    # Mapping user preferences
     preference_to_column_mapping = {
         'How important is environmental protection to you': 'Environment Pillar Score',
         'How important are human rights protection to you': 'Human Rights Score',
@@ -27,16 +23,44 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
         'How important is a high community score (Respecting business ethics, protecting public health, and being a good citizen)': 'Community Score',
         'How important is best practices and corporate governance to you': 'Governance Pillar Score'
     }
-     # Calculate base weights based on preferences
+    # Calculate base weights based on preferences
     total_importance = sum(user_preferences[key] for key in preference_to_column_mapping)
     weights = {key: user_preferences[key] / total_importance for key in preference_to_column_mapping}
-
     # Adjust weights based on flexibility (higher flexibility reduces preference strictness)
     flexibility_adjustment = 1 - (0.05 * (5 - flexibility))  # Flexibility scales from 0.95 to 1.00
     adjusted_weights = {key: weight * flexibility_adjustment for key, weight in weights.items()}
-    averaged_data['compatibility_score'] = sum(adjusted_weights[key] * averaged_data[preference_to_column_mapping[key]] for key in adjusted_weights)
-    df_grouped = averaged_data.copy()
-    df_grouped = df_grouped.groupby('Symbol').agg({
+    # Compatibility score calculation with penalties for deviation
+    for index, row in averaged_data.iterrows():
+        score = 100  # Start with a perfect score
+        for key, value in user_preferences.items():
+            if key in ['How flexible are you with your preferences in stocks', 'What is the risk you are willing to take']:
+                continue
+            column = preference_to_column_mapping.get(key)
+            if value == 1:
+                continue  # Skip this preference as it is not important
+            elif value == 2:
+                threshold = averaged_data[column].quantile(0.25 - 0.05 * (flexibility - 1))
+            elif value == 3:
+                threshold = averaged_data[column].quantile(0.50 - 0.05 * (flexibility - 1))
+            elif value == 4:
+                threshold = averaged_data[column].quantile(0.70 - 0.05 * (flexibility - 1))
+            elif value == 5:
+                threshold = averaged_data[column].quantile(0.90 - 0.05 * (flexibility - 1))
+            # Calculate deviation from the threshold
+            deviation = max(0, threshold - row[column])  # No penalty if above the threshold
+            penalty = (deviation / threshold) * 100  # Normalize deviation as a percentage of the threshold
+            score -= penalty  # Subtract penalty from the score
+        # Adjust score for risk preference
+        risk_weight = 0.20 * user_preferences['What is the risk you are willing to take']  # Maps 1-5 to risk quantile levels
+        risk_threshold = averaged_data['Standard Deviation'].quantile(risk_weight)
+        risk_penalty = (row['Standard Deviation'] / risk_threshold) * 100 if row['Standard Deviation'] > risk_threshold else 0
+        score -= risk_penalty
+        # Ensure score doesn't go below 0
+        score = max(0, score)
+        # Update compatibility_score for the row
+        averaged_data.at[index, 'compatibility_score'] = score
+    # Grouped Data
+    df_grouped = averaged_data.groupby('Symbol').agg({
         'Emissions Score': 'mean',
         'Governance Pillar Score': 'mean',
         'Product Responsibility Score': 'mean',
@@ -52,103 +76,34 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
         'Standard Deviation': 'mean',
         'compatibility_score': 'mean'
     }).reset_index()
-        # Filtering based on user preferences
-    flexibility = user_preferences['How flexible are you with your preferences in stocks']
-    for key, value in user_preferences.items():
-        if key in ['How flexible are you with your preferences in stocks', 'What is the risk you are willing to take']:
-            continue
-        column = preference_to_column_mapping.get(key)
-        if value == 1:
-            continue 
-        elif value == 2:
-            threshold = averaged_data[column].quantile(0.25 - 0.05 * (flexibility - 1))
-        elif value == 3:
-            threshold = averaged_data[column].quantile(0.50 - 0.05 * (flexibility - 1))
-        elif value == 4:
-            threshold = averaged_data[column].quantile(0.70 - 0.05 * (flexibility - 1))
-        elif value == 5:
-            threshold = averaged_data[column].quantile(0.90 - 0.05 * (flexibility - 1))
-        averaged_data = averaged_data[averaged_data[column] >= threshold]
-
-    # Filtering on risk question
-    risk_preference = user_preferences['What is the risk you are willing to take']
-    if risk_preference >= 1:
-        risk_weight = 0.20 * risk_preference  # Maps 1-5 to risk quantile levels
-        risk_threshold = averaged_data['Standard Deviation'].quantile(risk_weight)
-        averaged_data['compatibility_score'] = averaged_data['compatibility_score'] / (
-            1 + (averaged_data['Standard Deviation'] / risk_threshold)
-        )
-
-
-    # Top stocks based on Predicted Total Returns
-    # Top stocks based on Predicted Total Returns
-    top_100_stocks = averaged_data.groupby('Symbol').agg({
-        'Total Returns': 'mean',
-        'Name': 'first',
-        'ESG Score': 'mean',
-        'ESG Controversies Score': 'mean',
-        'Environment Pillar Score': 'mean',
-        'Social Pillar Score': 'mean',
-        'Governance Pillar Score': 'mean',
-        'Standard Deviation': 'mean',
-        'compatibility_score': 'mean'
-    }).nlargest(100, 'compatibility_score').reset_index()
-
-    top_100_stocks['compatibility_score'] = df_grouped['compatibility_score']
-
-    # Predict Total Returns based on compatibility score and other factors
-    top_100_stocks['Predicted Total Returns'] = (
-        0
-    )
-
-    top_100_stocks = top_100_stocks.rename(columns={"Name": "name",
-                            "Symbol": "ticker",
-                            "ESG Score": "esg",
-                            "ESG Controversies Score": "controversy",
-                            "Environment Pillar Score": "environment",
-                            "Social Pillar Score": "social",
-                            "Governance Pillar Score": "governance",
-                            "Total Returns": "annual_return",
-                            "Standard Deviation": "sd",
-                    })
-    
-    
-
-
-    # Convert scores to numeric
-    score_columns = ['Emissions Score', 'Governance Pillar Score', 'Product Responsibility Score', 'Social Pillar Score', 'Human Rights Score', 'Total Returns']
-    df_grouped[score_columns] = df_grouped[score_columns].apply(pd.to_numeric, errors='coerce')
-
-    
-    # Calculate the 75th percentile 
-    # emissions_75th_percentile = df_grouped['Emissions Score'].quantile(0.75)
-    # gov_75th_percentile = df_grouped['Governance Pillar Score'].quantile(0.75)
-    # product_75th_percentile = df_grouped['Product Responsibility Score'].quantile(0.75)
-    # social_75th_percentile = df_grouped['Social Pillar Score'].quantile(0.75)
-    # human_75th_percentile = df_grouped['Human Rights Score'].quantile(0.75)
-
-    # # Filter symbols 
-    # emissions_filtered_stocks = df_grouped[df_grouped['Emissions Score'] >= emissions_75th_percentile]
-    # gov_filtered_stocks = df_grouped[df_grouped['Governance Pillar Score'] >= gov_75th_percentile]
-    # product_filtered_stocks = df_grouped[df_grouped['Product Responsibility Score'] >= product_75th_percentile]
-    # social_filtered_stocks = df_grouped[df_grouped['Social Pillar Score'] >= social_75th_percentile]
-    # human_filtered_stocks = df_grouped[df_grouped['Human Rights Score'] >= human_75th_percentile]
-
+    # Top stocks based on compatibility score
+    top_100_stocks = df_grouped.nlargest(100, 'compatibility_score').reset_index()
+    # Rename columns for output
+    top_100_stocks = top_100_stocks.rename(columns={
+        "Name": "name",
+        "Symbol": "ticker",
+        "ESG Score": "esg",
+        "ESG Controversies Score": "controversy",
+        "Environment Pillar Score": "environment",
+        "Social Pillar Score": "social",
+        "Governance Pillar Score": "governance",
+        "Total Returns": "annual_return",
+        "Standard Deviation": "sd"
+    })
     df_grouped = df_grouped.rename(columns={"Name": "name",
-                            "Symbol": "ticker",
-                            "Name": "name",
-                            "ESG Score": "esg",
-                            "ESG Controversies Score": "controversy",
-                            "Environment Pillar Score": "environment",
-                            "Social Pillar Score": "social",
-                            "Governance Pillar Score": "governance",
-                            "Total Returns": "annual_return",
-                            "Standard Deviation": "sd",
-                            "Emissions Score": "emissions",
-                            "Product Responsibility Score": "product_responsibility",
-                            "Human Rights Score": "human_rights",
-                    })
-
+                                "Symbol": "ticker",
+                                "Name": "name",
+                                "ESG Score": "esg",
+                                "ESG Controversies Score": "controversy",
+                                "Environment Pillar Score": "environment",
+                                "Social Pillar Score": "social",
+                                "Governance Pillar Score": "governance",
+                                "Total Returns": "annual_return",
+                                "Standard Deviation": "sd",
+                                "Emissions Score": "emissions",
+                                "Product Responsibility Score": "product_responsibility",
+                                "Human Rights Score": "human_rights",
+                        })
     # Top 20 stocks
     top_20_stocks_enviroment = df_grouped.sort_values(by='environment', ascending=False).head(20)
     top_20_stocks_emissions = df_grouped.sort_values(by='emissions', ascending=False).head(20)
@@ -156,8 +111,6 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
     top_20_stocks_product = df_grouped.sort_values(by='product_responsibility', ascending=False).head(20)
     top_20_stocks_social = df_grouped.sort_values(by='social', ascending=False).head(20)
     top_20_stocks_human = df_grouped.sort_values(by='human_rights', ascending=False).head(20)
-
-
     result = {
         'top_100': top_100_stocks[['ticker', 'name' , 'annual_return', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
         'top_20s': [
@@ -180,7 +133,22 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
             }
         ],
         },
-    
-
+    # # Filter and print all S&P 500 stocks with their metrics
+    # sp500_stocks = df_grouped[['ticker', 'name', 'annual_return', 'sd', 'esg', 'environment', 'social', 'governance', 'compatibility_score']]
+    # print("All S&P 500 Stocks with Metrics:")
+    # print(sp500_stocks.to_string(index=False))
     return(result)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
