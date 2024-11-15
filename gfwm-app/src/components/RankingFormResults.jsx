@@ -8,15 +8,19 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const RankingFormResults = ({ results }) => {
   results = results[0] || {};
-  const investment_value =  10000 * ((1+ results.avg_return)**10 );
-  const data = results.top_100;
+  const [data, setData] = useState(results.top_100);
   const [sortConfig, setSortConfig] = useState({ key: 'compatibility_score', direction: 'descending' });
   const snp_avg = 0.1035;
   const portfolio_avg_esg = data.reduce((sum, item) => sum + item.esg, 0) / data.length;
   const portfolio_avg_return = data.reduce((sum, item) => sum + item.annual_return, 0) / data.length;
   const portfolio_volatility = Math.sqrt(data.reduce((sum, item) => sum + item.sd ** 2, 0) / data.length);
   const portfolio_sharpe = (portfolio_avg_return - 0.03) / portfolio_volatility;
+  const investment_value =  10000 * ((1+ portfolio_avg_return)**10 );
 
+  useEffect(() => { 
+    setData(results.top_100);
+    }, [results]);
+    
 
 //ANNUAL RETURN AND COMPATIBILITY SCORE BAR CHART
   const topData = data.slice(0, 20);
@@ -190,10 +194,13 @@ const requestSort = key => {
 
     //ADD REMOVE
     const handleAddToPortfolio = (stock) => {
-
+      if (!data.find((item) => item.ticker === stock.ticker)) {
+        setData((prevData) => [...prevData, stock]);
+      }
     };
   
     const handleRemoveFromPortfolio = (ticker) => {
+      setData(data.filter((item) => item.ticker !== ticker));
     };
     
   return (
@@ -266,15 +273,15 @@ const requestSort = key => {
               <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score.toFixed(2)}</td>
-              <td className="py-1 px-2 border-b border-gray-300"> 
-                <button onClick={() => handleRemoveFromPortfolio(item.ticker)} className="bg-red-500 text-white px-1 rounded">X</button>
+              <td onClick={(e) => {e.stopPropagation(); handleRemoveFromPortfolio(item.ticker)}}> 
+                <button  className="bg-red-500 text-white px-1 rounded">X</button>
                 </td>
 
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={scrollToTop} className="fixed bottom-4 right-4 bg-green-700 text-white p-2 rounded-full shadow-lg">↑</button>
+    
       </div>
 {results.top_20s.map((top_20) => ( 
       <div className="relative">
@@ -315,7 +322,10 @@ const requestSort = key => {
           </tr>
         </thead>
         <tbody>
-          {top_20.data.map((item, index) => (
+          {top_20.data.map((item, index) => {
+            const isInPortfolio = data.find((pI) => pI.ticker === item.ticker);
+            return (
+            
             <tr key={item.ticker} 
             className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? 'bg-gray-100' : ''}`} onClick={() => openTableauDashboard(item.ticker)}
             title="Show more">
@@ -331,11 +341,19 @@ const requestSort = key => {
               <td className="py-1 px-2 border-b border-gray-300">{item.product_responsibility.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.human_rights.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.compatibility_score.toFixed(2)}</td>
-              <td><button onClick={() => handleAddToPortfolio(item)} className="bg-green-500 text-white px-1 rounded mr-2">+</button></td>
+              <td onClick={(e) => {e.stopPropagation(); handleAddToPortfolio(item)}}>
+              <button
+            className={`px-1 rounded mr-2 ${isInPortfolio ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-500 text-white'}`}
+            disabled={isInPortfolio}
+          >
+            +
+          </button>
+                </td>
             </tr>
-          ))}
+          )})}
         </tbody>
       </table>
+      <button onClick={scrollToTop} className="fixed bottom-4 right-4 bg-green-700 text-white p-2 rounded-full shadow-lg">↑</button>
       </div>
 
 ))}

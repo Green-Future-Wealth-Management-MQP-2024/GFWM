@@ -2,7 +2,7 @@ import pandas as pd
 
 def filter_stocks(environment, humanRights, employeeSatisfaction, productResponsibility, governance, community, bestPractices, risk, flexibility):
 
-    averaged_data = pd.read_csv("data_science/preprocessed.csv")
+    averaged_data = pd.read_csv("data_science/preprocessed.csv") 
 
     # User responses to the questionnaire 
     user_preferences = {
@@ -34,11 +34,24 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
     # Adjust weights based on flexibility (higher flexibility reduces preference strictness)
     flexibility_adjustment = 1 - (0.05 * (5 - flexibility))  # Flexibility scales from 0.95 to 1.00
     adjusted_weights = {key: weight * flexibility_adjustment for key, weight in weights.items()}
-
-    # Calculate compatibility score using adjusted weights
     averaged_data['compatibility_score'] = sum(adjusted_weights[key] * averaged_data[preference_to_column_mapping[key]] for key in adjusted_weights)
-
-    later_data = averaged_data.copy()
+    df_grouped = averaged_data.copy()
+    df_grouped = df_grouped.groupby('Symbol').agg({
+        'Emissions Score': 'mean',
+        'Governance Pillar Score': 'mean',
+        'Product Responsibility Score': 'mean',
+        'Social Pillar Score': 'mean',
+        'Human Rights Score': 'mean',
+        'Total Returns': 'mean',
+        'Name': 'first',
+        'ESG Score': 'mean',
+        'ESG Controversies Score': 'mean',
+        'Environment Pillar Score': 'mean',
+        'Social Pillar Score': 'mean',
+        'Governance Pillar Score': 'mean',
+        'Standard Deviation': 'mean',
+        'compatibility_score': 'mean'
+    }).reset_index()
         # Filtering based on user preferences
     flexibility = user_preferences['How flexible are you with your preferences in stocks']
     for key, value in user_preferences.items():
@@ -81,6 +94,7 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
         'compatibility_score': 'mean'
     }).nlargest(100, 'compatibility_score').reset_index()
 
+    top_100_stocks['compatibility_score'] = df_grouped['compatibility_score']
 
     # Predict Total Returns based on compatibility score and other factors
     top_100_stocks['Predicted Total Returns'] = (
@@ -98,41 +112,14 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
                             "Standard Deviation": "sd",
                     })
     
-    # Average ESG Score for the top 100 companies
-    avg_esg = top_100_stocks['esg'].mean()
-
-    # Average Annual Return for the top 100 companies
-    avg_return = top_100_stocks['annual_return'].mean()
-
-    volatility = top_100_stocks['sd'].mean()
+    
 
 
     # Convert scores to numeric
     score_columns = ['Emissions Score', 'Governance Pillar Score', 'Product Responsibility Score', 'Social Pillar Score', 'Human Rights Score', 'Total Returns']
-    later_data[score_columns] = later_data[score_columns].apply(pd.to_numeric, errors='coerce')
+    df_grouped[score_columns] = df_grouped[score_columns].apply(pd.to_numeric, errors='coerce')
 
-    # Group by 'Symbol' and calculate the average for each feature
-    df_grouped = later_data.groupby('Symbol').agg({
-        'Emissions Score': 'mean',
-        'Governance Pillar Score': 'mean',
-        'Product Responsibility Score': 'mean',
-        'Social Pillar Score': 'mean',
-        'Human Rights Score': 'mean',
-        'Total Returns': 'mean',
-        'Name': 'first',
-        'ESG Score': 'mean',
-        'ESG Controversies Score': 'mean',
-        'Environment Pillar Score': 'mean',
-        'Social Pillar Score': 'mean',
-        'Governance Pillar Score': 'mean',
-        'Standard Deviation': 'mean',
-        'compatibility_score': 'mean'
-    }).reset_index()
-
-    # Round the specified scores to the tenth
-    columns_to_round = ['Emissions Score', 'Governance Pillar Score', 'Product Responsibility Score', 'Social Pillar Score', 'Human Rights Score']
-    df_grouped[columns_to_round] = df_grouped[columns_to_round].round(1)
-
+    
     # Calculate the 75th percentile 
     # emissions_75th_percentile = df_grouped['Emissions Score'].quantile(0.75)
     # gov_75th_percentile = df_grouped['Governance Pillar Score'].quantile(0.75)
@@ -163,6 +150,7 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
                     })
 
     # Top 20 stocks
+    top_20_stocks_enviroment = df_grouped.sort_values(by='environment', ascending=False).head(20)
     top_20_stocks_emissions = df_grouped.sort_values(by='emissions', ascending=False).head(20)
     top_20_stocks_gov = df_grouped.sort_values(by='governance', ascending=False).head(20)
     top_20_stocks_product = df_grouped.sort_values(by='product_responsibility', ascending=False).head(20)
@@ -172,10 +160,9 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
 
     result = {
         'top_100': top_100_stocks[['ticker', 'name' , 'annual_return', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
-        'avg_esg': avg_esg,
-        'avg_return': avg_return,
-        'volatility': volatility,
         'top_20s': [
+            {"data": top_20_stocks_enviroment.to_dict(orient='records'),
+                             'name': 'Environment'  },
             {"data": top_20_stocks_emissions.to_dict(orient='records'),
                                  'name': 'Emissions'
             },
