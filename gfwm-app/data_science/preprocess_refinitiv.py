@@ -4,28 +4,29 @@ import numpy as np
 
 data = pd.read_csv("data_science/Refinitiv ESG Final Data for Analysis.csv")
 
-
-columns_to_keep = ["Name", "Symbol", "ESG Controversies Score", "Environment Pillar Score", 
+columns_to_keep = ['Symbol', 'ESG Controversies Score', 
+                   'Environment Pillar Score', 'Social Pillar Score','Governance Pillar Score',
                    'Human Rights Score', 'Workforce Score', 'Product Responsibility Score', 
-                   'Shareholders Score','Community Score', "Governance Pillar Score"]
+                   'Shareholders Score','Community Score']
 
 data = data[columns_to_keep]
 # pandas prefers single word columns. lowercase for simplicity with variable names
-data = data.rename(columns={"Name": "name",
-                            "Symbol": "ticker",
+data = data.rename(columns={"Symbol": "ticker",
                             "ESG Controversies Score": "controversy",
                             "Environment Pillar Score": "environment",
+                            "Social Pillar Score": "social",
+                            "Governance Pillar Score": "governance",
                             "Human Rights Score": "human_rights",
                             "Workforce Score": "workforce",
                             "Product Responsibility Score": "product_responsibility",
                             "Shareholders Score": "shareholders",
-                            "Community Score": "community",
-                            "Governance Pillar Score": "governance"})
+                            "Community Score": "community"
+                            })
 
 # Delete rows containing the value 'Unknown' 
 data = data[~data.eq('Unknown').any(axis=1)]
 
-numeric_columns_to_average = data.columns[3:]
+numeric_columns_to_average = data.columns[1:]
 
 # for each ticker, calculate summary scores in each of the relevant columns
 # use exponential weighted average over the years for which we have data
