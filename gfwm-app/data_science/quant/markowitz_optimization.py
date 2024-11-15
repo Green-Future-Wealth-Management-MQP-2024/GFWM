@@ -66,9 +66,17 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
     for i in range(n):
         A[0, i] = mean_returns[i]
 
+    # ensure matrices are in proper opt format
+    mean_returns = opt.matrix(mean_returns)
+    cov = opt.matrix(cov)
+    target_returns = opt.matrix(target_returns)
+    
     # Calculate efficient frontier weights using quadratic programming
     optimal_portfolios['weights'] = optimal_portfolios['target_return'].map(
-        lambda tgt: solvers.qp(cov, -mean_returns, G, h, A, b=opt.matrix([tgt, 0.999], (2,1)))['x']
+        lambda tgt: solvers.qp(cov, 
+                               -mean_returns, 
+                               G, h, A, 
+                               b=opt.matrix([tgt, 0.999], (2,1))    )['x']
     )
 
     # Calculate annual return and annual volatility metrics based off of weights
