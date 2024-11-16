@@ -1,62 +1,91 @@
 import React, { useState } from "react";
+import styled from "@emotion/styled";
+import { DragDropContext, Droppable } from "react-beautiful-dnd";
+import { Grid, Box } from "@mui/material";
+import Divider from "@mui/material/Divider";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import { columnsFromBackend } from "./FormData";
+import OptionCard from "./OptionCard";
 import "./RankingForm.css"; // Import the CSS file
 import RankingFormResults from "./RankingFormResults";
 import { useRef } from "react";
 
+const Container = styled("div")(() => ({
+  display: "flex",
+  flexDirection: "row",
+}));
+
+const TaskList = styled("div")(() => ({
+  minHeight: "100px",
+  display: "flex",
+  flexDirection: "column",
+  background: "#d7dce8",
+  minWidth: "341px",
+  borderRadius: "5px",
+  padding: "15px 15px",
+  marginRight: "45px",
+}));
+
+const TaskColumnStyles = styled("div")(() => ({
+  margin: "8px",
+  display: "flex",
+  width: "100%",
+  minHeight: "80vh",
+}));
+const Title = styled("span")(() => ({
+  fontWeight: "bold",
+  color: "#333333",
+  fontSize: 16,
+  marginBottom: "1.5px",
+}));
+const FilterIcon = styled("span")(() => ({
+  marginBottom: "1.5px",
+  color: "text.secondary",
+}));
+
+
+
 const RankingForm = () => {
+  const [columns, setColumns] = useState(columnsFromBackend);
   const questions = [
     {
+      id: "fossilFuels",
+      text: "Minimizing investment in fossil fuel producers",
+      link: "",
+    },
+    { id: "weapons", text: "Minimizing investment in weapons manufacturers" },
+    {
       id: "environment",
-      text: "How important is environmental protection to you?",
+      text: "Investing in environmentally friendly companies",
       link: "https://www.greenfuturewealth.com/environmental",
     },
-    { 
-      id: "humanRights",
-       text: "How important is human rights protection to you? " 
-      },
     {
-      id: "employeeSatisfaction",
-      text: "How important is employee satisfaction to you?",
-    },
-    {
-      id: "productResponsibility",
-      text: "How important is product responsibility (Data privacy, Responsible Marketing, Product Quality) to you?",
+      id: "social",
+      text: "Investing in companies with positive social impacts",
+      link: "https://www.greenfuturewealth.com/social",
     },
     {
       id: "governance",
-      text: "How important is shareholder satisfaction to you?",
+      text: "Investing in companies with strong governance",
+      link: "https://www.greenfuturewealth.com/governance",
     },
-    {
-      id: "community",
-      text: "How important is community involvement (Respecting business ethics, protecting public health, and being a good citizen) to you?",
-    },
-    {
-    id: "bestPractices",
-    text: "How important is best practices and corporate governance to you?",
-    },
-    {
-    id: "risk",
-    text: "What is the risk you are willing to take?",
-    },
-    {
-    id: "flexibility",
-    text: "How flexible are you with your preferences? ",
-    }
-
-    
   ];
 
+
+  // 
   const formRefs = useRef(
     questions.reduce((acc, question) => {
       acc[question.id] = React.createRef();
       return acc;
     }, {})
   );
-
+  // no change
   const [returnData, setReturnData] = useState({});
 
   const [showResults, setShowResults] = useState(false);
 
+
+  // handle once submit is clicked
   const handleSubmit = (e) => {
     e.preventDefault();
     const responses = questions.reduce((acc, question) => {
@@ -80,7 +109,10 @@ const RankingForm = () => {
     }
 
     console.log(responses);
+    
 
+
+    // NO TOUCH
     // Send the data to the server
     fetch(`//${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
       method: "POST", // or 'PUT' if updating existing data
@@ -106,50 +138,97 @@ const RankingForm = () => {
       });
   };
 
+  const onDragEnd = (result, columns, setColumns) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
+    if (source.droppableId !== destination.droppableId) {
+      const sourceColumn = columns[source.droppableId];
+      const destColumn = columns[destination.droppableId];
+      const sourceItems = [...sourceColumn.items];
+      const destItems = [...destColumn.items];
+      const [removed] = sourceItems.splice(source.index, 1);
+      destItems.splice(destination.index, 0, removed);
+      setColumns({
+        ...columns,
+        [source.droppableId]: {
+          ...sourceColumn,
+          items: sourceItems,
+        },
+        [destination.droppableId]: {
+          ...destColumn,
+          items: destItems,
+        },
+      });
+    } else {
+      const column = columns[source.droppableId];
+      const copiedItems = [...column.items];
+      const [removed] = copiedItems.splice(source.index, 1);
+      copiedItems.splice(destination.index, 0, removed);
+      setColumns({
+        ...columns,
+        [source.droppableId]: {
+          ...column,
+          items: copiedItems,
+        },
+      });
+    }
+  };
+
   return (
     <div>
-      <form onSubmit={handleSubmit} className="ranking-form">
-        {questions.map((question) => (
-          <div
-            key={question.id}
-            className="form-row"
-            ref={formRefs.current[question.id]}
-          >
-            <label className="form-question">
-              {question.text} {" "}
-              {question.link && ( //show more info if link is provided
-                <a
-                  href={question.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  (Learn more)
-                </a>
-              )}
-            </label>
-            <div className="radio-group">
-              <span className="rating-label">1 (Not)</span>
-              {[1, 2, 3, 4, 5].map((rank) => (
-                <label key={rank}>
-                  <input
-                    type="radio"
-                    name={`question-${question.id}`}
-                    value={rank}
-                    defaultChecked={rank === 3}
-                  />
-                  {rank}
-                </label>
-              ))}
-              <span className="rating-label">5 (Very)</span>
-            </div>
-          </div>
-        ))}
-        <button type="submit" className="submit-btn">
-          Get Results
-        </button>
-      </form>
+    <DragDropContext
+      onDragEnd={(result) => {
+        onDragEnd(result, columns, setColumns);
+      }}
+    >
+      <Container>
+        <TaskColumnStyles>
+          {Object.entries(columns).map(([columnId, column], index) => {
+            return (
+              <Droppable key={index} droppableId={columnId}>
+                {(provided, snapshot ) => (
+                  <TaskList
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                  >
+                    <Box sx={{ width: "100%" }}>
+                      <Grid
+                        container
+                        rowSpacing={1}
+                        columnSpacing={{ xs: 1, sm: 2, md: 3 }}
+                      >
+                        <Grid item xs={10} key={index}>
+                          <Title>{column.title}</Title>
+                        </Grid>
+                        <Grid
+                          item
+                          xs={2}
+                          key={index}
+                          display="flex"
+                          alignContent="flex-end"
+                          justifyContent="flex-end"
+                        >
+                          <FilterIcon>
+                            <FilterAltIcon />
+                          </FilterIcon>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                    <Divider />
 
-      {showResults && <RankingFormResults results={returnData} />}
+                    {column.items.map((item, index) => (
+                      <TaskCard key={index} item={item} index={index} />
+                    ))}
+                    {provided.placeholder}
+                  </TaskList>
+                )}
+              </Droppable>
+            );
+          })}
+        </TaskColumnStyles>
+      </Container>
+    </DragDropContext>
+      {showResults && <RankingFormResults data={returnData} />}
     </div>
   );
 };
