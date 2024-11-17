@@ -85,14 +85,13 @@ def submit_form(request):
                     case _:
                         esg_flexibility = 0 #default
         
-        #TODO rework to also return secondary options
-        filtered_results = filter_stocks(esg_preferences, flexibility=esg_flexibility)
+        primary_results, secondary_results = filter_stocks(esg_preferences, flexibility=esg_flexibility)
         
         
-        primary_tickers = []
+        primary_tickers = primary_results['ticker']
         
         # calculate best fit portfolio for the client
-        ideal_portfolio, expected_return, sharpe = calculate_portfolio(primary_tickers, target_volatility)
+        ideal_portfolio_weights, expected_return, sharpe = calculate_portfolio(primary_tickers, target_volatility)
         
         #columns of ideal_portfolio: ticker, controversy, environment, social, governance,
         # human_rights, workforce, product_responsibility, shareholders, community
@@ -104,20 +103,25 @@ def submit_form(request):
         #calculate summary statistics   
         
         summary_statistics = {
-            "average_esg_score": ideal_portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
-            "average_sp500_return": 0.1345,
+            "average_esg_score": primary_results[['environment', 'social', 'governance']].to_numpy().mean(),
+            "average_sp500_return": 13.45,
+            "expected_return": expected_return,
             "growth_of_10k_10_years": 1e4 * (1 + expected_return) ** 10,
             "sharpe": sharpe
-        }     
+        }
+        
+        primary_results['weight'] = ideal_portfolio_weights * 100
         
         
         #package data into a dict of dicts for JsonResponse
         
-        portfolio_dict = ideal_portfolio.to_dict(orient='records')
-        
+        # this requires serializing the secondary dict of dataframes:
+        serial_secondary_results = {factor: df.to_dict(orient = 'records') for factor, df in secondary_results.items()}
         
         return JsonResponse({
-            'portfolio': portfolio_dict, 
-            'summary_statistics': summary_statistics})
+            'portfolio': primary_results.to_dict(orient='records'),
+            'summary_statistics': summary_statistics,
+            'secondary': serial_secondary_results
+            })
 
     return JsonResponse({"error": "Invalid request method."}, status=401)
