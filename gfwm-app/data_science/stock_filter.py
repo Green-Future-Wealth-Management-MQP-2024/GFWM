@@ -19,41 +19,52 @@ def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False
         (Primary dataframes, dict of secondary dataframes): First df: stocks filtered out using user ratings of mid or high importance\n
         dict['factor']: stocks not in primary dataset with high scores in 'factor' and good scores in factors rated mid or high\n
         Note that factors rated as not important are never used for filtering in either primary or secondary data.\n
-        Columns: ticker, controversy, environment, social, governance,
+        Columns: ticker, esg_combined, controversy, environment, social, governance,
         human_rights, community, workforce, product_responsibility, shareholders, management, 
-        compatibility
+        name, mean_return, volatility, compatibility
 
     """
+    performance_summaries = pd.read_csv("data_science/quant/sp500_performance_summaries.csv", index_col=0).transpose()
 
-    data = pd.read_csv("../preprocessed_refinitiv.csv")
+    performance_summaries['ticker'] = performance_summaries.index
+    performance_summaries.set_index('ticker', inplace=True)
+    performance_summaries.columns = ['mean_return', 'volatility']
     
-    # primary results come from:
-    high_quantile_threshold = 0.6  - flexibility/100.0
-    mid_quantile_threshold = 0.4 - flexibility/100.0
+    data = pd.read_csv("data_science/preprocessed_refinitiv.csv")
+    
+    data = data.merge(performance_summaries, how = 'inner', on = 'ticker')
+    
+    #print(data)
+    
+    top_quantile_threshold = 0.9 - flexibility/200.0
+    high_quantile_threshold = 0.55  - flexibility/100.0
+    mid_quantile_threshold = 0.45 - flexibility/100.0
+    low_quantile_threshold = 0.3
     
     compatibility_penalties = {}
     
     # find three quantiles for each factor: 
     #   0: to use when factor is considered in primary result
-    #   1: to use when considered in secondary result as high
-    #   2: to use when considered in secondary result as mid
-    # {factor: (high_importance_quantile, mid_importance_quantile), etc.}
+    #   1: to use when considered in secondary result as high importance
+    #   2: to use when considered in secondary result as mid importance
     factor_quantiles = {}
     
     # split the user preferences by primary and secondary
     for factor, value in user_preferences.items():
+        low = data[factor].quantile(low_quantile_threshold)
         mid = data[factor].quantile(mid_quantile_threshold)
         high = data[factor].quantile(high_quantile_threshold)
+        top = data[factor].quantile(top_quantile_threshold)
         
         if value == 10:
             factor_quantiles[factor] = (high, mid, mid) # in secondary results always considered mid
             
-            # lose 10 points for lower ranking in important factors
-            compatibility_penalties[factor] = 10
+            # lose points for lower ranking in important factors
+            compatibility_penalties[factor] = 2
         elif value == 5:
-            factor_quantiles[factor] = (mid, high, mid)
+            factor_quantiles[factor] = (low, top, mid)
             # lose less points for lower ranking in mid importance factors
-            compatibility_penalties[factor] = 5
+            compatibility_penalties[factor] = 1
         else:
             # don't lose points in factors ranked not important
             compatibility_penalties[factor] = 0
@@ -64,14 +75,15 @@ def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False
     
     def calculate_row_compatibility(row):
         ranks = row.rank(pct=True).values
-        #categorize ranks into 10 deciles (9th from top, etc ... up to top): bottom 10%, next 10% etc up to top 10%
-        deciles = [9 - min(9, floor(r * 10)) for r in ranks]
+        #categorize ranks into 5 quintiles (4th from top, 3rd from top, ..top): 
+        #                                   bottom 10%, next 10% etc up to top 10%
+        deciles = [4 - min(4, floor(r * 5)) for r in ranks]
         
         #calculate penalties for low deciles in important columns
         #TODO: convert to dot product?
         score = 100
         for idx, factor in enumerate(row.index):
-            score -= compatibility_penalties[factor] * deciles[idx]
+            score = score - compatibility_penalties[factor] * deciles[idx]
         return score
         
     
@@ -87,19 +99,21 @@ def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False
     secondary_masks = {}
     for factor, quantiles in factor_quantiles.items():
         
-        # use thresholds used for primary filtering
-        primary_masks.append(data[factor] >= quantiles[0])
+        if(user_preferences[factor] == 10):
         
-        #calculate the masks when the factor is most important and rest are mid importance
-        masks = []
-        for other_factor in factor_quantiles.keys():
-            if(other_factor == factor):
-                # treat this factor as high importance
-                masks.append(data[factor] >= quantiles[1])
-            else:
-                # treat all others as mid importance
-                masks.append(data[factor] >= quantiles[2])
-        secondary_masks[factor] = masks        
+            # use thresholds used for primary filtering
+            primary_masks.append(data[factor] >= quantiles[0])
+        elif(user_preferences[factor] == 5):
+            #calculate the masks when the factor is most important and rest are mid importance
+            masks = []
+            for other_factor in factor_quantiles.keys():
+                if(other_factor == factor):
+                    # treat this factor as high importance
+                    masks.append(data[factor] >= quantiles[1])
+                else:
+                    # treat all others as mid importance
+                    masks.append(data[factor] >= quantiles[2])
+            secondary_masks[factor] = masks        
     
     # combine masks using element-wise AND
     primary_combined_mask = reduce(lambda mask1, mask2: [el1 and el2 for el1, el2 in zip(mask1, mask2)],
@@ -150,44 +164,19 @@ def filter_stocks_mass(user_preference_dicts, count=100, flexibility=0):
 
     return result
 
-'''
-TODO add compatibility score to filter_stocks return type
-
-    # Calculates a compatibility score based off esg, annual returns, and risk (ranking of sd)
-    data['compatibility_score'] = data['combined esg'] + 8 * data['annual_return'] - 0.2 * data['sd']
-  
-    # Top 100
-    top_100 = sorted_data.head(100)
-
-    # Average ESG Score for the top 100 companies
-    avg_esg = top_100['combined esg'].mean()
-
-    # Average Annual Return for the top 100 companies
-    avg_return = top_100['annual_return'].mean()
-
-    volatility = top_100['sd'].mean()
-
-    result = {
-        'top_100': sorted_data[['ticker', 'name', 'annual_return', 'years_index', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
-        'avg_esg': avg_esg,
-        'avg_return': avg_return,
-        'volatility': volatility
-    }
-
-
-    # Shows the top companies that match user preferences
-    # TODO clear up output
-    # idea: print symbol, name, portfolio weight, past return, past risk
-    return(result)
-'''
-
-'''
-test_dict = {'environment':10, 
+#tests
+#results: 109 primary results, 
+# secondary has 16 for product_responsibility, 31 for management
+'''test_dict = {'environment':10, 
              'human_rights': 10,  
              'workforce':1,
              'product_responsibility':5,
              'shareholders':1,
              'community':10,
-             'governance':5}
-print(filter_stocks(test_dict, tickers_only=True))
-'''
+             'management':5}
+primary, secondary = filter_stocks(test_dict)
+
+print(primary.shape)
+#print(primary[['ticker', 'environment', 'human_rights', 'community', 'compatibility']])
+for factor, df in secondary.items():
+    print(factor, df.shape)'''

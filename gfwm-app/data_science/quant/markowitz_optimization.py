@@ -64,7 +64,7 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
 
     A = opt.matrix(1.0, (2, n))
     for i in range(n):
-        A[0, i] = mean_returns[i]
+        A[0, i] = mean_returns.iloc[i]
 
     # ensure matrices are in proper opt format
     mean_returns = opt.matrix(mean_returns)

@@ -62,11 +62,11 @@ def submit_form(request):
             elif key == 'risk_appetite':
                 match response:
                     case "1" | "2":
-                        target_volatility = 0.04
+                        target_volatility = 0.06
                     case "3":
-                        target_volatility = 0.07
+                        target_volatility = 0.09
                     case "4" | "5":
-                        target_volatility = 0.01
+                        target_volatility = 0.11
                     case _:
                         target_volatility = 0.07 #default
             
@@ -93,9 +93,6 @@ def submit_form(request):
         # calculate best fit portfolio for the client
         ideal_portfolio_weights, expected_return, sharpe = calculate_portfolio(primary_tickers, target_volatility)
         
-        #columns of ideal_portfolio: ticker, controversy, environment, social, governance,
-        # human_rights, workforce, product_responsibility, shareholders, community
-        
         # previous version of filter_stocks
         #results = filter_stocks(client_responses_parsed["environment"], client_responses_parsed["humanRights"], client_responses_parsed["employeeSatisfaction"], client_responses_parsed["productResponsibility"], client_responses_parsed["governance"], client_responses_parsed["community"], client_responses_parsed["bestPractices"], client_responses_parsed["risk"], client_responses_parsed["flexibility"])
         
@@ -104,10 +101,13 @@ def submit_form(request):
         
         summary_statistics = {
             "average_esg_score": primary_results[['environment', 'social', 'governance']].to_numpy().mean(),
-            "average_sp500_return": 13.45,
-            "expected_return": expected_return,
+            
+            "portfolio_average_return": expected_return,
+            "sp500_average_return": 0.1345,
             "growth_of_10k_10_years": 1e4 * (1 + expected_return) ** 10,
-            "sharpe": sharpe
+            
+            "portfolio_volatility": target_volatility,
+            "portfolio_sharpe": sharpe
         }
         
         primary_results['weight'] = ideal_portfolio_weights * 100
@@ -119,9 +119,9 @@ def submit_form(request):
         serial_secondary_results = {factor: df.to_dict(orient = 'records') for factor, df in secondary_results.items()}
         
         return JsonResponse({
-            'portfolio': primary_results.to_dict(orient='records'),
+            'portfolio_data': primary_results.to_dict(orient='records'),
             'summary_statistics': summary_statistics,
-            'secondary': serial_secondary_results
+            'secondary_data': serial_secondary_results
             })
 
     return JsonResponse({"error": "Invalid request method."}, status=401)

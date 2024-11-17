@@ -13,8 +13,8 @@ def calculate_portfolio(tickers, target_volatility, target_return=[0.08, 0.12]):
     #important note: tickers are in the same order in every data source
     n = len(tickers)
 
-    all_performance_summaries = pd.read_csv("sp500_performance_summaries.csv")
-    entire_cov_matrix = pd.read_csv("sp500_adjusted_cov_matrix.csv")
+    all_performance_summaries = pd.read_csv("data_science/quant/sp500_performance_summaries.csv")
+    entire_cov_matrix = pd.read_csv("data_science/quant/sp500_adjusted_cov_matrix.csv")
     entire_cov_matrix.set_index('ticker', inplace=True)
 
     # keep entries where both tickers are present
