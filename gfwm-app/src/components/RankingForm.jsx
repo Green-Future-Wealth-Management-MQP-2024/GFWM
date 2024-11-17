@@ -3,48 +3,51 @@ import "./RankingForm.css"; // Import the CSS file
 import RankingFormResults from "./RankingFormResults";
 import { useRef } from "react";
 
+// factors to get answers for:
+// environment,
+//social: community, human_rights, product_responsibility, workforce,
+//governance: management, shareholders
+// flexibility, risk
+
 const RankingForm = () => {
   const questions = [
     {
       id: "environment",
-      text: "How important is environmental protection to you?",
+      text: "Environmental protection",
       link: "https://www.greenfuturewealth.com/environmental",
     },
-    { 
-      id: "humanRights",
-       text: "How important is human rights protection to you? " 
-      },
     {
-      id: "employeeSatisfaction",
-      text: "How important is employee satisfaction to you?",
-    },
-    {
-      id: "productResponsibility",
-      text: "How important is product responsibility (Data privacy, Responsible Marketing, Product Quality) to you?",
-    },
-    {
-      id: "governance",
-      text: "How important is shareholder satisfaction to you?",
+      id: "human_rights",
+      text: "Respecting fundamental human rights conventions",
     },
     {
       id: "community",
-      text: "How important is community involvement (Respecting business ethics, protecting public health, and being a good citizen) to you?",
+      text: "Respecting business ethics, protecting public health, commitment to being good citizens",
     },
     {
-    id: "bestPractices",
-    text: "How important is best practices and corporate governance to you?",
+      id: "workforce",
+      text: "Promoting job satisfaction, healthy and safe workplaces, diversity, and development opportunities",
     },
     {
-    id: "risk",
-    text: "What is the risk you are willing to take?",
+      id: "product_responsibility",
+      text: "Producing quality products, incorporating customer health and safety, maintaining data privacy, marketing responsibly",
     },
     {
-    id: "flexibility",
-    text: "How flexible are you with your preferences? ",
-    }
-
-    
-  ];
+      id: "shareholders",
+      text: "Equal treatment of shareholders and protection from hostile takeovers",
+    },
+    {
+      id: "management",
+      text: "Maintaining best practices in management",
+    },
+    {
+      id: "flexibility",
+      text: "Rate your flexibility with the preferences submitted.",
+    },
+    {
+      id: "risk_appetite",
+      text: "Rate your risk appetite.",
+    }];
 
   const formRefs = useRef(
     questions.reduce((acc, question) => {
@@ -59,6 +62,8 @@ const RankingForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // read user responses and collect in responses object: {question_id : selected_value}
     const responses = questions.reduce((acc, question) => {
       const selectedOption = formRefs.current[
         question.id
@@ -116,7 +121,7 @@ const RankingForm = () => {
             ref={formRefs.current[question.id]}
           >
             <label className="form-question">
-              {question.text} {" "}
+              {question.text}{" "}
               {question.link && ( //show more info if link is provided
                 <a
                   href={question.link}
@@ -128,7 +133,7 @@ const RankingForm = () => {
               )}
             </label>
             <div className="radio-group">
-              <span className="rating-label">1 (Not)</span>
+              <span className="rating-label">1 (Low)</span>
               {[1, 2, 3, 4, 5].map((rank) => (
                 <label key={rank}>
                   <input
@@ -140,7 +145,7 @@ const RankingForm = () => {
                   {rank}
                 </label>
               ))}
-              <span className="rating-label">5 (Very)</span>
+              <span className="rating-label">5 (High)</span>
             </div>
           </div>
         ))}

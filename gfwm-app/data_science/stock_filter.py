@@ -20,7 +20,8 @@ def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False
         dict['factor']: stocks not in primary dataset with high scores in 'factor' and good scores in factors rated mid or high\n
         Note that factors rated as not important are never used for filtering in either primary or secondary data.\n
         Columns: ticker, controversy, environment, social, governance,
-        human_rights, workforce, product_responsibility, shareholders, community, compatibility
+        human_rights, community, workforce, product_responsibility, shareholders, management, 
+        compatibility
 
     """
 

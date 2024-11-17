@@ -29,8 +29,8 @@ def submit_form(request):
         client_responses = json.loads(request.body)
         
         # check that required factors are present
-        required_factors = ["environment", "human_rights", "workforce",
-                            "product_responsibility", "shareholders", "community", "governance"]
+        required_factors = ["environment", "human_rights", "community", "workforce",
+                            "product_responsibility", "shareholders", "management"]
         
         missing_keys = [key for key in required_factors + ['risk_appetite', 'flexibility'] if key not in client_responses.keys()]
         if len(missing_keys) > 0:

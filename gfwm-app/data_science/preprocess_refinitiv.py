@@ -6,8 +6,8 @@ data = pd.read_csv("data_science/Refinitiv ESG Final Data for Analysis.csv")
 
 columns_to_keep = ['Symbol', 'ESG Controversies Score', 
                    'Environment Pillar Score', 'Social Pillar Score','Governance Pillar Score',
-                   'Human Rights Score', 'Workforce Score', 'Product Responsibility Score', 
-                   'Shareholders Score','Community Score']
+                   'Human Rights Score', 'Community Score', 'Workforce Score', 'Product Responsibility Score', 
+                   'Shareholders Score','Management Score']
 
 data = data[columns_to_keep]
 # pandas prefers single word columns. lowercase for simplicity with variable names
@@ -17,10 +17,11 @@ data = data.rename(columns={"Symbol": "ticker",
                             "Social Pillar Score": "social",
                             "Governance Pillar Score": "governance",
                             "Human Rights Score": "human_rights",
+                            "Community Score": "community",
                             "Workforce Score": "workforce",
                             "Product Responsibility Score": "product_responsibility",
                             "Shareholders Score": "shareholders",
-                            "Community Score": "community"
+                            "Management Score": "management"
                             })
 
 # Delete rows containing the value 'Unknown' 
