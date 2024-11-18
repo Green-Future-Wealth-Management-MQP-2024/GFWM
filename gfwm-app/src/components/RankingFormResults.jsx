@@ -27,10 +27,6 @@ const RankingFormResults = ({results}) => {
 
   const { portfolio_data, summary_statistics, secondary_data } = results;
 
-  console.log(portfolio_data)
-  console.log(summary_statistics)
-  console.log(secondary_data)
-
   const{average_esg_score, portfolio_average_return, sp500_average_return,
     growth_of_10k_10_years, portfolio_volatility, portfolio_sharpe} = summary_statistics
 
@@ -219,7 +215,7 @@ const RankingFormResults = ({results}) => {
               <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
               <td className="py-1 px-2 border-b border-gray-300">{item.compatibility}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.weight.toFixed(2)}%</td>
+              <td className="py-1 px-2 border-b border-gray-300">{(item.weight * 100).toFixed(2)}%</td>
               <td className="py-1 px-2 border-b border-gray-300"> 
                 <button onClick={() => handleRemoveFromPortfolio(item.ticker)} className="bg-red-500 text-white px-1 rounded">X</button>
                 </td>

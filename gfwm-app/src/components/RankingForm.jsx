@@ -119,7 +119,7 @@ const RankingForm = () => {
     results['flexibility'] = 0;
     results['risk_appetite'] = volatilitySlider/100.0;
     results['weighing_scheme'] = weighing_scheme_choices[weighingScheme];
-    console.log(results); // or send to an API or other destinations
+    console.log("submitted: ", results); // or send to an API or other destinations
 
     // Send the data to the server
     fetch(`//${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {

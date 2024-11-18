@@ -44,18 +44,19 @@ def submit_form(request):
         esg_flexibility = client_responses['flexibility']
         target_volatility = client_responses['risk_appetite']
         
-        primary_results, secondary_results = filter_stocks(esg_preferences, flexibility=esg_flexibility)
+        use_markowitz = (client_responses['weighing_scheme'] == 'Markowitz Optimized')
         
+        # filter stocks using client responses
+        
+        primary_results, secondary_results = filter_stocks(esg_preferences, flexibility=esg_flexibility)
         
         primary_tickers = primary_results['ticker']
         
         # calculate best fit portfolio for the client
-        ideal_portfolio_weights, expected_return, sharpe = calculate_portfolio(primary_tickers, target_volatility)
+        ideal_portfolio_weights, expected_return, expected_volatility, sharpe = calculate_portfolio(primary_tickers, target_volatility, 
+                                                                               use_markowitz=use_markowitz)
         
-        # previous version of filter_stocks
-        #results = filter_stocks(client_responses_parsed["environment"], client_responses_parsed["humanRights"], client_responses_parsed["employeeSatisfaction"], client_responses_parsed["productResponsibility"], client_responses_parsed["governance"], client_responses_parsed["community"], client_responses_parsed["bestPractices"], client_responses_parsed["risk"], client_responses_parsed["flexibility"])
-        
-        
+
         #calculate summary statistics   
         
         summary_statistics = {
@@ -65,11 +66,13 @@ def submit_form(request):
             "sp500_average_return": 0.1345,
             "growth_of_10k_10_years": 1e4 * (1 + expected_return) ** 10,
             
-            "portfolio_volatility": target_volatility,
-            "portfolio_sharpe": sharpe
+            "portfolio_volatility": expected_volatility,
+            "portfolio_sharpe": sharpe,
+            
+            "portfolio_weighing_scheme": use_markowitz
         }
         
-        primary_results['weight'] = ideal_portfolio_weights * 100
+        primary_results['weight'] = ideal_portfolio_weights
         
         
         #package data into a dict of dicts for JsonResponse
