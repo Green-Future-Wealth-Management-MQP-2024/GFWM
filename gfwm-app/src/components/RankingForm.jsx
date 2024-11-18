@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import "./RankingForm.css"; // Import the CSS file
-import RankingFormResults from "./RankingFormResults";
 import { useRef } from "react";
+
+import RankingFormResults from "./RankingFormResults";
+import DragAndDrop from "./DragAndDrop";
+import BinaryChoice from "./BinaryChoice";
 
 // factors to get answers for:
 // environment,
@@ -10,6 +12,7 @@ import { useRef } from "react";
 // flexibility, risk
 
 const RankingForm = () => {
+  //no longer used
   const questions = [
     {
       id: "environment",
@@ -47,7 +50,36 @@ const RankingForm = () => {
     {
       id: "risk_appetite",
       text: "Rate your risk appetite.",
-    }];
+    },
+  ];
+
+  const factor_text_map = {
+    environment: "Environmental protection",
+    human_rights: "Respecting fundamental human rights conventions",
+    community:
+      "Respecting business ethics, protecting public health, commitment to being good citizens",
+    workforce:
+      "Promoting job satisfaction, safe workplaces, diversity, and development opportunities",
+    product_responsibility:
+      "Producing quality products, incorporating customer health and safety, maintaining data privacy, marketing responsibly",
+    shareholders:
+      "Equal treatment of shareholders and protection from hostile takeovers",
+    management: "Maintaining best practices in management",
+  };
+
+  const [columns, setColumns] = useState({
+    notImportant: ["community", "shareholders", "management"],
+    midImportance: ["product_responsibility", "workforce", "human_rights"],
+    highImportance: ["environment"],
+  });
+
+  const weighing_scheme_choices = {
+    choice1: "Equal Weights",
+    choice2: "Markowitz Optimized",
+  }
+
+  const [volatilitySlider, setSliderValue] = useState(10);
+  const [weighingScheme, setWeighingScheme] = useState("");
 
   const formRefs = useRef(
     questions.reduce((acc, question) => {
@@ -60,31 +92,34 @@ const RankingForm = () => {
 
   const [showResults, setShowResults] = useState(false);
 
+  const importance_level_mapper = (level) => {
+    switch (level){
+      case 'notImportant': return 0;
+      case 'midImportance': return 5;
+      case 'highImportance': return 10;
+    }
+
+    return -1;
+  }
+  
+  //TODO update to read new values
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // read user responses and collect in responses object: {question_id : selected_value}
-    const responses = questions.reduce((acc, question) => {
-      const selectedOption = formRefs.current[
-        question.id
-      ].current.querySelector(
-        'input[name="question-' + question.id + '"]:checked'
-      );
-      acc[question.id] = selectedOption ? selectedOption.value : "";
-      return acc;
-    }, {});
+    let results = {};
 
-    // Check if all questions are answered
-    const allAnswered = Object.values(responses).every(
-      (response) => response !== ""
-    );
-
-    if (!allAnswered) {
-      alert("Please answer all questions before submitting.");
-      return;
+    // Iterate through each column
+    for (const importance_level in columns) {
+        // For each factor in the current column, map it to the column name
+        columns[importance_level].forEach((factor) => {
+            results[factor] = importance_level_mapper(importance_level);
+        });
     }
-
-    console.log(responses);
+    //for the time being until we added another slider
+    results['flexibility'] = 0;
+    results['risk_appetite'] = volatilitySlider/100.0;
+    results['weighing_scheme'] = weighing_scheme_choices[weighingScheme];
+    console.log(results); // or send to an API or other destinations
 
     // Send the data to the server
     fetch(`//${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
@@ -92,7 +127,7 @@ const RankingForm = () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(responses),
+      body: JSON.stringify(results),
     })
       .then((res) => {
         if (!res.ok) {
@@ -114,41 +149,36 @@ const RankingForm = () => {
   return (
     <div>
       <form onSubmit={handleSubmit} className="ranking-form">
-        {questions.map((question) => (
-          <div
-            key={question.id}
-            className="form-row"
-            ref={formRefs.current[question.id]}
-          >
-            <label className="form-question">
-              {question.text}{" "}
-              {question.link && ( //show more info if link is provided
-                <a
-                  href={question.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  (Learn more)
-                </a>
-              )}
-            </label>
-            <div className="radio-group">
-              <span className="rating-label">1 (Low)</span>
-              {[1, 2, 3, 4, 5].map((rank) => (
-                <label key={rank}>
-                  <input
-                    type="radio"
-                    name={`question-${question.id}`}
-                    value={rank}
-                    defaultChecked={rank === 3}
-                  />
-                  {rank}
-                </label>
-              ))}
-              <span className="rating-label">5 (High)</span>
-            </div>
-          </div>
-        ))}
+        <DragAndDrop
+          columns={columns}
+          setColumns={setColumns}
+          factor_text_map={factor_text_map}
+        />
+
+        {/* Slider */}
+        <div style={{ margin: "20px 0" }}>
+          <label>Conservative</label>
+          <input
+            type="range"
+            min="1"
+            max="20"
+            value={volatilitySlider}
+            onChange={(e) => setSliderValue(e.target.value)}
+            style={{ width: "80%", margin: "0 10px" }}
+          />
+          <label>Aggressive</label>
+          <div>Selected Value: {volatilitySlider}</div>
+        </div>
+
+        {/* Binary Choice */}
+        <div>
+          <BinaryChoice
+            choices={weighing_scheme_choices}
+            binaryChoice={weighingScheme} //will be either choice1 or choice2
+            setBinaryChoice={setWeighingScheme}
+          />
+        </div>
+
         <button type="submit" className="submit-btn">
           Get Results
         </button>

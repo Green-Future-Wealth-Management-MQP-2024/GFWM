@@ -26,6 +26,8 @@ def handle_client_response_string(response: str):
 @csrf_exempt
 def submit_form(request):
     if request.method == "POST":
+        
+        # build dict of client responses
         client_responses = json.loads(request.body)
         
         # check that required factors are present
@@ -38,52 +40,9 @@ def submit_form(request):
         
         # prepare client responses for filtering and markowitz
         
-        esg_preferences = {}
-        esg_flexibility = 0
-        target_volatility = 0.07
-        
-        for(key, response) in client_responses.items():
-            print(key, response)
-            
-            if key in required_factors:
-                
-                match response:
-                    case "1" | "2":
-                        esg_preferences[key] = 0
-                    case "3":
-                        esg_preferences[key] = 5
-                    case "4" | "5":
-                        esg_preferences[key] = 10
-                    case _:
-                        esg_preferences[key] = 5 #default to mid importance
-            
-            #key is either risk_appetite or flexibility
-            
-            elif key == 'risk_appetite':
-                match response:
-                    case "1" | "2":
-                        target_volatility = 0.06
-                    case "3":
-                        target_volatility = 0.09
-                    case "4" | "5":
-                        target_volatility = 0.11
-                    case _:
-                        target_volatility = 0.07 #default
-            
-            elif key == 'flexbility':
-                match response:
-                    case "1":
-                        esg_flexibility = 0
-                    case "2":
-                        esg_flexibility = 5
-                    case "3":
-                        esg_flexibility = 10
-                    case "4":
-                        esg_flexibility = 15
-                    case "5":
-                        esg_flexibility = 20
-                    case _:
-                        esg_flexibility = 0 #default
+        esg_preferences = {key: value for (key, value) in client_responses.items() if key in required_factors}
+        esg_flexibility = client_responses['flexibility']
+        target_volatility = client_responses['risk_appetite']
         
         primary_results, secondary_results = filter_stocks(esg_preferences, flexibility=esg_flexibility)
         
