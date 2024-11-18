@@ -21,4 +21,8 @@ frontier as given, tangent line
 finding tangent line algorithm
 
 weights backed out of https://investor.vanguard.com/investment-products/list/all?strategy=all_in_one 
+
+11/18 andrew feedback
+sp volatility to compare
+number of stocks in top 90%
     
