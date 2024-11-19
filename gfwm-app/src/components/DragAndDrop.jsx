@@ -7,6 +7,7 @@ import {
   useSensor,
   useSensors,
   useDroppable,
+  DragOverlay
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -17,13 +18,20 @@ import { CSS } from "@dnd-kit/utilities";
 
 const DragAndDrop = ({ columns, setColumns, factor_text_map }) => {
 
+  const [activeId, setActiveId] = useState(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor)
   );
 
+  const handleDragStart = (event) => {
+    setActiveId(event.active.id);
+  }
+
   const handleDragEnd = (event) => {
     const { active, over } = event;
+    setActiveId(null);
 
     if (active.id !== over?.id) {
         const activeColumnId = active.data.current.sortable.containerId;
@@ -49,6 +57,7 @@ const DragAndDrop = ({ columns, setColumns, factor_text_map }) => {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <div
@@ -78,6 +87,22 @@ const DragAndDrop = ({ columns, setColumns, factor_text_map }) => {
           </SortableContext>
         ))}
       </div>
+
+
+      <DragOverlay>
+      {activeId ? (
+          <div
+            style={{
+              padding: 10,
+              backgroundColor: "#f1f1f1",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+              borderRadius: 4,
+            }}
+          >
+            {factor_text_map[activeId]}
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 };
