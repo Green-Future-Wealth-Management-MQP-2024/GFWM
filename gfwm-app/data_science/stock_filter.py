@@ -140,10 +140,13 @@ def filter_stocks_mass(user_preference_dicts, count=100, flexibility=0):
 
     data = pd.read_csv("../preprocessed_refinitiv.csv")
 
-    quantile_threshold = 0.6 * (1 - flexibility/100.0)
+    quantile_threshold = 0.5 * (1 - flexibility/100.0)
+    
     factors = ["environment", "human_rights", "workforce", 
-               "product_responsibility", "shareholders", "community", "governance"]
+               "product_responsibility", "shareholders", "community", "management"]
     quantiles = {factor: data[factor].quantile(quantile_threshold) for factor in factors}
+    
+    print(quantiles)
     
     result = []
     

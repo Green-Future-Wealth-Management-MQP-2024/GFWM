@@ -161,13 +161,13 @@ const RankingForm = () => {
           <input
             type="range"
             min="1"
-            max="20"
+            max="16"
             value={volatilitySlider}
             onChange={(e) => setSliderValue(e.target.value)}
             style={{ width: "80%", margin: "0 10px" }}
           />
           <label>Aggressive</label>
-          <div>Selected Value: {volatilitySlider}</div>
+          <div>Selected Value: {volatilitySlider}%</div>
         </div>
 
         {/* Binary Choice */}

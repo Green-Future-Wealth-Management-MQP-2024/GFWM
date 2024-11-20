@@ -14,11 +14,15 @@ def calculate_portfolio(tickers, target_volatility, use_markowitz):
     n = len(tickers)
     annual_returns = pd.read_csv("data_science/quant/sp500_performance_summaries.csv")[tickers].iloc[0]
     
-    entire_cov_matrix = pd.read_csv("data_science/quant/sp500_adjusted_cov_matrix.csv")
-    entire_cov_matrix.set_index('ticker', inplace=True)
-
+    adjusted_cov_matrix = pd.read_csv("data_science/quant/sp500_adjusted_cov_matrix.csv")
+    adjusted_cov_matrix.set_index('ticker', inplace=True)
+    
+    true_cov_matrix = pd.read_csv("data_science/quant/sp500_raw_cov_matrix.csv")
+    true_cov_matrix.set_index('ticker', inplace=True)
+    
     # keep entries where both tickers are present
-    cov_matrix = entire_cov_matrix.loc[tickers, tickers].to_numpy()
+    adjusted_cov_matrix = adjusted_cov_matrix.loc[tickers, tickers].to_numpy()
+    true_cov_matrix = true_cov_matrix.loc[tickers, tickers].to_numpy()
     
     if(use_markowitz):
 
@@ -29,63 +33,56 @@ def calculate_portfolio(tickers, target_volatility, use_markowitz):
         # daily target returns starting from risk free rate to 20% annually
         # scale to annual for graphing
         target_returns = np.linspace(start=pow(ANNUAL_RISK_FREE_RATE+1, 1/365.0) - 1, 
-                                    stop=0.2/252, num=50)
-
-        markowitz_portfolios, best_fit = markowitz_optimization.calculate_optimal_portfolios(mean_log_returns,
-                                                                                cov_matrix,
-                                                                                target_returns,
-                                                                                ANNUAL_RISK_FREE_RATE,
-                                                                                bounds=[0.25/n, 4.0/n],
-                                                                                calculate_best_fit=True)
-
-
-        #TODO: consider moving this calculation to markowitz_optimization.calculate_ideal_portfolio()
-
-        #calculate tangent line to best fit curve, passing through (0, annual_rfr)
-        # vol = ar^2 + br + c
-        # derivative: 2ar + b
-
-        # point slope form of line also passing through (vol_t, ret_t)
-        # vol - vol_t = slope * (ret - ret_t)
-
-        # at the tangency point (vol_t, ret_t), slopes are equal:
-        # vol_t / (ret_t - rfr) = 2a * ret_t + b
-        # solve for ret_t to find the tangency point (ret_t, vol_t)
-
-        # best_fit(ret_t) / (ret_t - rfr) = 2a * ret_t + b
-        # ar^2 + br + c = (r-rfr)(2ar+b)
-        #               = 2a r^2 + (b-2arfr) * r - rfr*b
-        # 0 = ar^2 - 2arfr * r - c - rfr*b
-
-        [c, b, a] = best_fit.convert().coef
-        tangency_poly = np.polynomial.Polynomial([-c - b * ANNUAL_RISK_FREE_RATE, 
-                                                -2*a* ANNUAL_RISK_FREE_RATE,
-                                                a])
-        #find root in the acceptable range
-        approx_tangent_return = [root for root in tangency_poly.roots() if 0 <= root <= 0.5][0]
+                                    stop=0.3/252, num=80)
         
-        # we want the portfolio closest to the tangent point
+        bounds = [0.333/n, 3.0/n]
+        markowitz_portfolios = markowitz_optimization.calculate_optimal_portfolios(true_mean_returns=mean_log_returns,
+                                                                                   adjusted_mean_returns=mean_log_returns,
+                                                                                   true_cov=true_cov_matrix,
+                                                                                   adjusted_cov=adjusted_cov_matrix,
+                                                                                   target_returns=target_returns,
+                                                                                   annual_risk_free_rate=ANNUAL_RISK_FREE_RATE,
+                                                                                   bounds = bounds)
+
+
+        # idea: calculate the slope of the line between (0, rfr), (point)
+        # the steepest slope is the ideal portfolio we want
         
-        closest_index = (np.abs(markowitz_portfolios['annual_return'] - approx_tangent_return)).argmin()
+        # slope = (return - rfr) / volatility
+        # same as picking the portfolio with the largest sharpe!
         
-        #columns of portfolio: 'annual_return', 'annual_volatility', 'weights', 'diversification'
-        tangent_portfolio = markowitz_portfolios.iloc[closest_index]
+        markowitz_portfolios['slope'] = (markowitz_portfolios['annual_return'] - ANNUAL_RISK_FREE_RATE) / markowitz_portfolios['annual_volatility']
         
+        tangent_portfolio_index = markowitz_portfolios['slope'].argmax()
+        
+        tangent_portfolio = markowitz_portfolios.iloc[tangent_portfolio_index]        
         
         # interpolate the line between (0, risk_free_rate) and the tangent portfolio
         # target_vol = alpha * tangent_vol + (1-alpha) * 0
         
         alpha = target_volatility / tangent_portfolio['annual_volatility']
         
-        #expected_return = alpha * tangent_portfolio['annual_return'] + (1-alpha) * ANNUAL_RISK_FREE_RATE
-        ideal_weights = np.array(alpha * tangent_portfolio['weights']).reshape(n, 1)
-     
-    else: #not markowitz -> equal weights
+        # in most cases, target volatility is less than tangent portfolio:
+        if alpha <= 1:
+            print(f'alpha: {alpha}')
+            print(tangent_portfolio)
+            ideal_weights = np.array(alpha * tangent_portfolio['weights']).reshape(n, 1)  
+        
+        # rare case: the client's volatility tolerance is higher than the tangent portfolio
+        # find the portfolio with the closest volatility
+        # assuming there is a portfolio that high
+        else:
+            closest_portfolio = markowitz_portfolios.iloc[markowitz_portfolios.loc[tangent_portfolio_index:, 'annual_volatility'].sub(target_volatility).abs().argmin()]
+            print(closest_portfolio)
+            ideal_weights = np.array(closest_portfolio['weights']).reshape(n, 1)
+
+    #not markowitz -> equal weights
+    else:
         ideal_weights = np.repeat(1.0/n, n).reshape(n, 1)
     
     expected_return = np.dot(ideal_weights.reshape(n,), annual_returns)
-    expected_volatility = np.sqrt(252) * (ideal_weights.T @ cov_matrix @ ideal_weights)[0][0]
-    print(expected_volatility)
+    
+    expected_volatility = np.sqrt(252 * (ideal_weights.T @ true_cov_matrix @ ideal_weights)[0][0])
     
     sharpe = (expected_return - ANNUAL_RISK_FREE_RATE) / expected_volatility
     

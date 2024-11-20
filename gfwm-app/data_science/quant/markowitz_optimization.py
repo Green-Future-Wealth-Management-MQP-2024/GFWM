@@ -2,14 +2,16 @@ import pandas as pd
 import numpy as np
 
 import cvxopt as opt
-from cvxopt import blas, solvers
+from cvxopt import matrix, solvers, blas
 
 #True to display progress in console
 solvers.options["show_progress"] = False
 
-def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_free_rate = 0.02, bounds = None, calculate_best_fit = False):
+# use adjusted to optimize and true to report (vol, return) points
+def calculate_optimal_portfolios(true_mean_returns, adjusted_mean_returns, true_cov, adjusted_cov, 
+                                 target_returns, annual_risk_free_rate = 0.02, bounds = None, calculate_best_fit = False):
     
-    n = len(mean_returns)
+    n = len(true_mean_returns)
     
     # convert to daily rate
     risk_free_rate = pow(annual_risk_free_rate+1, 1/365.0) - 1
@@ -17,12 +19,12 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
     target_returns = target_returns[np.where(target_returns > risk_free_rate)]
     
     # initialize results dataframe
-    empty = np.empty(len(target_returns))
+    empty_col = np.empty(len(target_returns))
     optimal_portfolios = pd.DataFrame({'target_return': target_returns,
-                                   'annual_return': empty,
-                                   'annual_volatility': empty,
-                                   'weights': empty,
-                                   'diversification': empty})
+                                   'annual_return': empty_col,
+                                   'annual_volatility': empty_col,
+                                   'weights': empty_col,
+                                   'diversification': empty_col})
 
     
     # make sure these are floats    
@@ -34,7 +36,7 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
     
     # minimize w * cov * w
     # subject to:
-    # Gw <= h: (2n+1, n)(n, 1) <= (2n+1, 1)  
+    # Gw <= h: (2n, n)(n, 1) <= (2n, 1)  
     #   -w <= -lower_bound (lower_bound <= w <= upper_bound)
     #   w <= upper_bound
     
@@ -58,33 +60,47 @@ def calculate_optimal_portfolios(mean_returns, cov, target_returns, annual_risk_
         G[i, i] = -1.0
         G[n + i, i] = 1.0
 
-    h = opt.matrix(-bounds[0], (2 * n, 1))
+    epsilon = 1e-8
+    
+    h = opt.matrix(-bounds[0] - epsilon, (2 * n, 1))
     for i in range(n):
-        h[i + n] = bounds[1]
-
+        h[i + n] = bounds[1] + epsilon
+    
     A = opt.matrix(1.0, (2, n))
     for i in range(n):
-        A[0, i] = mean_returns.iloc[i]
+        A[0, i] = adjusted_mean_returns.iloc[i]
 
     # ensure matrices are in proper opt format
-    mean_returns = opt.matrix(mean_returns)
-    cov = opt.matrix(cov)
-    target_returns = opt.matrix(target_returns)
     
-    # Calculate efficient frontier weights using quadratic programming
-    optimal_portfolios['weights'] = optimal_portfolios['target_return'].map(
-        lambda tgt: solvers.qp(cov, 
-                               -mean_returns, 
-                               G, h, A, 
-                               b=opt.matrix([tgt, 0.999], (2,1))    )['x']
-    )
+    true_mean_returns = matrix(true_mean_returns)
+    adjusted_mean_returns = matrix(adjusted_mean_returns)
+    
+    true_cov = matrix(true_cov)
+    adjusted_cov = matrix(adjusted_cov)
+    
+    target_returns = matrix(target_returns)
+    
+    q = matrix([0.0] * n)
+    
+    def solve_qp(target_return):
+        # Run quadratic programming to minimize 1/2 * x^T cov * x with constraints
+        solution = solvers.qp(P=adjusted_cov, q=q, G=G, h=h, A=A, b=matrix([target_return, 0.999], (2, 1)))
+    
+        # Check solver status
+        if solution['status'] == 'optimal':
+            return solution['x']
+    
+    optimal_portfolios['weights'] = optimal_portfolios['target_return'].map(solve_qp)
+    
+    # remove the rows where weights are none, ie no solution found
+    optimal_portfolios.dropna(subset=['weights'], inplace=True)
 
     # Calculate annual return and annual volatility metrics based off of weights
     optimal_portfolios['annual_return'] = optimal_portfolios['weights'].map(
-        lambda w: 252.0 * blas.dot(mean_returns, w)
+        lambda w: 252.0 * blas.dot(true_mean_returns, w)
     )
     optimal_portfolios['annual_volatility'] = optimal_portfolios['weights'].map(
-        lambda w: np.sqrt(252.0 * blas.dot(w, cov*w))
+        lambda w: np.sqrt(252.0 * blas.dot(w, true_cov*w))
     )
     
     optimal_portfolios['diversification'] = optimal_portfolios['weights'].map(
@@ -109,6 +125,9 @@ def montecarlo_random_portfolios(mean_returns, cov, bounds = None, iterations = 
     
     n = len(mean_returns)
     iterations = int(iterations)
+    
+    mean_returns = opt.matrix(mean_returns)
+    cov = opt.matrix(cov)
 
     montecarlo_portfolios = pd.DataFrame(index=range(iterations))
     
@@ -120,7 +139,7 @@ def montecarlo_random_portfolios(mean_returns, cov, bounds = None, iterations = 
         rng.uniform(low=bounds[0], high=bounds[1], size=(iterations, n)))
     
     montecarlo_portfolios['random_weights'] = montecarlo_portfolios['random_weights'].map(
-        lambda w: opt.matrix(w/sum(w))
+        lambda w: opt.matrix(np.array(w)/sum(w))
     )
 
     montecarlo_portfolios['annual_return'] = montecarlo_portfolios['random_weights'].map(

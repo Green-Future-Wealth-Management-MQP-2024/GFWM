@@ -162,6 +162,8 @@ const RankingFormResults = ({results}) => {
           <p className="pb-1">Value of $10,000 invested in portfolio 10 years ago: <span className="text-green-700 text-2xl font-bold">${growth_of_10k_10_years.toFixed(2)}</span></p>
           <p className="pb-1">Portfolio SD/Volatility: <span className="text-green-700 text-2xl font-bold">{(portfolio_volatility * 100).toFixed(2)}%</span></p>
           <p className="pb-1">Portfolio Sharpe Ratio: <span className="text-green-700 text-2xl font-bold">{portfolio_sharpe.toFixed(2)}</span></p>
+          <p className="pb-1">Portfolio Size: <span className="text-green-700 text-2xl font-bold">{sorted_portfolio_data.length} stocks</span></p>
+          
         </div>
       </div>
 <div className="relative">
