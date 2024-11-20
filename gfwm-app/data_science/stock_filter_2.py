@@ -1,6 +1,7 @@
 import pandas as pd
+
 def filter_stocks(environment, humanRights, employeeSatisfaction, productResponsibility, governance, community, bestPractices, risk, flexibility):
-    averaged_data = pd.read_csv('data_science/preprocessed.csv')
+    averaged_data = pd.read_csv('public/preprocessed.csv')
     # User responses to the questionnaire
     user_preferences = {
         'How important is environmental protection to you': environment,  # Question 1
@@ -76,21 +77,8 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
         'Standard Deviation': 'mean',
         'compatibility_score': 'mean'
     }).reset_index()
-    # Top stocks based on compatibility score
-    top_100_stocks = df_grouped.nlargest(100, 'compatibility_score').reset_index()
-    # Rename columns for output
-    top_100_stocks = top_100_stocks.rename(columns={
-        "Name": "name",
-        "Symbol": "ticker",
-        "ESG Score": "esg",
-        "ESG Controversies Score": "controversy",
-        "Environment Pillar Score": "environment",
-        "Social Pillar Score": "social",
-        "Governance Pillar Score": "governance",
-        "Total Returns": "annual_return",
-        "Standard Deviation": "sd"
-    })
-    df_grouped = df_grouped.rename(columns={"Name": "name",
+    
+    df_grouped = df_grouped.rename(columns={
                                 "Symbol": "ticker",
                                 "Name": "name",
                                 "ESG Score": "esg",
@@ -104,39 +92,17 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
                                 "Product Responsibility Score": "product_responsibility",
                                 "Human Rights Score": "human_rights",
                         })
-    # Top 20 stocks
-    top_20_stocks_enviroment = df_grouped.sort_values(by='environment', ascending=False).head(20)
-    top_20_stocks_emissions = df_grouped.sort_values(by='emissions', ascending=False).head(20)
-    top_20_stocks_gov = df_grouped.sort_values(by='governance', ascending=False).head(20)
-    top_20_stocks_product = df_grouped.sort_values(by='product_responsibility', ascending=False).head(20)
-    top_20_stocks_social = df_grouped.sort_values(by='social', ascending=False).head(20)
-    top_20_stocks_human = df_grouped.sort_values(by='human_rights', ascending=False).head(20)
+    # Top stocks based on compatibility score
+    top_100_stocks = df_grouped.nlargest(100, 'compatibility_score').reset_index()
+
     result = {
-        'top_100': top_100_stocks[['ticker', 'name' , 'annual_return', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
-        'top_20s': [
-            {"data": top_20_stocks_enviroment.to_dict(orient='records'),
-                             'name': 'Environment'  },
-            {"data": top_20_stocks_emissions.to_dict(orient='records'),
-                                 'name': 'Emissions'
-            },
-            {"data": top_20_stocks_gov.to_dict(orient='records'),
-                           'name': 'Governance'
-            },
-             {"data": top_20_stocks_product.to_dict(orient='records'),
-                               'name': 'Product Responsibility'
-            },
-            {"data": top_20_stocks_social.to_dict(orient='records'),
-                              'name': 'Social'
-            },
-            {"data": top_20_stocks_human.to_dict(orient='records'),
-                             'name': 'Human Rights'
-            }
-        ],
-        },
-    # # Filter and print all S&P 500 stocks with their metrics
-    # sp500_stocks = df_grouped[['ticker', 'name', 'annual_return', 'sd', 'esg', 'environment', 'social', 'governance', 'compatibility_score']]
-    # print("All S&P 500 Stocks with Metrics:")
-    # print(sp500_stocks.to_string(index=False))
+        'top_100': top_100_stocks[['ticker', 'name', 'annual_return', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
+        'snp500_compatibility': df_grouped[['ticker', 'compatibility_score']].to_dict(orient='records'),
+    }
+
+
+
+
     return(result)
 
 

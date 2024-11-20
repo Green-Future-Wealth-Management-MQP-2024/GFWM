@@ -1,7 +1,5 @@
-from django.shortcuts import render
+
 from django.http import JsonResponse
-from .models import SurveyResponse
-import pandas as pd
 from django.views.decorators.csrf import csrf_exempt
 import json
 
@@ -26,12 +24,21 @@ def submit_form(request):
         for key in required_keys:
             if key not in client_responses_parsed:
                 return JsonResponse({"error": f"Missing key: {key}"}, status=400)
+        
+        
+        results = filter_stocks(
+            client_responses_parsed["environment"],
+            client_responses_parsed["humanRights"],
+            client_responses_parsed["employeeSatisfaction"],
+            client_responses_parsed["productResponsibility"],
+            client_responses_parsed["governance"],
+            client_responses_parsed["community"],
+            client_responses_parsed["bestPractices"],
+            client_responses_parsed["risk"],
+            client_responses_parsed["flexibility"]
+        )
 
-        
-        results = filter_stocks(client_responses_parsed["environment"], client_responses_parsed["humanRights"], client_responses_parsed["employeeSatisfaction"], client_responses_parsed["productResponsibility"], client_responses_parsed["governance"], client_responses_parsed["community"], client_responses_parsed["bestPractices"], client_responses_parsed["risk"], client_responses_parsed["flexibility"])
-        #results = filter_stocks(client_responses_parsed["environment"], client_responses_parsed["humanRights"], client_responses_parsed["employeeSatisfaction"])
-        
-        #print(results)
+
         return JsonResponse(results, safe=False)
 
     return JsonResponse({"error": "Invalid request method."}, status=401)
