@@ -3,6 +3,9 @@ import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { useEffect, useState } from "react";
 
+import ComparisonTable from "./ComparisonTable";
+import PieChart from "./PieChart";
+
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -66,6 +69,15 @@ const RankingFormResults = ({results}) => {
     }
     setSortConfig({ key, direction });
   };
+
+  // TODO get the sp500 data from the server (benchmarks csv)
+  const comparisonTableData = [
+    {field: "Annual Return", portfolio: `${(portfolio_average_return * 100).toFixed(2)}%`, sp500: "13.45%"},
+    {field: "Annual Volatility", portfolio: `${(portfolio_volatility * 100).toFixed(2)}%`, sp500:"15.6%"},
+    { field: "Sharpe Ratio", portfolio: `${portfolio_sharpe.toFixed(2)}`, sp500: "0.73"},
+    { field: "Average ESG Score", portfolio: `${average_esg_score.toFixed(2)}`, sp500:"66.66"},
+    { field: "Number of stocks", portfolio: `${portfolio_data.length}`, sp500: "500" }
+  ];
 
 
   //SELECTED TICKER AND OPEN TABLEAU DASHBOARD
@@ -154,17 +166,16 @@ const RankingFormResults = ({results}) => {
         <div className="flex-1 min-w-72 max-w-sm ">
           <Bar data={sp500_return_data} options={sp500_return_options} />
         </div> */}
+
         <div className="ml-5 shrink grow min-w-72 max-w-5xl basis-0 ">
-        
-          <p className="pb-1">Portfolio ESG Score: <span className="text-green-700 text-2xl font-bold">{average_esg_score.toFixed(2)}</span></p>
-          <p className="pb-1">Portfolio Annual Return: <span className="text-green-700 text-2xl font-bold">{(portfolio_average_return * 100).toFixed(2)}%</span></p>
-          <p className="pb-1">S&P 500 Annual Return: <span className="text-green-700 text-2xl font-bold">{(sp500_average_return *100).toFixed(2)}%</span></p>
-          <p className="pb-1">Value of $10,000 invested in portfolio 10 years ago: <span className="text-green-700 text-2xl font-bold">${growth_of_10k_10_years.toFixed(2)}</span></p>
-          <p className="pb-1">Portfolio SD/Volatility: <span className="text-green-700 text-2xl font-bold">{(portfolio_volatility * 100).toFixed(2)}%</span></p>
-          <p className="pb-1">Portfolio Sharpe Ratio: <span className="text-green-700 text-2xl font-bold">{portfolio_sharpe.toFixed(2)}</span></p>
-          <p className="pb-1">Portfolio Size: <span className="text-green-700 text-2xl font-bold">{sorted_portfolio_data.length} stocks</span></p>
-          
+          <ComparisonTable data = {comparisonTableData}></ComparisonTable>
         </div>
+
+        <div className="flex-1 min-w-72 max-w-sm ">
+          <PieChart weights={portfolio_data.map((item) => item.weight * 100)} />
+        </div>
+
+        
       </div>
 <div className="relative">
       <table className="min-w-full bg-white mb-2 text-sm">

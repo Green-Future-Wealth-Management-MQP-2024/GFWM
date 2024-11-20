@@ -76,9 +76,10 @@ const RankingForm = () => {
   const weighing_scheme_choices = {
     choice1: "Equal Weights",
     choice2: "Markowitz Optimized",
-  }
+  };
 
-  const [volatilitySlider, setSliderValue] = useState(10);
+  const [volatilitySlider, setVolatilitySliderValue] = useState(10);
+  const [flexibilitySlider, setFlexibilitySliderValue] = useState(1);
   const [weighingScheme, setWeighingScheme] = useState("");
 
   const formRefs = useRef(
@@ -93,15 +94,18 @@ const RankingForm = () => {
   const [showResults, setShowResults] = useState(false);
 
   const importance_level_mapper = (level) => {
-    switch (level){
-      case 'notImportant': return 0;
-      case 'midImportance': return 5;
-      case 'highImportance': return 10;
+    switch (level) {
+      case "notImportant":
+        return 0;
+      case "midImportance":
+        return 5;
+      case "highImportance":
+        return 10;
     }
 
     return -1;
-  }
-  
+  };
+
   //TODO update to read new values
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -110,15 +114,15 @@ const RankingForm = () => {
 
     // Iterate through each column
     for (const importance_level in columns) {
-        // For each factor in the current column, map it to the column name
-        columns[importance_level].forEach((factor) => {
-            results[factor] = importance_level_mapper(importance_level);
-        });
+      // For each factor in the current column, map it to the column name
+      columns[importance_level].forEach((factor) => {
+        results[factor] = importance_level_mapper(importance_level);
+      });
     }
     //for the time being until we added another slider
-    results['flexibility'] = 0;
-    results['risk_appetite'] = volatilitySlider/100.0;
-    results['weighing_scheme'] = weighing_scheme_choices[weighingScheme];
+    results["flexibility"] = 0;
+    results["risk_appetite"] = volatilitySlider / 100.0;
+    results["weighing_scheme"] = weighing_scheme_choices[weighingScheme];
     console.log("submitted: ", results); // or send to an API or other destinations
 
     // Send the data to the server
@@ -155,19 +159,35 @@ const RankingForm = () => {
           factor_text_map={factor_text_map}
         />
 
-        {/* Slider */}
-        <div style={{ margin: "20px 0" }}>
-          <label>Conservative</label>
+        {/* Sliders 
+          flexiblity*/}
+        <p>Rate your flexibility with these ESG preferences.</p>
+        <div className="w-3/4 flex items-center space-x-4">
+          <span className="text-gray-600 text-lg whitespace-nowrap">Not flexible</span>
           <input
             type="range"
-            min="1"
+            min="0"
+            max="20"
+            value={flexibilitySlider}
+            onChange={(e) => setFlexibilitySliderValue(e.target.value)}
+            className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
+          />
+          <span className="text-gray-600 text-lg whitespace-nowrap">Most flexible</span>
+        </div>
+        <p>Rate your risk level.</p>
+        {/* volatility / risk slider */}
+        <div className="w-3/4 flex items-center space-x-4">
+          <span className="text-gray-600 text-lg whitespace-nowrap">Conservative</span>
+          <input
+            type="range"
+            min="4"
             max="16"
             value={volatilitySlider}
-            onChange={(e) => setSliderValue(e.target.value)}
-            style={{ width: "80%", margin: "0 10px" }}
+            onChange={(e) => setVolatilitySliderValue(e.target.value)}
+            className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
-          <label>Aggressive</label>
-          <div>Selected Value: {volatilitySlider}%</div>
+          <span className="text-gray-600 text-lg whitespace-nowrap">Aggressive growth</span>
+          {/* <div>Selected Value: {volatilitySlider}%</div> */}
         </div>
 
         {/* Binary Choice */}
