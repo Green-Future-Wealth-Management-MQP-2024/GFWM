@@ -61,6 +61,8 @@ def calculate_portfolio(tickers, target_volatility, use_markowitz):
                                      stop=0.25/252, num=20)
 
         bounds = [0.5/n, 3.0/n]
+        #TODO speed up: precalculate the markowitz ideal portfolio for all the combinations of factors
+        # then run markowitz again after the client edits their portfolio and chooses to recalculate the weights
         markowitz_portfolios = markowitz_optimization.calculate_optimal_portfolios(true_mean_returns=mean_log_returns,
                                                                                    adjusted_mean_returns=mean_log_returns,
                                                                                    true_cov=true_cov_matrix,

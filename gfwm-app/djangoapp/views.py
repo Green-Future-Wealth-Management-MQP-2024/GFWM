@@ -52,7 +52,7 @@ def submit_form(request):
         
         primary_tickers = primary_results['ticker']
         
-        print(primary_tickers)
+        #print(primary_tickers)
         
         # calculate best fit portfolio for the client
         ideal_portfolio_weights, expected_return, expected_volatility, sharpe = calculate_portfolio(primary_tickers, target_volatility, 
