@@ -14,8 +14,8 @@ const PieChart = ({ weights }) => {
   // Find the drop-off point
   let dropIndex = sortedWeights.length;
   for (let i = 1; i < sortedWeights.length; i++) {
-    // Drop-off threshold: < 20% of the previous value
-    if (sortedWeights[i] < largestWeight * 0.5) {
+    // Drop-off threshold: < 1/3 of highest weight
+    if (sortedWeights[i] < largestWeight / 3.0) {
       dropIndex = i;
       break;
     }

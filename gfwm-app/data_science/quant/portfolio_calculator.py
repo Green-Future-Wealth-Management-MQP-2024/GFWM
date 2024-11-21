@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import data_science.quant.markowitz_optimization as markowitz_optimization
+from math import floor
 
 #TODO move this to .env
 # risk free rate based of historical average of 30d yield
@@ -35,7 +36,7 @@ def calculate_portfolio(tickers, target_volatility, use_markowitz):
         target_returns = np.linspace(start=pow(ANNUAL_RISK_FREE_RATE+1, 1/365.0) - 1, 
                                     stop=0.3/252, num=80)
         
-        bounds = [0.333/n, 3.0/n]
+        bounds = [0.5/n, 4.0/n]
         markowitz_portfolios = markowitz_optimization.calculate_optimal_portfolios(true_mean_returns=mean_log_returns,
                                                                                    adjusted_mean_returns=mean_log_returns,
                                                                                    true_cov=true_cov_matrix,
@@ -62,19 +63,32 @@ def calculate_portfolio(tickers, target_volatility, use_markowitz):
         
         alpha = target_volatility / tangent_portfolio['annual_volatility']
         
+        # round alpha down to nearest 5% for simplicity in valuing cash position
+        # alpha is percent allocated to portfolio, 1-alpha is cash
+        if alpha > 0.975:
+            alpha = 0.975
+        else:
+            alpha = floor(alpha * 20) / 20.0
+        
         # in most cases, target volatility is less than tangent portfolio:
         if alpha <= 1:
             print(f'alpha: {alpha}')
             print(tangent_portfolio)
-            ideal_weights = np.array(alpha * tangent_portfolio['weights']).reshape(n, 1)  
+            ideal_weights = np.array(alpha * tangent_portfolio['weights']).reshape(n, 1)
         
         # rare case: the client's volatility tolerance is higher than the tangent portfolio
         # find the portfolio with the closest volatility
         # assuming there is a portfolio that high
         else:
-            closest_portfolio = markowitz_portfolios.iloc[markowitz_portfolios.loc[tangent_portfolio_index:, 'annual_volatility'].sub(target_volatility).abs().argmin()]
+            #TODO debug this case giving returns around 5%, not 15+
+            #for the time being, this case never hits as volatility input doesn't go this high
+            closest_portfolio_index = markowitz_portfolios.loc[tangent_portfolio_index:, 'annual_volatility'].sub(target_volatility).abs().argmin()
+            closest_portfolio = markowitz_portfolios.iloc[closest_portfolio_index]
+            print(tangent_portfolio_index, closest_portfolio_index)
             print(closest_portfolio)
             ideal_weights = np.array(closest_portfolio['weights']).reshape(n, 1)
+            
+        print(sum(ideal_weights))
 
     #not markowitz -> equal weights
     else:

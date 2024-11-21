@@ -84,7 +84,7 @@ def calculate_optimal_portfolios(true_mean_returns, adjusted_mean_returns, true_
     
     def solve_qp(target_return):
         # Run quadratic programming to minimize 1/2 * x^T cov * x with constraints
-        solution = solvers.qp(P=adjusted_cov, q=q, G=G, h=h, A=A, b=matrix([target_return, 0.999], (2, 1)))
+        solution = solvers.qp(P=adjusted_cov, q=q, G=G, h=h, A=A, b=matrix([target_return, 0.999999], (2, 1)))
     
         # Check solver status
         if solution['status'] == 'optimal':

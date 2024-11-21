@@ -180,7 +180,7 @@ const RankingForm = () => {
           <span className="text-gray-600 text-lg whitespace-nowrap">Conservative</span>
           <input
             type="range"
-            min="4"
+            min="5"
             max="16"
             value={volatilitySlider}
             onChange={(e) => setVolatilitySliderValue(e.target.value)}
