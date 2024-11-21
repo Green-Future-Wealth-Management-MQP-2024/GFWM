@@ -1,6 +1,19 @@
 import pandas as pd
 
-def filter_stocks(environment, humanRights, employeeSatisfaction, productResponsibility, governance, community, bestPractices, risk, flexibility):
+
+def filter_stocks(esg_preferences, esg_flexibility):
+    
+    environment = esg_preferences['environment']
+    humanRights = esg_preferences['human_rights']
+    employeeSatisfaction = esg_preferences['workforce']
+    productResponsibility = esg_preferences['product_responsibility']
+    governance = esg_preferences['shareholders']
+    community = esg_preferences['community']
+    bestPractices = esg_preferences['management']
+
+    risk = 3
+    flexibility = round(esg_flexibility/4, 0)
+    
     averaged_data = pd.read_csv('public/preprocessed.csv')
     # User responses to the questionnaire
     user_preferences = {
@@ -27,9 +40,7 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
     # Calculate base weights based on preferences
     total_importance = sum(user_preferences[key] for key in preference_to_column_mapping)
     weights = {key: user_preferences[key] / total_importance for key in preference_to_column_mapping}
-    # Adjust weights based on flexibility (higher flexibility reduces preference strictness)
-    flexibility_adjustment = 1 - (0.05 * (5 - flexibility))  # Flexibility scales from 0.95 to 1.00
-    adjusted_weights = {key: weight * flexibility_adjustment for key, weight in weights.items()}
+    
     # Compatibility score calculation with penalties for deviation
     for index, row in averaged_data.iterrows():
         score = 100  # Start with a perfect score
@@ -37,6 +48,7 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
             if key in ['How flexible are you with your preferences in stocks', 'What is the risk you are willing to take']:
                 continue
             column = preference_to_column_mapping.get(key)
+            threshold = 50
             if value == 1:
                 continue  # Skip this preference as it is not important
             elif value == 2:
@@ -95,12 +107,13 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
     # Top stocks based on compatibility score
     top_100_stocks = df_grouped.nlargest(100, 'compatibility_score').reset_index()
 
-    result = {
-        'top_100': top_100_stocks[['ticker', 'name', 'annual_return', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']].to_dict(orient='records'),
-        'snp500_compatibility': df_grouped[['ticker', 'compatibility_score']].to_dict(orient='records'),
-    }
+    top_100 = top_100_stocks[['ticker', 'name', 'annual_return', 'sd', 'compatibility_score', 'esg', 'environment', 'social', 'governance']]
+    snp500_compatibility = df_grouped[['ticker', 'compatibility_score']]
 
-    return(result)
+
+
+
+    return(top_100, snp500_compatibility)
 
 
 
