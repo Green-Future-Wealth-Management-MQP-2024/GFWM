@@ -11,8 +11,7 @@ const LandingPage = () => {
         <h1>Welcome to Our ESG Questionnaire!</h1>
         <p>Thank you for taking the time to answer these questions.</p>
         <p>
-          Rank each cause below from not important to very important on a scale
-          1-5.
+          Classify each factor below from not important to very important to your investments.
           <br />
           If you so choose, you will also be able to contact Green Future Wealth
           Management to book a complimentary initial consultation today to
