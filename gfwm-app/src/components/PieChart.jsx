@@ -34,7 +34,7 @@ const PieChart = ({ weights }) => {
   const labels = [
     `Top ${dropIndex} stocks`, // Label for the significant group
     `Other ${others.length} stocks`, // Label for the rest
-    "Not allocated",
+    "Cash Position",
   ];
   const values = [top_stocks_total, other_stocks_total, not_allocated];
 

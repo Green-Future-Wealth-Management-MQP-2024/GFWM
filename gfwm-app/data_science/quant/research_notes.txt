@@ -25,4 +25,11 @@ weights backed out of https://investor.vanguard.com/investment-products/list/all
 11/18 andrew feedback
 sp volatility to compare
 number of stocks in top 90%
-    
+
+
+11/20
+
+different risk measures
+
+lower downside semi variance
+instead of averaging x-xbar, only include if x < xbar
