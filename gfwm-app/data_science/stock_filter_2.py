@@ -100,9 +100,6 @@ def filter_stocks(environment, humanRights, employeeSatisfaction, productRespons
         'snp500_compatibility': df_grouped[['ticker', 'compatibility_score']].to_dict(orient='records'),
     }
 
-
-
-
     return(result)
 
 
