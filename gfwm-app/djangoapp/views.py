@@ -22,13 +22,22 @@ def submit_form(request):
         required_factors = ["environment", "human_rights", "community", "workforce",
                             "product_responsibility", "shareholders", "management"]
         
-        missing_keys = [key for key in required_factors + ['risk_appetite', 'flexibility'] if key not in client_responses.keys()]
+        avoid_factors = ['avoid_fossil_fuels', 'avoid_weapons']
+        
+        missing_keys = [key for key in required_factors + avoid_factors + ['flexibility', 'risk_appetite']
+                        if key not in client_responses.keys()]
         if len(missing_keys) > 0:
             return JsonResponse({"error": f"Missing keys: {missing_keys}"}, status=400)
         
         # prepare client responses for filtering and markowitz
         
+        # drag and drop factors
         esg_preferences = {key: value for (key, value) in client_responses.items() if key in required_factors}
+        
+        # avoid factors (checkbox)
+        for avoid_factor in avoid_factors:
+            esg_preferences[avoid_factor] = client_responses[avoid_factor]
+        
         esg_flexibility = client_responses['flexibility']
         target_volatility = client_responses['risk_appetite']
         
