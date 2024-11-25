@@ -7,6 +7,8 @@ import json
 from data_science.stock_filter import filter_stocks
 from data_science.quant.portfolio_calculator import calculate_portfolio, ANNUAL_RISK_FREE_RATE
 
+from data_science.quant.portfolio_history import portfolio_history
+
 @csrf_exempt
 def hello_api(request):
     return JsonResponse({"message": f"Hello from the Django API! {request}"})
@@ -57,6 +59,10 @@ def submit_form(request):
         
         portfolio['weight'] = ideal_portfolio_weights
         
+        spy_timeseries, portfolio_timeseries, dates, spy_max_dd, portfolio_max_dd = portfolio_history(portfolio[['ticker',
+                                                                                                                 'weight']]
+                                                                                                      .set_index('ticker', drop = True))
+        
         #calculate summary statistics        
         summary_statistics = {
             "portfolio_esg_score": portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
@@ -70,6 +76,13 @@ def submit_form(request):
             "sp500_average_return": 0.1345,
             "sp500_average_volatility": 0.156,
             "sp500_sharpe": (0.1345 - ANNUAL_RISK_FREE_RATE) / 0.156,
+            
+            "spy_max_dd": spy_max_dd,
+            "portfolio_max_dd": portfolio_max_dd,
+            
+            "spy_timeseries": spy_timeseries,
+            "portfolio_timeseries": portfolio_timeseries,
+            "timeseries_dates": dates,
             
             "portfolio_weighing_scheme": use_markowitz
         }

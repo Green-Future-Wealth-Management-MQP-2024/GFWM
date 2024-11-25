@@ -15,6 +15,7 @@ import StockSearchModal from "./StockSearchModal";
 
 import ComparisonTable from "./ComparisonTable";
 import PieChart from "./PieChart";
+import TimeseriesChart from "./TimeseriesChart"
 
 ChartJS.register(
   CategoryScale,
@@ -45,6 +46,11 @@ const RankingFormResults = ({ results, columns }) => {
     sp500_average_return,
     sp500_average_volatility,
     sp500_sharpe,
+    spy_max_dd,
+    portfolio_max_dd,
+    spy_timeseries,
+    portfolio_timeseries,
+    timeseries_dates,
   } = summary_statistics;
 
   // MANAGE STOCK DATA OBJECT
@@ -226,6 +232,7 @@ const RankingFormResults = ({ results, columns }) => {
 
   const rowRefs = React.useRef([]);
 
+  // VALUES FOR COMPARISON TABLE
   const comparisonTableData = [
     {
       field: "Average Annual Return",
@@ -237,15 +244,20 @@ const RankingFormResults = ({ results, columns }) => {
       portfolio: `${(portfolio_volatility * 100).toFixed(2)}%, delta: ${((portfolio_volatility - sp500_average_volatility) * 100).toFixed(2)}%`,
       sp500: `${(sp500_average_volatility * 100).toFixed(2)}%`,
     },
-    {
-      field: "Growth of $10k in 10 years",
-      portfolio: `$${growth_of_10k_10_years.toFixed(2)}`,
-      sp500: `$${(10000 * Math.pow(1 + sp500_average_return, 10)).toFixed(2)}`,
-    },
+    // {
+    //   field: "Growth of $10k in 10 years",
+    //   portfolio: `$${growth_of_10k_10_years.toFixed(2)}`,
+    //   sp500: `$${(10000 * Math.pow(1 + sp500_average_return, 10)).toFixed(2)}`,
+    // },
     {
       field: "Sharpe Ratio",
       portfolio: `${portfolio_sharpe.toFixed(2)}`,
       sp500: `${sp500_sharpe.toFixed(2)}`,
+    },
+    {
+      field: "Max Drawdown",
+      portfolio: `${(portfolio_max_dd * 100).toFixed(2)}%`,
+      sp500: `${(spy_max_dd * 100).toFixed(2)}%`,
     },
     {
       field: "Average ESG Score",
@@ -359,6 +371,11 @@ const RankingFormResults = ({ results, columns }) => {
 
         <div className="ml-5 shrink grow min-w-72 max-w-5xl basis-0 ">
           <ComparisonTable data={comparisonTableData}></ComparisonTable>
+        </div>
+
+        <div className="w-1/2">
+          <h2 className="text-lg font-bold mb-4">Portfolio vs S&P 500 10 year chart, % growth</h2>
+          <TimeseriesChart portfolio={portfolio_timeseries} spy={spy_timeseries} dates = {timeseries_dates}/>
         </div>
 
         <div className="flex-1 min-w-72 max-w-sm ">
