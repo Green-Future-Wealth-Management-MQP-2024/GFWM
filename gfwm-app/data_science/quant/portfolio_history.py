@@ -9,11 +9,9 @@ def portfolio_history(portfolio):
     
     tickers = portfolio.index.tolist()
     
-    print(tickers)
-    
     tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
     
-    # TODO clean this up using pandas tricks
+    # TODO clean this up using pandas objects instead of python lists
     
     # print(len(spy_log_returns))
     # print(len(tickers_log_returns))
@@ -50,11 +48,19 @@ def portfolio_history(portfolio):
             
         ticker_timeseries[ticker] = [value * weight for value in timeseries]
     
-    # initially all 0's. days + 1 because start is init_value, then data start
+    # initially all 0's. 
+    # days + 1 because start is init_value, then data actually starts
     portfolio_timeseries = [0] * (days + 1)
     # add portfolios one by one, elementwise, to result
     for timeseries in ticker_timeseries.values():
         portfolio_timeseries = [p + t for p, t in zip(portfolio_timeseries, timeseries)]
+        
+    # add cash position earning risk free rate:
+    t = np.arange(start = 0, stop = days + 1)
+    portfolio_cash_start = 100 * (1 - (portfolio['weight'].sum()))
+    
+    portfolio_cash = portfolio_cash_start * np.exp((cash_daily_return) * t)  # Exponential growth formula
+    portfolio_timeseries = [p + c for p, c in zip(portfolio_timeseries, portfolio_cash)]
         
     # calculate max drawdown as a percent
     # https://quant.stackexchange.com/a/43544/78596
