@@ -1,22 +1,30 @@
-import React from 'react';
+import React from "react";
 
 const ComparisonTable = ({ data }) => {
   return (
     <div>
-      <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
+      <table className="w-full border-collapse table-auto text-left">
         <thead>
           <tr>
-            <th>Field</th>
-            <th>Portfolio</th>
-            <th>S&P 500</th>
+            <th className="px-4 py-2 font-semibold text-gray-700">Field</th>
+            <th className="px-4 py-2 font-semibold text-gray-700">Portfolio</th>
+            <th className="px-4 py-2 font-semibold text-gray-700">S&P 500</th>
           </tr>
         </thead>
         <tbody>
           {data.map((row, index) => (
-            <tr key={index}>
-              <td>{row.field}</td>
-              <td><span className="text-green-700 text-2xl font-bold">{row.portfolio}</span></td>
-              <td><span className="text-light-green-700 text-2xl font-bold">{row.sp500}</span></td>
+            <tr key={index} className="border-b">
+              <td className="w-[30%] px-2">{row.field}</td>
+              <td className="w-[50%] px-4">
+                <span className="text-green-700 text-xl font-bold">
+                  {row.portfolio}
+                </span>
+              </td>
+              <td className="w-[20%] px-4">
+                <span className="text-light-green-700 text-xl font-bold">
+                  {row.sp500}
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>

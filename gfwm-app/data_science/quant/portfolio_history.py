@@ -80,7 +80,7 @@ def portfolio_history(portfolio):
     spy_max_drawdown = get_max_drawdown(pd.Series(spy_timeseries))
     portfolio_max_drawdown = get_max_drawdown(pd.Series(portfolio_timeseries))
     
-    return spy_timeseries[::7], portfolio_timeseries[::7], tickers_log_returns['date'][::7].tolist(), spy_max_drawdown, portfolio_max_drawdown
+    return spy_timeseries[::5], portfolio_timeseries[::5], tickers_log_returns['date'][::5].tolist(), spy_max_drawdown, portfolio_max_drawdown
 
 
 # d = {'ticker': ['ABNB', 'AAPL', 'MSFT'], 'weight': [0.3, 0.3, 0.4]}
