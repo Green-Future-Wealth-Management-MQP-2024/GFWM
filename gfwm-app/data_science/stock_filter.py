@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from math import floor
 
 from functools import reduce
@@ -10,133 +11,100 @@ def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False
     Filters the ESG dataset based off the user_preferences dict.
     
     Args:
-        user_preferences (dict):
-        count (int): Unused
+        user_preferences (dict): Must include the following keys: "environment", 
+                                    "human_rights", "community", "workforce", "product_responsibility", 
+                                    "shareholders", "management",
+                                    'avoid_fossil_fuels', 'avoid_weapons'
+        count (int): How many stocks to return
         flexibility (int 0 - 100): Percent to extend the acceptable threshold
         tickers_only (boolean): Whether to return a series of only tickers or dataframe with more columns
         
     Returns:
-        (Primary dataframes, dict of secondary dataframes): First df: stocks filtered out using user ratings of mid or high importance\n
-        dict['factor']: stocks not in primary dataset with high scores in 'factor' and good scores in factors rated mid or high\n
-        Note that factors rated as not important are never used for filtering in either primary or secondary data.\n
-        Columns: ticker, esg_combined, controversy, environment, social, governance,
-        human_rights, community, workforce, product_responsibility, shareholders, management, 
-        name, mean_return, volatility, compatibility
-
+        (df['ticker', 'compatibility', 'environment, 'social, 'governance']):\n
+        One row per ticker in the S&P 500, sorted by compatibility score
     """
-    performance_summaries = pd.read_csv("data_science/quant/sp500_performance_summaries.csv", index_col=0).transpose()
-
-    performance_summaries['ticker'] = performance_summaries.index
-    performance_summaries.set_index('ticker', inplace=True)
-    performance_summaries.columns = ['mean_return', 'volatility']
     
+    # already preprocessed to contain only stocks for which we have financial data
+    # contains averages in various esg columns as well as fossil fuels & weapons yes/no data
     data = pd.read_csv("data_science/preprocessed_refinitiv.csv")
     
-    # combine refinitiv data with performance data
-    data = data.merge(performance_summaries, how = 'inner', on = 'ticker')
+    #print(data)    
     
-    #print(data)
-    
-    top_quantile_threshold = 0.9 - flexibility/200.0
-    high_quantile_threshold = 0.55  - flexibility/100.0
-    mid_quantile_threshold = 0.45 - flexibility/100.0
-    low_quantile_threshold = 0.3
+    # masks to use when excluding fossil fuels and/or weapons
+    exclusion_masks = []
     
     compatibility_penalties = {}
     
-    # find three quantiles for each factor: 
-    #   0: to use when factor is considered in primary result
-    #   1: to use when considered in secondary result as high importance
-    #   2: to use when considered in secondary result as mid importance
-    factor_quantiles = {}
+    rated_factors = []
     
     # split the user preferences by primary and secondary
     for factor, value in user_preferences.items():
-        low = data[factor].quantile(low_quantile_threshold)
-        mid = data[factor].quantile(mid_quantile_threshold)
-        high = data[factor].quantile(high_quantile_threshold)
-        top = data[factor].quantile(top_quantile_threshold)
         
         if value == 10:
-            factor_quantiles[factor] = (high, mid, mid) # in secondary results always considered mid
-            
+            rated_factors.append(factor)
             # lose points for lower ranking in important factors
-            compatibility_penalties[factor] = 2
+            compatibility_penalties[factor] = 10
+        
         elif value == 5:
-            factor_quantiles[factor] = (low, top, mid)
+            rated_factors.append(factor)
             # lose less points for lower ranking in mid importance factors
-            compatibility_penalties[factor] = 1
+            compatibility_penalties[factor] = 5
+        
+        elif value == True:
+            #means exclude this factor (either fossil fuels or weapons)
+            column_name = factor.split('avoid_')[1]
+            exclusion_masks.append(data[column_name].to_numpy())
         else:
             # don't lose points in factors ranked not important
             compatibility_penalties[factor] = 0
-
+    
+    combined_exclusion_mask = np.ones(len(data), dtype = bool)
+    #combine exclusion masks, not the result to be used as a filter
+    if(len(exclusion_masks) > 0):
+        combined_exclusion_mask = ~np.logical_and.reduce(exclusion_masks)
+    
     #calculate compatibility scores for all stocks
     # calculating it after filtering would rank within the filtered results
     # use decile ranks within important columns
     
     def calculate_row_compatibility(row):
-        ranks = row.rank(pct=True).values
-        #categorize ranks into 5 quintiles (4th from top, 3rd from top, ..top): 
-        #                                   bottom 10%, next 10% etc up to top 10%
-        deciles = [4 - min(4, floor(r * 5)) for r in ranks]
+        # rank each factor within its column, in descending order
+        ranks = {factor: data[factor].rank(ascending=False, pct=True)[row.name] for factor in rated_factors}
+    
+        # comptibility calculation:
+        # calculate how far the company is down the ranking, taking into account flexibility
+        # with flexibility 0, rank  <= 15% results in 0 penalty
+        #                      15 < rank <= 25 results in 1 penalty
+        #                         etc each 10% increase in rank increases penalty by 1
+        # ex: ABC ranks in the 42% percentile with flexibility 15
+        # taking into account flexibility, the highest rank to still hold no penalty is 25%
+        # ABC is 2 levels up from that: 25-35, 35-45
+        # https://www.desmos.com/calculator/lfyjozqfcn
         
-        #calculate penalties for low deciles in important columns
-        #TODO: convert to dot product?
+        unweighted_penalties = {factor: max(0, floor(10*(r - flexibility) - 0.501)) for factor, r in ranks.items()}
+        
+        # then each of these penalties is weighed by that factor's importance to calculate the total penalty
+        
         score = 100
-        for idx, factor in enumerate(row.index):
-            score = score - compatibility_penalties[factor] * deciles[idx]
-        return score
+        for factor in rated_factors:
+            score = score - compatibility_penalties[factor] * unweighted_penalties[factor]
+        return max(0, score)
         
+    # apply comptability calculation described to each row
+    data['compatibility'] = data.apply(calculate_row_compatibility, axis = 1)
     
-    data['compatibility'] = data[factor_quantiles.keys()].apply(calculate_row_compatibility, axis = 1)
+    # now filter out rows that client wants to exclude
+    data = data[combined_exclusion_mask]
     
+    # sort by compatibility score
+    data.sort_values(by='compatibility', ascending=False, inplace=True)
     
-    # now filter rows that meet the user's criteria
+    results = data[['ticker', 'compatibility', 'environment', 'social', 'governance']]
     
-    # how to find stocks not in primary list that could be secondary options:
-    # top stocks if one mid importance column was high and the rest of (mid and high) were mid
-    
-    primary_masks = []
-    secondary_masks = {}
-    for factor, quantiles in factor_quantiles.items():
-        
-        if(user_preferences[factor] == 10):
-        
-            # use thresholds used for primary filtering
-            primary_masks.append(data[factor] >= quantiles[0])
-        elif(user_preferences[factor] == 5):
-            #calculate the masks when the factor is most important and rest are mid importance
-            masks = []
-            for other_factor in factor_quantiles.keys():
-                if(other_factor == factor):
-                    # treat this factor as high importance
-                    masks.append(data[factor] >= quantiles[1])
-                else:
-                    # treat all others as mid importance
-                    masks.append(data[factor] >= quantiles[2])
-            secondary_masks[factor] = masks        
-    
-    # combine masks using element-wise AND
-    primary_combined_mask = reduce(lambda mask1, mask2: [el1 and el2 for el1, el2 in zip(mask1, mask2)],
-                                   primary_masks)
-    primary_filtered_data = data[primary_combined_mask].reset_index(drop=True)
-
     if (tickers_only):
-        return primary_filtered_data['ticker']
-    
-    # combine secondary masks using element-wise AND
-    secondary_combined_masks = {factor: reduce(lambda mask1, mask2: [el1 and el2 for el1, el2 in zip(mask1, mask2)], 
-                                     masks) for factor, masks in secondary_masks.items()}
-    
-    # secondary masks should not include anything in primary
-    secondary_combined_masks = {factor: [m2 and not m1 for m1, m2 in zip(primary_combined_mask, combined_mask)]
-                                         for factor, combined_mask in secondary_combined_masks.items()}
-    
-    secondary_filtered_data = {factor: data[mask].reset_index(drop = True) for factor, mask in secondary_combined_masks.items()}
-    
-    
+        return results['ticker'].head(count)
 
-    return primary_filtered_data, secondary_filtered_data
+    return results
 
 # only returns tickers
 def filter_stocks_mass(user_preference_dicts, count=100, flexibility=0):

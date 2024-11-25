@@ -4,8 +4,8 @@ from .models import SurveyResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-from data_science.stock_filter_2 import filter_stocks
-from data_science.quant.portfolio_calculator import calculate_portfolio
+from data_science.stock_filter import filter_stocks
+from data_science.quant.portfolio_calculator import calculate_portfolio, ANNUAL_RISK_FREE_RATE
 
 @csrf_exempt
 def hello_api(request):
@@ -44,44 +44,42 @@ def submit_form(request):
         use_markowitz = (client_responses['weighing_scheme'] == 'Markowitz Optimized')
         
         # filter stocks using client responses
-        top_100, snp500_compatibility = filter_stocks(esg_preferences, esg_flexibility)
+        # df with two columns: ticker, compatibility
+        filter_results = filter_stocks(user_preferences= esg_preferences, flexibility= esg_flexibility)
         
-        primary_tickers = top_100[['ticker', 'compatibility_score']]
+        # this value determines how many stocks to include in portfolio
+        portfolio = filter_results.head(100).copy()
         
         # calculate best fit portfolio for the client
-        ideal_portfolio_weights, expected_return, expected_volatility, sharpe = calculate_portfolio(primary_tickers, target_volatility, 
-                                                                               use_markowitz=use_markowitz)
+        ideal_portfolio_weights, expected_return, expected_volatility, sharpe = calculate_portfolio(portfolio[['ticker', 'compatibility']], 
+                                                                                                    target_volatility,
+                                                                                                    use_markowitz)
         
-
+        portfolio['weight'] = ideal_portfolio_weights
+        
         #calculate summary statistics        
         summary_statistics = {
-            "average_esg_score": top_100[['environment', 'social', 'governance']].to_numpy().mean(),
+            "portfolio_esg_score": portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
             
             "portfolio_average_return": expected_return,
-            "sp500_average_return": 0.1345,
             "growth_of_10k_10_years": 1e4 * (1 + expected_return) ** 10,
             
             "portfolio_volatility": expected_volatility,
             "portfolio_sharpe": sharpe,
             
+            "sp500_average_return": 0.1345,
+            "sp500_average_volatility": 0.156,
+            "sp500_sharpe": (0.1345 - ANNUAL_RISK_FREE_RATE) / 0.156,
+            
             "portfolio_weighing_scheme": use_markowitz
         }
-
-    
-         # Ensure ideal_portfolio_weights has exactly 100 entries
-        if len(ideal_portfolio_weights) < 100:
-            ideal_portfolio_weights += [0] * (100 - len(ideal_portfolio_weights))
-
-        top_100['weight'] = ideal_portfolio_weights
-
         
         #package data into a dict of dicts for JsonResponse
-        
     
         return JsonResponse({
-            'top_100': top_100.to_dict(orient='records'),
-            'summary_statistics': summary_statistics,
-            'snp500_compatibility': snp500_compatibility.to_dict(orient='records')
+            'sp500_compatibility': filter_results.set_index('ticker')['compatibility'].to_dict(),
+            'portfolio': portfolio.set_index('ticker')['weight'].to_dict(),
+            'summary_statistics': summary_statistics
             })
 
     return JsonResponse({"error": "Invalid request method."}, status=401)

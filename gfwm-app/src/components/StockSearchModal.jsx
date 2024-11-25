@@ -39,7 +39,7 @@ const StockSearchModal = ({ isOpen, onClose, stocks, currentStocks, onAddToPortf
               <tr>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Symbol</th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Name</th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">ESG</th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Combined ESG</th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Compatibility</th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Edit</th>
               </tr>
@@ -51,8 +51,8 @@ const StockSearchModal = ({ isOpen, onClose, stocks, currentStocks, onAddToPortf
                 <tr key={stock.ticker} onClick={() => onClickStock(stock.ticker)} className="hover:bg-gray-100 cursor-pointer">
                   <td className="py-1 px-2 border-b border-gray-300">{stock.ticker}</td>
                   <td className="py-1 px-2 border-b border-gray-300">{stock.name}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{stock.esg.toFixed(2)}</td>
-                <td className="py-1 px-2 border-b border-gray-300">{stock.compatibility_score.toFixed(0)}%</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{stock.esg_combined.toFixed(2)}</td>
+                <td className="py-1 px-2 border-b border-gray-300">{stock.compatibility.toFixed(0)}%</td>
                   <td className="py-1 px-2 border-b border-gray-300">
                   {isInPortfolio ? (
                         <button

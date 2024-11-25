@@ -26,21 +26,13 @@ def round_alpha(alpha):
 
 
 # TODO change volatility target to range
-def calculate_portfolio(primary_tickers_compatibility, target_volatility, use_markowitz):
+def calculate_portfolio(ticker_compatibility_df, target_volatility, use_markowitz):
 
     performance_summaries = pd.read_csv("data_science/quant/sp500_performance_summaries.csv")
-    sp500_tickers = performance_summaries.columns.tolist()
+    #sp500_tickers = performance_summaries.columns.tolist()
 
-    filtered_tickers = primary_tickers_compatibility['ticker']
-    tickers_compatibility = {'ticker':[], 'compatibility_score':[]}
-
-    for i in range(len(filtered_tickers)):
-        if filtered_tickers[i] in sp500_tickers:
-            tickers_compatibility['ticker'].append(filtered_tickers[i])
-            tickers_compatibility['compatibility_score'].append(primary_tickers_compatibility['compatibility_score'][i])
-
-    tickers = tickers_compatibility['ticker']
-    # compatibility_scores = tickers_compatibility['compatibility_score']
+    tickers = ticker_compatibility_df['ticker']
+    compatibility_scores = ticker_compatibility_df['compatibility']
 
     # TODO move this check to filter stocks so it does not return tickers for which we don't have financial data
     # important note: tickers are in the same order in every data source

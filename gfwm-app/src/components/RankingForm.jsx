@@ -160,7 +160,7 @@ const RankingForm = () => {
           <input
             type="range"
             min="0"
-            max="20"
+            max="30"
             value={flexibilitySlider}
             onChange={(e) => setFlexibilitySliderValue(e.target.value)}
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
@@ -204,7 +204,7 @@ const RankingForm = () => {
         </button>
       </form>
 
-      {showResults && <RankingFormResults results={returnData} />}
+      {showResults && <RankingFormResults results={returnData} columns = {columns} />}
     </div>
   );
 };
