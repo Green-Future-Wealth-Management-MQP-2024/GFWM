@@ -8,6 +8,8 @@ useEffect (() => {
   setSearchTerm('');
   if (isOpen && selectedStocks.length > 0) {
     setSelectedCategory('selected');
+  } else {
+    setSelectedCategory('all');
   }
 }, [isOpen]);
 
@@ -33,7 +35,6 @@ useEffect (() => {
   });
 
   const sortedStocks = selectedCategory === 'all'
-    
     ? filteredStocks
     : selectedCategory === 'selected'
     ? filteredStocks.filter(stock => selectedStocks.includes(stock.ticker))
@@ -45,6 +46,8 @@ useEffect (() => {
         .filter(stock => stock[selectedCategory] !== undefined)
         .sort((a, b) => (b[selectedCategory] || 0) - (a[selectedCategory] || 0))
         .slice(0, 20);
+
+
 
   if (!isOpen) return null;
 
@@ -112,7 +115,25 @@ useEffect (() => {
             <thead className='sticky top-0 bg-white z-10'>
               <tr>
 
-                <th className=" border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
+                <th className="pl-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"> <input 
+                className='cursor-pointer'
+                type="checkbox"
+                checked={selectedStocks.length === sortedStocks.length}
+                onChange={() => {
+                  if (selectedStocks.length === sortedStocks.length) {
+                    setSelectedStocks([]);
+                  } // if all stocked in the current filter is in the selectedStocks, then clear the selectedStocks
+                
+                  else {
+                    setSelectedStocks(prevSelected => [
+                      ...prevSelected,
+                      ...sortedStocks
+                      .filter(stock => !prevSelected.includes(stock.ticker))
+                      .map(stock => stock.ticker)
+                    ]);
+                  }
+                }}
+                ></input> </th>
                 <th className="py-0 px-0 border-b-2 border-gray-300 text-left leading-4 text-gray-600"></th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Symbol</th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">Name</th>
