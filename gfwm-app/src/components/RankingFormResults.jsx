@@ -200,6 +200,13 @@ const RankingFormResults = ({ results, columns }) => {
     }
     setSortConfig({ key, direction });
   };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(value);
+  };
   //------------------------------
 
   // HANDLE TOP 20s OBJECT
@@ -282,6 +289,7 @@ const RankingFormResults = ({ results, columns }) => {
     },
   ];
 
+
   // OPEN TABLEAU DASHBOARD FOR SELECTED TICKER
   const [selectedTicker, setSelectedTicker] = React.useState(null);
 
@@ -332,28 +340,34 @@ const RankingFormResults = ({ results, columns }) => {
   //--------------
 
   //SCROLL TO TOP
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-  //ADD REMOVE
-  const handleAddToPortfolio = (added_stock) => {
-    //if not already in portfolio data, add it to the bottom
-    if (!portfolio_data.find((item) => item.ticker === added_stock.ticker)) {
-      setPortfolioData((prevData) => [...prevData, added_stock]);
-    }
-    setSelectedTicker(added_stock.ticker);
-  };
-
-  const handleRemoveFromPortfolio = (removed_stock) => {
-    //keep everything in portfolio data except removed stock
-    setPortfolioData(
-      portfolio_data.filter((item) => item.ticker !== removed_stock)
-    );
-    setSelectedTicker(removed_stock);
-  };
+    //ADD REMOVE
+    const handleAddToPortfolio = (stock) => {
+      if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
+        setPortfolioData((prevData) => [...prevData, stock]);
+      }
+      setSelectedTicker(stock.ticker);
+    };
+  
+    const handleRemoveFromPortfolio = (ticker) => {
+      setPortfolioData(portfolio_data.filter((item) => item.ticker !== ticker));
+      setSelectedTicker(ticker);
+    };
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [selectedStocks, setSelectedStocks] = useState([]);
+
+  const handleSelectStock = (ticker) => {
+    setSelectedStocks((prevSelected) =>
+      prevSelected.includes(ticker)
+        ? prevSelected.filter((item) => item !== ticker)
+        : [...prevSelected, ticker]
+    );
+    setSelectedTicker(ticker);
+  };
 
   return (
     <div className="ranking-form-results p-4 bg-white rounded-lg">
@@ -383,7 +397,7 @@ const RankingFormResults = ({ results, columns }) => {
         onClick={() => setIsModalOpen(true)}
         className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded mb-4"
       >
-        Search and Add Stocks
+        Edit Portfolio
       </button>
       <StockSearchModal
         isOpen={isModalOpen}
@@ -393,6 +407,9 @@ const RankingFormResults = ({ results, columns }) => {
         onAddToPortfolio={handleAddToPortfolio}
         onRemovePortfolio={handleRemoveFromPortfolio}
         onClickStock={openTableauDashboard}
+        selectedStocks={selectedStocks}
+        setSelectedStocks={setSelectedStocks}
+        handleSelectStock={handleSelectStock}
       />
       <div className="relative">
         <table className="min-w-full bg-white mb-2 text-sm">
@@ -484,8 +501,9 @@ const RankingFormResults = ({ results, columns }) => {
             </tr>
           </thead>
           <tbody>
-            {sorted_portfolio_data.map((item, index) => (
-              <tr
+            {sorted_portfolio_data.map((item, index) => {
+              const isSelected = selectedStocks.includes(item.ticker);
+              return (<tr
                 ref={(el) => (rowRefs.current[item.ticker] = el)}
                 key={item.ticker}
                 className={`hover:bg-gray-100 cursor-pointer ${
@@ -494,9 +512,17 @@ const RankingFormResults = ({ results, columns }) => {
                 onClick={() => openTableauDashboard(item.ticker)}
                 title="Show more"
               >
-                <td className="py-0 px-0 border-b border-gray-300 text-gray-400 text-right">
-                  {index + 1}
-                </td>
+                <td className="border-b text-right pl-2 border-gray-300 cursor-pointer " onClick={(e) => {e.stopPropagation(); handleSelectStock(item.ticker)}}>
+                      <input
+                        className='cursor-pointer'
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleSelectStock(item.ticker)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+              <td className="py-0 px-0 border-b border-gray-300 text-gray-400 text-right" onClick={(e) => {e.stopPropagation(); handleSelectStock(item.ticker)}}>{index +1}</td>
+              
                 <td className="py-1 px-2 border-b border-gray-300">
                   {item.ticker}
                 </td>
@@ -538,7 +564,8 @@ const RankingFormResults = ({ results, columns }) => {
                   </button>
                 </td>
               </tr>
-            ))}
+              )
+})}
           </tbody>
         </table>
       </div>
