@@ -1,8 +1,13 @@
 import pandas as pd
-import yfinance as yf
-import numpy as np
 
 data = pd.read_csv("data_science/Refinitiv ESG Final Data for Analysis.csv")
+
+tickers_to_keep = pd.read_csv("data_science/tickers_to_keep.csv")['ticker']
+
+performance_data = pd.read_csv("data_science/quant/sp500_performance_summaries.csv")
+
+company_data = pd.read_csv("data_science/company_data.csv")
+company_data.set_index('ticker', inplace=True)
 
 columns_to_keep = ['Symbol', 'Name', 'ESG Combined Score', 'ESG Controversies Score', 
                    'Environment Pillar Score', 'Social Pillar Score','Governance Pillar Score',
@@ -26,21 +31,42 @@ data = data.rename(columns={"Symbol": "ticker",
                             "Management Score": "management"
                             })
 
-# Delete rows containing the value 'Unknown' 
+numeric_columns_to_average = data.columns[2:]
+
+# Delete rows containing the value 'Unknown'
 data = data[~data.eq('Unknown').any(axis=1)]
 
-numeric_columns_to_average = data.columns[2:]
+# only keep the tickers for which we have financial data (are in the sp500 as of 11/2024)
+data = data[data['ticker'].isin(tickers_to_keep)]
 
 # for each ticker, calculate summary scores in each of the relevant columns
 # use exponential weighted average over the years for which we have data
+
+def map_company_data(boolean_input):
+    if boolean_input:
+        return 1
+    elif not boolean_input:
+        return 0
+    return -1
 
 def ewma_summaries(group):
     # Set span based on group size
     span = min(len(group), 10)
     #TODO selecting columns inside here, after the group by, is deprecated
-    last_row = group[numeric_columns_to_average].ewm(span = span).mean().iloc[-1]
-    last_row['name'] = group['name'].iloc[0]
-    return last_row.round(4)
+    last_row = group[numeric_columns_to_average].ewm(span = span).mean().iloc[-1].round(4)
+    
+    ticker = group['ticker'].iloc[0]
+    # get additional data based off ticker
+    additional_data = company_data.loc[ticker]
+    
+    last_row['name'] = additional_data['name']
+    last_row['annual_return'] = performance_data[ticker].iloc[0]
+    last_row['volatility'] = performance_data[ticker].iloc[1]
+    last_row['fossil_fuels'] = map_company_data(additional_data['fossil_fuels'])
+    last_row['weapons'] = map_company_data(additional_data['weapons'])
+    last_row['tobacco'] = map_company_data(additional_data['tobacco'])
+    
+    return last_row
 
 result = (
     data.groupby('ticker')
