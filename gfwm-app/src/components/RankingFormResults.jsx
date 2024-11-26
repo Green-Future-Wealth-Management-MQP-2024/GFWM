@@ -202,9 +202,9 @@ const RankingFormResults = ({ results, columns }) => {
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(value);
   };
   //------------------------------
@@ -289,7 +289,6 @@ const RankingFormResults = ({ results, columns }) => {
     },
   ];
 
-
   // OPEN TABLEAU DASHBOARD FOR SELECTED TICKER
   const [selectedTicker, setSelectedTicker] = React.useState(null);
 
@@ -340,22 +339,26 @@ const RankingFormResults = ({ results, columns }) => {
   //--------------
 
   //SCROLL TO TOP
-    const scrollToTop = () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-    //ADD REMOVE
-    const handleAddToPortfolio = (stock) => {
-      if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
-        setPortfolioData((prevData) => [...prevData, stock]);
-      }
-      setSelectedTicker(stock.ticker);
-    };
-  
-    const handleRemoveFromPortfolio = (ticker) => {
-      setPortfolioData(portfolio_data.filter((item) => item.ticker !== ticker));
-      setSelectedTicker(ticker);
-    };
+  //ADD REMOVE
+  const handleAddToPortfolio = (stock) => {
+    // if not already in portfolio, add it
+    if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
+
+      const stockWithWeight = { ...stock, weight: 0 }; // Add the weight field
+
+      setPortfolioData((prevData) => [...prevData, stockWithWeight]);
+    }
+    setSelectedTicker(stock.ticker);
+  };
+
+  const handleRemoveFromPortfolio = (ticker) => {
+    setPortfolioData(portfolio_data.filter((item) => item.ticker !== ticker));
+    setSelectedTicker(ticker);
+  };
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedStocks, setSelectedStocks] = useState([]);
@@ -503,69 +506,75 @@ const RankingFormResults = ({ results, columns }) => {
           <tbody>
             {sorted_portfolio_data.map((item, index) => {
               const isSelected = selectedStocks.includes(item.ticker);
-              return (<tr
-                ref={(el) => (rowRefs.current[item.ticker] = el)}
-                key={item.ticker}
-                className={`hover:bg-gray-100 cursor-pointer ${
-                  selectedTicker === item.ticker ? "bg-gray-100" : ""
-                }`}
-                onClick={() => openTableauDashboard(item.ticker)}
-                title="Show more"
-              >
-                <td className="border-b text-right pl-2 border-gray-300 cursor-pointer " onClick={(e) => {e.stopPropagation(); handleSelectStock(item.ticker)}}>
-                      <input
-                        className='cursor-pointer'
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectStock(item.ticker)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </td>
-              <td className="py-0 px-0 border-b border-gray-300 text-gray-400 text-right" onClick={(e) => {e.stopPropagation(); handleSelectStock(item.ticker)}}>{index +1}</td>
-              
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.ticker}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.name}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {(item.annual_return * 100).toFixed(2)}%
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {(item.volatility * 100).toFixed(2)}%
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.esg_combined.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.environment.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.social.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.governance.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300 ">
-                  {item.compatibility.toFixed(0)}%
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {(item.weight * 100).toFixed(2)}%
-                </td>
-                <td
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveFromPortfolio(item.ticker);
-                  }}
+              return (
+                <tr
+                  ref={(el) => (rowRefs.current[item.ticker] = el)}
+                  key={item.ticker}
+                  className={`hover:bg-gray-100 cursor-pointer ${
+                    selectedTicker === item.ticker ? "bg-gray-100" : ""
+                  }`}
+                  onClick={() => openTableauDashboard(item.ticker)}
+                  title="Show more"
                 >
-                  <button className="bg-red-500 text-white px-1 rounded">
-                    X
-                  </button>
-                </td>
-              </tr>
-              )
-})}
+                  <td
+                    className="border-b text-right pl-2 border-gray-300 cursor-pointer "
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectStock(item.ticker);
+                    }}
+                  >
+                    <input
+                      className="cursor-pointer"
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectStock(item.ticker)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </td>
+
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.ticker}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.name}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.annual_return * 100).toFixed(2)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.volatility * 100).toFixed(2)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.esg_combined.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.environment.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.social.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.governance.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300 ">
+                    {item.compatibility.toFixed(0)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.weight * 100).toFixed(2)}%
+                  </td>
+                  <td
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFromPortfolio(item.ticker);
+                    }}
+                  >
+                    <button className="bg-red-500 text-white px-1 rounded">
+                      X
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
