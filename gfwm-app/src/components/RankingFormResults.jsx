@@ -347,7 +347,6 @@ const RankingFormResults = ({ results, columns }) => {
   const handleAddToPortfolio = (stock) => {
     // if not already in portfolio, add it
     if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
-
       const stockWithWeight = { ...stock, weight: 0 }; // Add the weight field
 
       setPortfolioData((prevData) => [...prevData, stockWithWeight]);
@@ -396,12 +395,21 @@ const RankingFormResults = ({ results, columns }) => {
         </div>
       </div>
       <h2 className="text-xl font-bold mb-2">Portfolio</h2>
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded mb-4"
-      >
-        Edit Portfolio
-      </button>
+      <div className="flex gap-4 mb-4">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Edit Portfolio
+        </button>
+
+        {/* <button
+          disabled={true} // Disables the button
+          className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+        >
+          Recalculate Weights
+        </button> */}
+      </div>
       <StockSearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
