@@ -179,7 +179,7 @@ const RankingForm = () => {
             onChange={(e) => setVolatilitySliderValue(e.target.value)}
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
-          <span className="text-gray-600 text-lg whitespace-nowrap">Aggressive growth</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">Growth</span>
           {/* <div>Selected Value: {volatilitySlider}%</div> */}
         </div>
 

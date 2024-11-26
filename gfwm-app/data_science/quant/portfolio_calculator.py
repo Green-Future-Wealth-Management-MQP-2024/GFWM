@@ -132,4 +132,5 @@ def calculate_portfolio(ticker_compatibility_df, target_volatility, use_markowit
 
     sharpe = (expected_return - ANNUAL_RISK_FREE_RATE) / expected_volatility
 
-    return ideal_weights.tolist(), expected_return, expected_volatility, sharpe
+    # convert to row vector of weights
+    return ideal_weights.T.tolist()[0], expected_return, expected_volatility, sharpe

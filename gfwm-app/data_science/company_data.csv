@@ -26,7 +26,7 @@ ALLE,Allegion PLC,4022,Industrials,Security & Protection Services,FALSE,FALSE,FA
 AMAT,Applied Materials Inc,19034,Technology,Semiconductor Equipment & Materials,FALSE,FALSE,FALSE
 AMCR,Amcor PLC,1991,Consumer Cyclical,Packaging & Containers,FALSE,FALSE,TRUE
 AMD,Advanced Micro Devices Inc,16475,Technology,Semiconductors,FALSE,FALSE,FALSE
-AME,AMETEK Inc,34478,Industrials,Specialty Industrial Machinery,FALSE,FALSE,FALSE
+AME,AMETEK Inc,34478,Industrials,Specialty Industrial Machinery,FALSE,TRUE,FALSE
 AMGN,Amgen Inc,15134,Healthcare,Drug Manufacturers - General,FALSE,FALSE,FALSE
 AMP,Ameriprise Financial Inc,7008,Financial Services,Asset Management,FALSE,FALSE,FALSE
 AMT,American Tower Corp,9765,Real Estate,REIT - Specialty,FALSE,FALSE,FALSE
@@ -38,7 +38,7 @@ AON,Aon PLC,14686,Financial Services,Insurance Brokers,FALSE,FALSE,FALSE
 AOS,A.O. Smith Corp,14686,Industrials,Specialty Industrial Machinery,FALSE,FALSE,FALSE
 APA,APA Corp,20268,Energy,Oil & Gas E&P,TRUE,FALSE,FALSE
 APD,Air Products & Chemicals Inc,23019,Basic Materials,Specialty Chemicals,TRUE,FALSE,FALSE
-APH,Amphenol Corp,12068,Technology,Electronic Components,FALSE,FALSE,FALSE
+APH,Amphenol Corp,12068,Technology,Electronic Components,FALSE,TRUE,FALSE
 APTV,Aptiv PLC,4754,Consumer Cyclical,Auto Parts,FALSE,FALSE,FALSE
 ARE,Alexandria Real Estate Equities Inc,10040,Real Estate,REIT - Office,FALSE,FALSE,FALSE
 ATO,Atmos Energy Corp,14940,Utilities,Utilities - Regulated Gas,TRUE,FALSE,FALSE
@@ -51,7 +51,7 @@ AXP,American Express Co,17355,Financial Services,Credit Services,FALSE,FALSE,FAL
 AZO,AutoZone Inc,12288,Consumer Cyclical,Specialty Retail,FALSE,FALSE,FALSE
 BA,Boeing Co,26481,Industrials,Aerospace & Defense,FALSE,TRUE,FALSE
 BAC,Bank of America Corp,18952,Financial Services,Banks - Diversified,FALSE,FALSE,FALSE
-BALL,Ball Corp,18603,Consumer Cyclical,Packaging & Containers,FALSE,FALSE,FALSE
+BALL,Ball Corp,18603,Consumer Cyclical,Packaging & Containers,FALSE,TRUE,FALSE
 BAX,Baxter International Inc,23202,Healthcare,Medical Instruments & Supplies,FALSE,FALSE,FALSE
 BBY,Best Buy Co Inc,13640,Consumer Cyclical,Specialty Retail,FALSE,FALSE,FALSE
 BDX,Becton Dickinson & Co,22339,Healthcare,Medical Instruments & Supplies,FALSE,FALSE,FALSE
@@ -170,7 +170,7 @@ EQT,EQT Corp,27199,Energy,Oil & Gas E&P,TRUE,FALSE,FALSE
 ERIE,Erie Indemnity Co,10644,Financial Services,Insurance Brokers,FALSE,FALSE,FALSE
 ES,Eversource Energy,6218,Utilities,Utilities - Regulated Electric,TRUE,FALSE,FALSE
 ESS,Essex Property Trust Inc,11127,Real Estate,REIT - Residential,FALSE,FALSE,FALSE
-ETN,Eaton Corp PLC,27750,Industrials,Specialty Industrial Machinery,FALSE,FALSE,FALSE
+ETN,Eaton Corp PLC,27750,Industrials,Specialty Industrial Machinery,FALSE,TRUE,FALSE
 ETR,Entergy Corp,11281,Utilities,Utilities - Regulated Electric,TRUE,FALSE,FALSE
 EVRG,Evergy Inc,27476,Utilities,Utilities - Regulated Electric,TRUE,FALSE,FALSE
 EW,Edwards Lifesciences Corp,8999,Healthcare,Medical Devices,FALSE,FALSE,FALSE
@@ -196,7 +196,7 @@ FOXA,Fox Corp,2095,Communication Services,Entertainment,FALSE,FALSE,FALSE
 FRT,Federal Realty Investment Trust,14585,Real Estate,REIT - Retail,FALSE,FALSE,FALSE
 FSLR,First Solar Inc,6580,Technology,Solar,FALSE,FALSE,FALSE
 FTNT,Fortinet Inc,5483,Technology,Software - Infrastructure,FALSE,FALSE,FALSE
-FTV,Fortive Corp,3062,Technology,Scientific & Technical Instruments,FALSE,FALSE,FALSE
+FTV,Fortive Corp,3062,Technology,Scientific & Technical Instruments,FALSE,TRUE,FALSE
 GD,General Dynamics Corp,26509,Industrials,Aerospace & Defense,FALSE,TRUE,FALSE
 GDDY,GoDaddy Inc,3523,Technology,Software - Infrastructure,FALSE,FALSE,FALSE
 GE,GE Aerospace,48364,Industrials,Aerospace & Defense,FALSE,TRUE,FALSE
@@ -254,7 +254,7 @@ ISRG,Intuitive Surgical Inc,8928,Healthcare,Medical Instruments & Supplies,FALSE
 IT,Gartner Inc,11347,Technology,Information Technology Services,FALSE,FALSE,FALSE
 ITW,Illinois Tool Works Inc,18882,Industrials,Specialty Industrial Machinery,FALSE,FALSE,FALSE
 IVZ,Invesco Ltd,11224,Financial Services,Asset Management,FALSE,FALSE,FALSE
-J,Jacobs Solutions Inc,12761,Industrials,Engineering & Construction,FALSE,FALSE,FALSE
+J,Jacobs Solutions Inc,12761,Industrials,Engineering & Construction,FALSE,TRUE,FALSE
 JBHT,JB Hunt Transport Services Inc,14976,Industrials,Integrated Freight & Logistics,FALSE,FALSE,FALSE
 JBL,Jabil Inc,9698,Technology,Electronic Components,FALSE,FALSE,FALSE
 JCI,Johnson Controls International PLC,21592,Industrials,Building Products & Equipment,FALSE,FALSE,FALSE
@@ -371,7 +371,7 @@ PFE,Pfizer Inc,26817,Healthcare,Drug Manufacturers - General,FALSE,FALSE,FALSE
 PFG,Principal Financial Group Inc,8431,Financial Services,Asset Management,FALSE,FALSE,FALSE
 PG,Procter & Gamble Co,27274,Consumer Defensive,Household & Personal Products,FALSE,FALSE,FALSE
 PGR,Progressive Corp,13689,Financial Services,Insurance - Property & Casualty,FALSE,FALSE,FALSE
-PH,Parker Hannifin Corp,21898,Industrials,Specialty Industrial Machinery,FALSE,FALSE,FALSE
+PH,Parker Hannifin Corp,21898,Industrials,Specialty Industrial Machinery,FALSE,TRUE,FALSE
 PHM,PulteGroup Inc,13499,Consumer Cyclical,Residential Construction,FALSE,FALSE,FALSE
 PKG,Packaging Corp of America,9065,Consumer Cyclical,Packaging & Containers,FALSE,FALSE,FALSE
 PLD,Prologis Inc,9863,Real Estate,REIT - Industrial,FALSE,FALSE,FALSE
@@ -433,8 +433,8 @@ SYK,Stryker Corp,13444,Healthcare,Medical Devices,FALSE,FALSE,FALSE
 SYY,Sysco Corp,16012,Consumer Defensive,Food Distribution,FALSE,FALSE,FALSE
 T,AT&T Inc,28511,Communication Services,Telecom Services,FALSE,FALSE,FALSE
 TAP,Molson Coors Beverage Co,18063,Consumer Defensive,Beverages - Brewers,FALSE,FALSE,FALSE
-TDG,TransDigm Group Inc,6827,Industrials,Aerospace & Defense,FALSE,FALSE,FALSE
-TDY,Teledyne Technologies Inc,9131,Technology,Scientific & Technical Instruments,FALSE,FALSE,FALSE
+TDG,TransDigm Group Inc,6827,Industrials,Aerospace & Defense,FALSE,TRUE,FALSE
+TDY,Teledyne Technologies Inc,9131,Technology,Scientific & Technical Instruments,FALSE,TRUE,FALSE
 TECH,Bio-Techne Corp,11671,Healthcare,Biotechnology,FALSE,FALSE,FALSE
 TEL,TE Connectivity PLC,6371,Technology,Electronic Components,FALSE,FALSE,FALSE
 TER,Teradyne Inc,16628,Technology,Semiconductor Equipment & Materials,FALSE,FALSE,FALSE

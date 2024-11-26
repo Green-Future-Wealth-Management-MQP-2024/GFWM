@@ -15,7 +15,7 @@ import StockSearchModal from "./StockSearchModal";
 
 import ComparisonTable from "./ComparisonTable";
 import PieChart from "./PieChart";
-import TimeseriesChart from "./TimeseriesChart"
+import TimeseriesChart from "./TimeseriesChart";
 
 ChartJS.register(
   CategoryScale,
@@ -33,9 +33,11 @@ const RankingFormResults = ({ results, columns }) => {
   // 'portfolio': portfolio[['ticker', 'weight']].to_dict(orient = 'records'),
   // 'summary_statistics':
 
-  const { sp500_compatibility: server_compatibility_scores, 
-    portfolio: server_portfolio_weights, 
-    summary_statistics } = results;
+  const {
+    sp500_compatibility: server_compatibility_scores,
+    portfolio: server_portfolio_weights,
+    summary_statistics,
+  } = results;
 
   const {
     portfolio_esg_score,
@@ -57,15 +59,14 @@ const RankingFormResults = ({ results, columns }) => {
 
   // contains all stocks the client might want to invest in
   // stocks removed by fossil fuels / weapons have compatibility 0 by default
-  const [stock_data, setStockData] = useState([])
+  const [stock_data, setStockData] = useState([]);
 
   // runs when server's compatibility score changes
   // augments preprocessed csv with compatibility scores from server
-  useEffect( () => {
-
+  useEffect(() => {
     // stop if there are no compatibility scores to augment stock_data with
-    if(!server_compatibility_scores) return
-    
+    if (!server_compatibility_scores) return;
+
     const augmentStockData = async () => {
       try {
         const preprocessedCSV = await fetch("/preprocessed_refinitiv.csv"); //public version of preprocessed
@@ -76,14 +77,27 @@ const RankingFormResults = ({ results, columns }) => {
         });
         // List of columns known to be numeric
         //TODO make this not hardcoded
-        const numericColumns = ["esg_combined", "controversy", "environment","social","governance",
-          "human_rights","community","workforce","product_responsibility",
-          "shareholders","management","annual_return","volatility",
-          "fossil_fuels","weapons","tobacco"];
+        const numericColumns = [
+          "esg_combined",
+          "controversy",
+          "environment",
+          "social",
+          "governance",
+          "human_rights",
+          "community",
+          "workforce",
+          "product_responsibility",
+          "shareholders",
+          "management",
+          "annual_return",
+          "volatility",
+          "fossil_fuels",
+          "weapons",
+          "tobacco",
+        ];
 
         //augment data with compatibility column pulled from server response
         const augmentedData = parseResult.data.map((row) => {
-          
           // Convert specific numeric columns
           const parsedRow = {
             ...row,
@@ -102,19 +116,20 @@ const RankingFormResults = ({ results, columns }) => {
           };
         });
 
-        console.log("updated stock data wth compatibility", augmentedData)
-        
+        console.log("updated stock data wth compatibility", augmentedData);
+
         setStockData(augmentedData);
       } catch (error) {
-        console.error("Error with augmenting preprocessed CSV with server's compatibility scores:", error);
+        console.error(
+          "Error with augmenting preprocessed CSV with server's compatibility scores:",
+          error
+        );
       }
     };
 
-    augmentStockData()
-
+    augmentStockData();
   }, [server_compatibility_scores]);
   //--------------------------------
-
 
   // MANAGE PORTFOLIO DATA OBJECT
 
@@ -125,36 +140,33 @@ const RankingFormResults = ({ results, columns }) => {
   // runs when the server updates the portfolio weights object
   // copies correct rows (tickers) from stock_data and augments with given weight
   useEffect(() => {
+    if (!server_portfolio_weights) return;
 
-    if(!server_portfolio_weights) return;
-
-    const updatePortfolioData = async() => {
-
+    const updatePortfolioData = async () => {
       //TODO speed this up either by
       // 1. returning a proper object of {ticker1: weight1, ticker2: weight2 ...}
       // 2. making a hashmap on the client of the same format
 
       // first check if the ticker exists in the portfolio object
-      const portfolioData = stock_data.filter(row =>
-        server_portfolio_weights.hasOwnProperty(row.ticker) 
+      const portfolioData = stock_data
+        .filter(
+          (row) => server_portfolio_weights.hasOwnProperty(row.ticker)
 
-        //then access the weight directly by ticker
-      ).map(row => {
-        const weight = server_portfolio_weights[row.ticker] || 0; 
-        return {
-          ...row,
-          weight, // Add the weight property
-        };
-      });
+          //then access the weight directly by ticker
+        )
+        .map((row) => {
+          const weight = server_portfolio_weights[row.ticker] || 0;
+          return {
+            ...row,
+            weight, // Add the weight property
+          };
+        });
       setPortfolioData(portfolioData);
+    };
 
-    }
-
-    updatePortfolioData()
-
+    updatePortfolioData();
   }, [server_portfolio_weights, stock_data]);
   //-----------------------------------
-
 
   // HANDLE SORTING OF PORTFOLIO DATA
 
@@ -178,7 +190,6 @@ const RankingFormResults = ({ results, columns }) => {
       });
     }
     return sortableData;
-
   }, [portfolio_data, sortConfig]); // update sorted_portfolio_data when these change
 
   // Handle sorting
@@ -189,29 +200,31 @@ const RankingFormResults = ({ results, columns }) => {
     }
     setSortConfig({ key, direction });
   };
-  //------------------------------
 
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(value);
+  };
+  //------------------------------
 
   // HANDLE TOP 20s OBJECT
 
-  const [top_20s, setTop20s] = useState([])
+  const [top_20s, setTop20s] = useState([]);
 
   useEffect(() => {
-
     if (!stock_data) return;
 
-    
     const combinedList = [
       ...columns.highImportance,
       ...columns.midImportance,
       ...columns.notImportant,
     ];
 
-    const updateTop20s = async() => {
-
+    const updateTop20s = async () => {
       // build top 20s from the list of factors and stock data
       const top20s_builder = combinedList.map((factor) => {
-
         // Sort stock_data by the factor, descending order, and slice the first 20
         const sortedStocks = [...stock_data]
           .sort((a, b) => b[factor] - a[factor])
@@ -223,10 +236,9 @@ const RankingFormResults = ({ results, columns }) => {
         };
       });
       setTop20s(top20s_builder);
-    }
+    };
 
-    updateTop20s()
-
+    updateTop20s();
   }, [stock_data, columns]); // update top 20s when stock data or columns change
   //--------------------------
 
@@ -235,13 +247,19 @@ const RankingFormResults = ({ results, columns }) => {
   // VALUES FOR COMPARISON TABLE
   const comparisonTableData = [
     {
-      field: "Average Annual Return",
-      portfolio: `${(portfolio_average_return * 100).toFixed(2)}%, delta: ${((portfolio_average_return - sp500_average_return) * 100).toFixed(2)}%`,
+      field: "Average Return",
+      portfolio: `${(portfolio_average_return * 100).toFixed(2)}% (delta ${(
+        (portfolio_average_return - sp500_average_return) *
+        100
+      ).toFixed(2)}%)`,
       sp500: `${(sp500_average_return * 100).toFixed(2)}%`,
     },
     {
-      field: "Average Annual Standard Deviation",
-      portfolio: `${(portfolio_volatility * 100).toFixed(2)}%, delta: ${((portfolio_volatility - sp500_average_volatility) * 100).toFixed(2)}%`,
+      field: "Average Standard Deviation",
+      portfolio: `${(portfolio_volatility * 100).toFixed(2)}% (delta ${(
+        (portfolio_volatility - sp500_average_volatility) *
+        100
+      ).toFixed(2)}%)`,
       sp500: `${(sp500_average_volatility * 100).toFixed(2)}%`,
     },
     // {
@@ -326,31 +344,72 @@ const RankingFormResults = ({ results, columns }) => {
   };
 
   //ADD REMOVE
-  const handleAddToPortfolio = (added_stock) => {
-    //if not already in portfolio data, add it to the bottom
-    if (!portfolio_data.find((item) => item.ticker === added_stock.ticker)) {
-      setPortfolioData((prevData) => [...prevData, added_stock]);
+  const handleAddToPortfolio = (stock) => {
+    // if not already in portfolio, add it
+    if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
+      const stockWithWeight = { ...stock, weight: 0 }; // Add the weight field
+
+      setPortfolioData((prevData) => [...prevData, stockWithWeight]);
     }
-    setSelectedTicker(added_stock.ticker);
+    setSelectedTicker(stock.ticker);
   };
 
-  const handleRemoveFromPortfolio = (removed_stock) => {
-    //keep everything in portfolio data except removed stock
-    setPortfolioData(portfolio_data.filter((item) => item.ticker !== removed_stock));
-    setSelectedTicker(removed_stock);
+  const handleRemoveFromPortfolio = (ticker) => {
+    setPortfolioData(portfolio_data.filter((item) => item.ticker !== ticker));
+    setSelectedTicker(ticker);
   };
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [selectedStocks, setSelectedStocks] = useState([]);
+
+  const handleSelectStock = (ticker) => {
+    setSelectedStocks((prevSelected) =>
+      prevSelected.includes(ticker)
+        ? prevSelected.filter((item) => item !== ticker)
+        : [...prevSelected, ticker]
+    );
+    setSelectedTicker(ticker);
+  };
 
   return (
     <div className="ranking-form-results p-4 bg-white rounded-lg">
-      <h2 className="text-xl font-bold mb-2">Results</h2>
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded mb-4"
-      >
-        Search and Add Stocks
-      </button>
+      <h2 className="text-xl font-bold mb-2">Results Summary</h2>
+      <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
+        {/* Comparison Table */}
+        <div className="flex-none w-full sm:w-[35%] min-w-[200px]">
+          <ComparisonTable data={comparisonTableData} />
+        </div>
+
+        {/* Timeseries Chart */}
+        <div className="flex-grow w-[40%]">
+          <TimeseriesChart
+            portfolio={portfolio_timeseries}
+            spy={spy_timeseries}
+            dates={timeseries_dates}
+          />
+        </div>
+
+        {/* Pie Chart */}
+        <div className="flex-none w-[20%] min-w-[100px]">
+          <PieChart weights={portfolio_data.map((item) => item.weight * 100)} />
+        </div>
+      </div>
+      <h2 className="text-xl font-bold mb-2">Portfolio</h2>
+      <div className="flex gap-4 mb-4">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Edit Portfolio
+        </button>
+
+        {/* <button
+          disabled={true} // Disables the button
+          className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+        >
+          Recalculate Weights
+        </button> */}
+      </div>
       <StockSearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -359,38 +418,20 @@ const RankingFormResults = ({ results, columns }) => {
         onAddToPortfolio={handleAddToPortfolio}
         onRemovePortfolio={handleRemoveFromPortfolio}
         onClickStock={openTableauDashboard}
+        selectedStocks={selectedStocks}
+        setSelectedStocks={setSelectedStocks}
+        handleSelectStock={handleSelectStock}
       />
-      <div className="flex flex-wrap flex-col lg:flex-row lg:items-start ">
-        {/* <div className="flex-1 max-w-2xl" style={{ minWidth: '32rem' }}>
-          <Bar data={AnnualReturnBar_chartData} options={AnnualReturnBar_Options} />
-        </div>
-
-        <div className="flex-1 min-w-72 max-w-sm ">
-          <Bar data={sp500_return_data} options={sp500_return_options} />
-        </div> */}
-
-        <div className="ml-5 shrink grow min-w-72 max-w-5xl basis-0 ">
-          <ComparisonTable data={comparisonTableData}></ComparisonTable>
-        </div>
-
-        <div className="w-1/2">
-          <h2 className="text-lg font-bold mb-4">Portfolio vs S&P 500 10 year chart, % growth</h2>
-          <TimeseriesChart portfolio={portfolio_timeseries} spy={spy_timeseries} dates = {timeseries_dates}/>
-        </div>
-
-        <div className="flex-1 min-w-72 max-w-sm ">
-          <PieChart weights={portfolio_data.map((item) => item.weight * 100)} />
-        </div>
-      </div>
       <div className="relative">
         <table className="min-w-full bg-white mb-2 text-sm">
           <thead className="sticky top-0 bg-white </tr>z-10">
             <tr title="Sort data">
               <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
-              
-              <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("ticker")}
-                >
+              >
                 Symbol{" "}
                 {sortConfig.key === "ticker" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -399,7 +440,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("name")}
-                >
+              >
                 Name{" "}
                 {sortConfig.key === "name" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -407,7 +448,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("annual_return")}
-                >
+              >
                 Annualized Return{" "}
                 {sortConfig.key === "annual_return" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -415,7 +456,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("sd")}
-                >
+              >
                 Standard Deviation{" "}
                 {sortConfig.key === "volatility" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -423,7 +464,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("esg")}
-                >
+              >
                 Combined ESG{" "}
                 {sortConfig.key === "esg_combined" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -431,7 +472,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("environment")}
-                >
+              >
                 Environment{" "}
                 {sortConfig.key === "environment" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -439,7 +480,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("social")}
-                >
+              >
                 Social{" "}
                 {sortConfig.key === "social" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -447,7 +488,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("governance")}
-                >
+              >
                 Governance{" "}
                 {sortConfig.key === "governance" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -455,7 +496,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("compatibility")}
-                >
+              >
                 Compatibility{" "}
                 {sortConfig.key === "compatibility" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -463,7 +504,7 @@ const RankingFormResults = ({ results, columns }) => {
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("weight")}
-                >
+              >
                 Weight{" "}
                 {sortConfig.key === "weight" &&
                   (sortConfig.direction === "ascending" ? "▲" : "▼")}
@@ -471,65 +512,81 @@ const RankingFormResults = ({ results, columns }) => {
             </tr>
           </thead>
           <tbody>
-            {sorted_portfolio_data.map((item, index) => (
-              <tr
-                ref={(el) => (rowRefs.current[item.ticker] = el)}
-                key={item.ticker}
-                className={`hover:bg-gray-100 cursor-pointer ${
-                  selectedTicker === item.ticker ? "bg-gray-100" : ""
-                }`}
-                onClick={() => openTableauDashboard(item.ticker)}
-                title="Show more"
-              >
-                <td className="py-0 px-0 border-b border-gray-300 text-gray-400 text-right">
-                  {index + 1}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.ticker}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.name}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {(item.annual_return * 100).toFixed(2)}%
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {(item.volatility * 100).toFixed(2)}%
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.esg_combined.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.environment.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.social.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {item.governance.toFixed(2)}
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300 ">
-                  {item.compatibility.toFixed(0)}%
-                </td>
-                <td className="py-1 px-2 border-b border-gray-300">
-                  {(item.weight * 100).toFixed(2)}%
-                </td>
-                <td
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveFromPortfolio(item.ticker);
-                  }}
+            {sorted_portfolio_data.map((item, index) => {
+              const isSelected = selectedStocks.includes(item.ticker);
+              return (
+                <tr
+                  ref={(el) => (rowRefs.current[item.ticker] = el)}
+                  key={item.ticker}
+                  className={`hover:bg-gray-100 cursor-pointer ${
+                    selectedTicker === item.ticker ? "bg-gray-100" : ""
+                  }`}
+                  onClick={() => openTableauDashboard(item.ticker)}
+                  title="Show more"
                 >
-                  <button className="bg-red-500 text-white px-1 rounded">
-                    X
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  <td
+                    className="border-b text-right pl-2 border-gray-300 cursor-pointer "
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectStock(item.ticker);
+                    }}
+                  >
+                    <input
+                      className="cursor-pointer"
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectStock(item.ticker)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </td>
+
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.ticker}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.name}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.annual_return * 100).toFixed(2)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.volatility * 100).toFixed(2)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.esg_combined.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.environment.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.social.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.governance.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300 ">
+                    {item.compatibility.toFixed(0)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.weight * 100).toFixed(2)}%
+                  </td>
+                  <td
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFromPortfolio(item.ticker);
+                    }}
+                  >
+                    <button className="bg-red-500 text-white px-1 rounded">
+                      X
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-      {top_20s.map(({factor, stocks}) => (
+      {top_20s.map(({ factor, stocks }) => (
         <div className="relative">
           <h2 className="text-xl font-bold mb-2">Top {factor} Stocks</h2>
           <table className="min-w-full bg-white mb-2 text-sm">
@@ -552,13 +609,13 @@ const RankingFormResults = ({ results, columns }) => {
                 </th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
                   Environment
-                </th>                
+                </th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
                   Human Rights
                 </th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
                   Community
-                </th>                
+                </th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
                   Workforce
                 </th>

@@ -11,6 +11,8 @@ import {
   Legend,
 } from "chart.js";
 
+import zoomPlugin from "chartjs-plugin-zoom";
+
 // Register required Chart.js components
 ChartJS.register(
   CategoryScale,
@@ -19,7 +21,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  zoomPlugin
 );
 
 const Chart = ({ portfolio, spy, dates }) => {
@@ -58,7 +61,6 @@ const Chart = ({ portfolio, spy, dates }) => {
         label: "Portfolio",
         data: portfolio,
         borderColor: "rgba(75, 192, 192, 1)", // Line color
-        backgroundColor: "rgba(75, 192, 192, 0.2)", // Fill under the line
         tension,
         borderWidth,
         pointRadius,
@@ -68,7 +70,6 @@ const Chart = ({ portfolio, spy, dates }) => {
         label: "S&P 500",
         data: spy,
         borderColor: "rgba(255, 99, 132, 1)", // Line color
-        backgroundColor: "rgba(255, 99, 132, 0.2)", // Fill under the line
         tension,
         borderWidth,
         pointRadius,
@@ -87,17 +88,38 @@ const Chart = ({ portfolio, spy, dates }) => {
         mode: "index",
         intersect: false,
       },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: "x", // Allow horizontal panning
+        },
+        zoom: {
+          wheel: {
+            enabled: true, // Zoom with the mouse wheel
+          },
+          pinch: {
+            enabled: true, // Zoom with touch gestures
+          },
+          mode: "x", // Allow horizontal zooming
+        },
+      },
     },
     scales: {
       x: {
+        ticks: {
+          autoSkip: true, // Automatically skip labels to avoid overcrowding
+          maxRotation: 0, // Prevent label rotation
+          minRotation: 0,
+        },
         title: {
-          display: false, // Remove x-axis title
+          display: true,
+          text: "Date",
         },
       },
       y: {
         title: {
           display: true,
-          text: "Value",
+          text: "Growth of 100%",
         },
       },
     },
