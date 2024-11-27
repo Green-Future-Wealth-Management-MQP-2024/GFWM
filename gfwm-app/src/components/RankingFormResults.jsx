@@ -200,47 +200,7 @@ const RankingFormResults = ({ results, columns }) => {
     }
     setSortConfig({ key, direction });
   };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value);
-  };
   //------------------------------
-
-  // HANDLE TOP 20s OBJECT
-
-  const [top_20s, setTop20s] = useState([]);
-
-  useEffect(() => {
-    if (!stock_data) return;
-
-    const combinedList = [
-      ...columns.highImportance,
-      ...columns.midImportance,
-      ...columns.notImportant,
-    ];
-
-    const updateTop20s = async () => {
-      // build top 20s from the list of factors and stock data
-      const top20s_builder = combinedList.map((factor) => {
-        // Sort stock_data by the factor, descending order, and slice the first 20
-        const sortedStocks = [...stock_data]
-          .sort((a, b) => b[factor] - a[factor])
-          .slice(0, 20);
-
-        return {
-          factor: factor,
-          stocks: sortedStocks,
-        };
-      });
-      setTop20s(top20s_builder);
-    };
-
-    updateTop20s();
-  }, [stock_data, columns]); // update top 20s when stock data or columns change
-  //--------------------------
 
   const rowRefs = React.useRef([]);
 
@@ -345,8 +305,17 @@ const RankingFormResults = ({ results, columns }) => {
 
   //ADD REMOVE
   const handleAddToPortfolio = (stock) => {
+
     // if not already in portfolio, add it
     if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
+
+
+
+
+
+
+
+
       const stockWithWeight = { ...stock, weight: 0 }; // Add the weight field
 
       setPortfolioData((prevData) => [...prevData, stockWithWeight]);
@@ -570,152 +539,12 @@ const RankingFormResults = ({ results, columns }) => {
                   <td className="py-1 px-2 border-b border-gray-300">
                     {(item.weight * 100).toFixed(2)}%
                   </td>
-                  <td
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFromPortfolio(item.ticker);
-                    }}
-                  >
-                    <button className="bg-red-500 text-white px-1 rounded">
-                      X
-                    </button>
-                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      {top_20s.map(({ factor, stocks }) => (
-        <div className="relative">
-          <h2 className="text-xl font-bold mb-2">Top {factor} Stocks</h2>
-          <table className="min-w-full bg-white mb-2 text-sm">
-            <thead className="sticky top-0 bg-white </tr>z-10">
-              <tr>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Ticker
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Name
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Annualized Return
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Standard Deviation
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Combined ESG
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Environment
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Human Rights
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Community
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Workforce
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Product Responsibility
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Shareholders
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Management
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Compatibility
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {stocks.map((row) => {
-                const isInPortfolio = portfolio_data.find(
-                  (item) => item.ticker === row.ticker
-                );
-                return (
-                  <tr
-                    key={row.ticker}
-                    className={`hover:bg-gray-100 cursor-pointer ${
-                      selectedTicker === row.ticker ? "bg-gray-100" : ""
-                    }`}
-                    onClick={() => openTableauDashboard(row.ticker)}
-                    title="Show more"
-                  >
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.ticker}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.name}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {(row.annual_return * 100).toFixed(2)}%
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {(row.volatility * 100).toFixed(2)}%
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.esg_combined}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.environment.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.human_rights.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.community.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.workforce.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.product_responsibility.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.shareholders.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.management.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.compatibility.toFixed(0)}%
-                    </td>
-                    <td
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToPortfolio(row);
-                      }}
-                    >
-                      <button
-                        className={`px-1 rounded mr-2 ${
-                          isInPortfolio
-                            ? "bg-gray-500 cursor-not-allowed"
-                            : "bg-green-500 text-white"
-                        }`}
-                        disabled={isInPortfolio}
-                      >
-                        {isInPortfolio ? "✓" : " + "}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <button
-            onClick={scrollToTop}
-            className="fixed bottom-4 right-4 bg-green-700 text-white p-2 rounded-full shadow-lg"
-          >
-            ↑
-          </button>
-        </div>
-      ))}
     </div>
   );
 };

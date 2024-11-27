@@ -11,13 +11,10 @@ import BinaryChoice from "./BinaryChoice";
 // flexibility, risk
 
 const RankingForm = () => {
-
   //map factor name to the text shown in the drag and drop box
   const factor_text_map = {
-    environment: 
-      "Environmental protection",
-    human_rights: 
-      "Respecting fundamental human rights conventions",
+    environment: "Environmental protection",
+    human_rights: "Respecting fundamental human rights conventions",
     community:
       "Respecting business ethics, protecting public health, commitment to being good citizens",
     workforce:
@@ -130,33 +127,38 @@ const RankingForm = () => {
         />
 
         {/* fossil fuels checkbox */}
-      <label className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={fossilFuelsChecked}
-          onChange={handleFossilFuelsCheckboxChange}
-          className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
-        />
-        <span className="text-gray-700">Avoid investing in fossil fuels?</span>
-      </label>
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={fossilFuelsChecked}
+            onChange={handleFossilFuelsCheckboxChange}
+            className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
+          />
+          <span className="text-gray-700">
+            Avoid investing in fossil fuels?
+          </span>
+        </label>
 
-      {/* weapons manufacturers checkbox */}
-      <label className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={weaponsChecked}
-          onChange={handleWeaponsCheckboxChange}
-          className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
-        />
-        <span className="text-gray-700">Avoid investing in weapons manufacturers?</span>
-      </label>
-
+        {/* weapons manufacturers checkbox */}
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={weaponsChecked}
+            onChange={handleWeaponsCheckboxChange}
+            className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
+          />
+          <span className="text-gray-700">
+            Avoid investing in weapons manufacturers?
+          </span>
+        </label>
 
         {/* Sliders 
           flexiblity*/}
         <p>Rate your flexibility with these ESG preferences.</p>
         <div className="w-3/4 flex items-center space-x-4">
-          <span className="text-gray-600 text-lg whitespace-nowrap">Not flexible</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Not flexible
+          </span>
           <input
             type="range"
             min="0"
@@ -165,12 +167,16 @@ const RankingForm = () => {
             onChange={(e) => setFlexibilitySliderValue(e.target.value)}
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
-          <span className="text-gray-600 text-lg whitespace-nowrap">Most flexible</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Most flexible
+          </span>
         </div>
         <p>Rate your risk level.</p>
         {/* volatility / risk slider */}
         <div className="w-3/4 flex items-center space-x-4">
-          <span className="text-gray-600 text-lg whitespace-nowrap">Conservative</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Conservative
+          </span>
           <input
             type="range"
             min="5"
@@ -179,7 +185,9 @@ const RankingForm = () => {
             onChange={(e) => setVolatilitySliderValue(e.target.value)}
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
-          <span className="text-gray-600 text-lg whitespace-nowrap">Growth</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Growth
+          </span>
           {/* <div>Selected Value: {volatilitySlider}%</div> */}
         </div>
 
@@ -199,12 +207,17 @@ const RankingForm = () => {
           ))}
         </div>
 
-        <button type="submit" className="hover:opacity-75 bg-green-700 text-white px-4 py-2 rounded mb-4">
+        <button
+          type="submit"
+          className="hover:opacity-75 bg-green-700 text-white px-4 py-2 rounded mb-4"
+        >
           Get Results
         </button>
       </form>
 
-      {showResults && <RankingFormResults results={returnData} columns = {columns} />}
+      {showResults && (
+        <RankingFormResults results={returnData} columns={columns} />
+      )}
     </div>
   );
 };
