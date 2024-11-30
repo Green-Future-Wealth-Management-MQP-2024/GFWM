@@ -552,7 +552,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("sd")}
+                onClick={() => requestSort("volatility")}
               >
                 Standard Deviation{" "}
                 {sortConfig.key === "volatility" &&
@@ -560,7 +560,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("esg")}
+                onClick={() => requestSort("esg_combined")}
               >
                 Combined ESG{" "}
                 {sortConfig.key === "esg_combined" &&
