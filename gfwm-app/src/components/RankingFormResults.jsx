@@ -271,11 +271,14 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   const comparisonTableData = [
     {
       field: "Average Return",
-      portfolio: `${(portfolioSummaryStatistics.averageReturn * 100).toFixed(2)}% (delta ${(
-        (portfolioSummaryStatistics.averageReturn - sp500SummaryStatistics.averageReturn) *
-        100
-      ).toFixed(2)}%)`,
+      portfolio: `${(portfolioSummaryStatistics.averageReturn * 100).toFixed(2)}%`,
       sp500: `${(sp500SummaryStatistics.averageReturn * 100).toFixed(2)}%`,
+    },
+    {
+      field: "Average Return Compared to Benchmark",
+      portfolio: `${((portfolioSummaryStatistics.averageReturn - sp500SummaryStatistics.averageReturn) 
+        *100).toFixed(2)}%`,
+      sp500: '',
     },
     {
       field: "Average Standard Deviation",

@@ -48,34 +48,27 @@ const StockSearchModal = ({
       : selectedCategory === "selected"
       ? filteredStocks.filter((stock) => selectedTickers.includes(stock.ticker))
       : selectedCategory === "current_portfolio"
-      ? filteredStocks.filter((stock) =>
-          currentStocks.some((cs) => cs.ticker === stock.ticker)
-        )
+      ? filteredStocks.filter((stock) => currentStocks.some((cs) => cs.ticker === stock.ticker))
       : selectedCategory === "not_in_portfolio"
-      ? filteredStocks.filter(
-          (stock) => !currentStocks.some((cs) => cs.ticker === stock.ticker)
-        )
+      ? filteredStocks.filter((stock) => !currentStocks.some((cs) => cs.ticker === stock.ticker))
       : filteredStocks
           .filter((stock) => stock[selectedCategory] !== undefined)
-          .sort(
-            (a, b) => (b[selectedCategory] || 0) - (a[selectedCategory] || 0)
-          )
-          .slice(0, 20);
+          .sort((a, b) => (b[selectedCategory] || 0) - (a[selectedCategory] || 0))
+          .slice(0, 25);
 
   if (!isOpen) return null;
 
   const handleAddSelected = () => {
     if (
-      !window.confirm(
-        `Are you sure you want to add the selected ${selectedTickers.length} stock(s) to your portfolio?`
-      )
+      !window.confirm(`Are you sure you want to add the 
+      ${selectedTickers.length} selected stock(s) to your portfolio?`)
     ) {
       return;
     }
-    const stocksToAdd = stocks.filter((stock) =>
-      selectedTickers.includes(stock.ticker)
+    // handle adding list of tickers accounting for duplicates
+    const stocksToAdd = stocks.filter(
+      (stock) => selectedTickers.includes(stock.ticker) && !currentStocks.includes(stock.ticker)
     );
-    // handle adding list of tickers
     onAddStocks(stocksToAdd);
     setSelectedTickers([]);
   };
@@ -89,23 +82,17 @@ const StockSearchModal = ({
       return;
     }
     // handle removing list of selected tickers from portfolio
-    onRemoveTickers(selectedTickers)
+    onRemoveTickers(selectedTickers);
     setSelectedTickers([]);
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div
-        className="fixed inset-0 bg-black opacity-50"
-        onClick={onClose}
-      ></div>
+      <div className="fixed inset-0 bg-black opacity-50" onClick={onClose}></div>
       <div className="bg-white rounded-lg shadow-lg p-6 z-50 max-w-3xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Portfolio Edit</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             &times;
           </button>
         </div>
@@ -174,9 +161,7 @@ const StockSearchModal = ({
             </thead>
             <tbody>
               {sortedStocks.map((stock, index) => {
-                const isInPortfolio = currentStocks.find(
-                  (pI) => pI.ticker === stock.ticker
-                );
+                const isInPortfolio = currentStocks.find((pI) => pI.ticker === stock.ticker);
                 const isSelected = selectedTickers.includes(stock.ticker);
                 return (
                   <tr key={stock.ticker} className="hover:bg-gray-100  ">
@@ -230,9 +215,7 @@ const StockSearchModal = ({
                       {isInPortfolio ? (
                         <span className="text-green-500">In Portfolio</span>
                       ) : (
-                        <span className="text-gray-500 text-xs">
-                          Not In Portfolio
-                        </span>
+                        <span className="text-gray-500 text-xs">Not In Portfolio</span>
                       )}
                     </td>
                   </tr>
@@ -252,16 +235,10 @@ const StockSearchModal = ({
             </button>
           </div>
 
-          <button
-            onClick={handleRemoveSelected}
-            className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded"
-          >
+          <button onClick={handleRemoveSelected} className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded">
             Remove Selected
           </button>
-          <button
-            onClick={handleAddSelected}
-            className="hover:opacity-75 px-4 py-2 bg-green-500 text-white rounded"
-          >
+          <button onClick={handleAddSelected} className="hover:opacity-75 px-4 py-2 bg-green-500 text-white rounded">
             Add Selected
           </button>
         </div>
