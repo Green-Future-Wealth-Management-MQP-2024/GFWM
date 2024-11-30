@@ -3,13 +3,20 @@ import numpy as np
 
 from data_science.quant.portfolio_calculator import ANNUAL_RISK_FREE_RATE
 
-def portfolio_history(portfolio):
+def extract_value(var):
+    if isinstance(var, list) and len(var) == 1:
+        return var[0]
+    return var
+
+# TODO handle include_spy = False better
+def portfolio_history(portfolio, include_spy = True):
     
     spy_log_returns = pd.read_csv("data_science/quant/spy_timeseries_13-24.csv")['SPY']
     
     tickers = portfolio.index.tolist()
     
     tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
+    # print(tickers_log_returns.head())
     
     # TODO clean this up using pandas objects instead of python lists
     
@@ -34,7 +41,8 @@ def portfolio_history(portfolio):
         timeseries = [init_value]
         
         for log_return in tickers_log_returns[ticker].values:
-            
+            log_return = extract_value(log_return)
+            # print(log_return)
             if pd.isna(log_return):
                 log_return = cash_daily_return
             timeseries.append(timeseries[-1] * np.exp(log_return))
@@ -80,7 +88,11 @@ def portfolio_history(portfolio):
     spy_max_drawdown = get_max_drawdown(pd.Series(spy_timeseries))
     portfolio_max_drawdown = get_max_drawdown(pd.Series(portfolio_timeseries))
     
-    return spy_timeseries[::5], portfolio_timeseries[::5], tickers_log_returns['date'][::5].tolist(), spy_max_drawdown, portfolio_max_drawdown
+    if(include_spy):
+        return spy_timeseries[::5], portfolio_timeseries[::5], tickers_log_returns['date'][::5].tolist(), spy_max_drawdown, portfolio_max_drawdown
+    else:
+        return portfolio_timeseries[::5], tickers_log_returns['date'][::5].tolist(), portfolio_max_drawdown
+        
 
 
 # d = {'ticker': ['ABNB', 'AAPL', 'MSFT'], 'weight': [0.3, 0.3, 0.4]}

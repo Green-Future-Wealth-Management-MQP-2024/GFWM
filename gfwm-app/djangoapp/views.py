@@ -1,6 +1,5 @@
-
+import pandas as pd
 from django.http import JsonResponse
-from .models import SurveyResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
@@ -95,4 +94,51 @@ def submit_form(request):
             'summary_statistics': summary_statistics
             })
 
+    return JsonResponse({"error": "Invalid request method."}, status=401)
+
+@csrf_exempt
+def update_weights(request):
+    if request.method == "POST":
+        
+        # dict of request body:
+        # tickers, risk_appetite, weighing_scheme
+        update_request_dict = json.loads(request.body)
+        
+        # TODO update to process ticker and compatibility columns
+        client_portfolio = pd.DataFrame(update_request_dict['client_portfolio'])
+        
+        target_volatility = update_request_dict['risk_appetite']
+        
+        use_markowitz = (update_request_dict['weighing_scheme'] == 'Markowitz Optimized')
+        
+        # calculate best fit portfolio for the client
+        ideal_portfolio_weights, expected_return, expected_volatility, sharpe = calculate_portfolio(client_portfolio[['ticker', 'compatibility']], 
+                                                                                                    target_volatility,
+                                                                                                    use_markowitz)
+        client_portfolio['weight'] = ideal_portfolio_weights
+        
+        portfolio_timeseries, dates, portfolio_max_dd = portfolio_history(client_portfolio[['ticker','weight']].set_index('ticker', drop = True),
+                                                                          include_spy=False)
+        
+        #calculate summary statistics        
+        summary_statistics = {            
+            "portfolio_average_return": expected_return,
+            
+            "portfolio_volatility": expected_volatility,
+            "portfolio_sharpe": sharpe,
+            
+            "portfolio_max_dd": portfolio_max_dd,
+            
+            "portfolio_timeseries": portfolio_timeseries,
+            "timeseries_dates": dates,
+            
+            "portfolio_weighing_scheme": use_markowitz
+        }
+        
+        # return format for updated_portfolio: {ticker: weight, ticker: weight etc}
+        return JsonResponse({
+            "updated_portfolio": client_portfolio[['ticker','weight']].set_index('ticker', drop = True)['weight'].to_dict(),
+            "updated_summary_statistics": summary_statistics
+        })
+    
     return JsonResponse({"error": "Invalid request method."}, status=401)

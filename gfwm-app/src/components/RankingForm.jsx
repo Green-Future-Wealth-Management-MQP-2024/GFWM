@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import RankingFormResults from "./RankingFormResults";
 import DragAndDrop from "./DragAndDrop";
@@ -53,9 +53,15 @@ const RankingForm = () => {
     choice1: "Equal Weights",
     choice2: "Markowitz Optimized",
   };
-  const [weighingScheme, setWeighingScheme] = useState("choice1"); //equal weights as the default
+  const [weighingScheme, setWeighingScheme] = useState("choice1"); //equal weights (choice1) as the default
 
-  const [returnData, setReturnData] = useState({});
+  const [formResults, setFormResults] = useState({});
+
+  const [serverResponse, setServerResponse] = useState({});
+
+  useEffect(() => {
+    console.log("updated server response state: ", serverResponse);
+  }, [serverResponse]);
 
   const [showResults, setShowResults] = useState(false);
 
@@ -90,7 +96,11 @@ const RankingForm = () => {
     results["flexibility"] = flexibilitySlider / 100.0;
     results["risk_appetite"] = volatilitySlider / 100.0;
     results["weighing_scheme"] = weighing_scheme_choices[weighingScheme];
-    console.log("submitted: ", results); // or send to an API or other destinations
+
+    // save the form results to pass along with server response to results display
+    setFormResults(results);
+
+    console.log("Form submitted:", results);
 
     // Send the data to the server
     fetch(`//${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
@@ -108,8 +118,8 @@ const RankingForm = () => {
         return res.json();
       })
       .then((data) => {
-        setReturnData(data);
-        console.log("Server response:", data); // Use the server response if needed
+        console.log("Server response:", data);
+        setServerResponse(data);
         setShowResults(true); // Show results after successful response
       })
       .catch((error) => {
@@ -152,8 +162,7 @@ const RankingForm = () => {
           </span>
         </label>
 
-        {/* Sliders 
-          flexiblity*/}
+        {/* flexiblity slider*/}
         <p>Rate your flexibility with these ESG preferences.</p>
         <div className="w-3/4 flex items-center space-x-4">
           <span className="text-gray-600 text-lg whitespace-nowrap">
@@ -191,6 +200,8 @@ const RankingForm = () => {
           {/* <div>Selected Value: {volatilitySlider}%</div> */}
         </div>
 
+        {/* weighing scheme checkboxes: equal weight or markowitz optimized */}
+
         <div className="flex justify-left space-x-4">
           {Object.entries(weighing_scheme_choices).map(([key, value]) => (
             <label key={key} className="flex items-center space-x-2">
@@ -215,8 +226,9 @@ const RankingForm = () => {
         </button>
       </form>
 
+      {/* shorthand for if showResults, then ... */}
       {showResults && (
-        <RankingFormResults results={returnData} columns={columns} />
+        <RankingFormResults serverResponse={serverResponse} formResults={formResults} />
       )}
     </div>
   );

@@ -5,11 +5,11 @@ const StockSearchModal = ({
   onClose,
   stocks,
   currentStocks,
-  onAddToPortfolio,
-  onRemovePortfolio,
+  onAddStocks,
+  onRemoveTickers,
   onClickStock,
-  selectedStocks,
-  setSelectedStocks,
+  selectedTickers,
+  setSelectedTickers,
   handleSelectStock,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,7 +17,7 @@ const StockSearchModal = ({
 
   useEffect(() => {
     setSearchTerm("");
-    if (isOpen && selectedStocks.length > 0) {
+    if (isOpen && selectedTickers.length > 0) {
       setSelectedCategory("selected");
     }
   }, [isOpen]);
@@ -46,7 +46,7 @@ const StockSearchModal = ({
     selectedCategory === "all"
       ? filteredStocks
       : selectedCategory === "selected"
-      ? filteredStocks.filter((stock) => selectedStocks.includes(stock.ticker))
+      ? filteredStocks.filter((stock) => selectedTickers.includes(stock.ticker))
       : selectedCategory === "current_portfolio"
       ? filteredStocks.filter((stock) =>
           currentStocks.some((cs) => cs.ticker === stock.ticker)
@@ -67,28 +67,30 @@ const StockSearchModal = ({
   const handleAddSelected = () => {
     if (
       !window.confirm(
-        `Are you sure you want to add the selected ${selectedStocks.length} stock(s) to your portfolio?`
+        `Are you sure you want to add the selected ${selectedTickers.length} stock(s) to your portfolio?`
       )
     ) {
       return;
     }
     const stocksToAdd = stocks.filter((stock) =>
-      selectedStocks.includes(stock.ticker)
+      selectedTickers.includes(stock.ticker)
     );
-    stocksToAdd.forEach((stock) => onAddToPortfolio(stock));
-    setSelectedStocks([]);
+    // handle adding list of tickers
+    onAddStocks(stocksToAdd);
+    setSelectedTickers([]);
   };
 
   const handleRemoveSelected = () => {
     if (
       !window.confirm(
-        `Are you sure you want to remove the selected ${selectedStocks.length} stock(s) from your portfolio?`
+        `Are you sure you want to remove the selected ${selectedTickers.length} stock(s) from your portfolio?`
       )
     ) {
       return;
     }
-    selectedStocks.forEach((ticker) => onRemovePortfolio(ticker));
-    setSelectedStocks([]);
+    // handle removing list of selected tickers from portfolio
+    onRemoveTickers(selectedTickers)
+    setSelectedTickers([]);
   };
 
   return (
@@ -175,7 +177,7 @@ const StockSearchModal = ({
                 const isInPortfolio = currentStocks.find(
                   (pI) => pI.ticker === stock.ticker
                 );
-                const isSelected = selectedStocks.includes(stock.ticker);
+                const isSelected = selectedTickers.includes(stock.ticker);
                 return (
                   <tr key={stock.ticker} className="hover:bg-gray-100  ">
                     <td
@@ -241,9 +243,9 @@ const StockSearchModal = ({
         </div>
         <div className="flex justify-end space-x-4 mt-4">
           <div className="flex flex-col text-gray-700">
-            <span className="">{selectedStocks.length} stock(s) selected</span>
+            <span className="">{selectedTickers.length} stock(s) selected</span>
             <button
-              onClick={() => setSelectedStocks([])}
+              onClick={() => setSelectedTickers([])}
               className=" text-xs hover:underline text-gray-500 hover:opacity-75"
             >
               Clear Selected Stocks

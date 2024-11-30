@@ -47,8 +47,6 @@ const Chart = ({ portfolio, spy, dates }) => {
 
 //   const labels = generateLabels("2013-01-01", portfolio.length, 7);
 
-    console.log(dates);
-
   const tension = 0.2; // line smoothness
   const borderWidth = 2;
   const pointRadius = 0; // No circles displayed
