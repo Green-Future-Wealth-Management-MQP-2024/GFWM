@@ -28,7 +28,15 @@ def portfolio_history(portfolio, include_spy = True):
     init_value = 100
     cash_daily_return = np.log(1+ANNUAL_RISK_FREE_RATE) / 252
     
-    spy_timeseries = [init_value]
+    # cash position earning risk free rate is the same for spy and portfolio:
+    t = np.arange(start = 0, stop = days + 1)
+    cash_percent =  1- (portfolio['weight'].sum())
+    
+    cash_portion = (init_value * cash_percent) * np.exp((cash_daily_return) * t)  # Exponential growth formula
+    
+    # calculate spy growth
+    
+    spy_timeseries = [init_value * (1-cash_percent)]
      
     for log_return in spy_log_returns.values:
         spy_timeseries.append(spy_timeseries[-1] * np.exp(log_return))
@@ -62,13 +70,11 @@ def portfolio_history(portfolio, include_spy = True):
     # add portfolios one by one, elementwise, to result
     for timeseries in ticker_timeseries.values():
         portfolio_timeseries = [p + t for p, t in zip(portfolio_timeseries, timeseries)]
-        
-    # add cash position earning risk free rate:
-    t = np.arange(start = 0, stop = days + 1)
-    portfolio_cash_start = 100 * (1 - (portfolio['weight'].sum()))
     
-    portfolio_cash = portfolio_cash_start * np.exp((cash_daily_return) * t)  # Exponential growth formula
-    portfolio_timeseries = [p + c for p, c in zip(portfolio_timeseries, portfolio_cash)]
+    
+    # add cash to both portfolios
+    spy_timeseries = [spy + cash for spy, cash in zip(spy_timeseries, cash_portion)]
+    portfolio_timeseries = [p + cash for p, cash in zip(portfolio_timeseries, cash_portion)]
         
     # calculate max drawdown as a percent
     # https://quant.stackexchange.com/a/43544/78596

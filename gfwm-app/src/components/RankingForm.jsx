@@ -46,7 +46,7 @@ const RankingForm = () => {
     setWeaponsChecked(!weaponsChecked);
   };
 
-  const [volatilitySlider, setVolatilitySliderValue] = useState(10);
+  const [riskSlider, setRiskSliderValue] = useState(10);
   const [flexibilitySlider, setFlexibilitySliderValue] = useState(5);
 
   const weighing_scheme_choices = {
@@ -94,7 +94,7 @@ const RankingForm = () => {
     results["avoid_fossil_fuels"] = fossilFuelsChecked;
     results["avoid_weapons"] = weaponsChecked;
     results["flexibility"] = flexibilitySlider / 100.0;
-    results["risk_appetite"] = volatilitySlider / 100.0;
+    results["risk_appetite"] = riskSlider / 100.0;
     results["weighing_scheme"] = weighing_scheme_choices[weighingScheme];
 
     // save the form results to pass along with server response to results display
@@ -181,23 +181,23 @@ const RankingForm = () => {
           </span>
         </div>
         <p>Rate your risk level.</p>
-        {/* volatility / risk slider */}
+        {/* risk slider */}
         <div className="w-3/4 flex items-center space-x-4">
           <span className="text-gray-600 text-lg whitespace-nowrap">
             Conservative
           </span>
           <input
             type="range"
-            min="5"
-            max="16"
-            value={volatilitySlider}
-            onChange={(e) => setVolatilitySliderValue(e.target.value)}
+            min="0"
+            max="20"
+            value={riskSlider}
+            onChange={(e) => setRiskSliderValue(e.target.value)}
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
           <span className="text-gray-600 text-lg whitespace-nowrap">
             Growth
           </span>
-          {/* <div>Selected Value: {volatilitySlider}%</div> */}
+          {/* <div>Selected Value: {riskSlider}%</div> */}
         </div>
 
         {/* weighing scheme checkboxes: equal weight or markowitz optimized */}

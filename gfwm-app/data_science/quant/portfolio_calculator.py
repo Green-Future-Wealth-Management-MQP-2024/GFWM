@@ -8,25 +8,7 @@ from math import floor
 ANNUAL_RISK_FREE_RATE = 0.0153
 
 
-def round_alpha(alpha):
-
-    # round alpha down to nearest 5% for simplicity in valuing cash position
-    # alpha is percent allocated to portfolio, 1-alpha is cash
-
-    if alpha > 1:
-        # target volatility is higher than found portfolio:
-        # find a solution depending on weighting method
-        return 2
-
-    # interesting case: alpha <= 1
-    if alpha > 0.975:
-        return 0.975
-    else:
-        return floor(alpha * 20) / 20.0
-
-
-# TODO change volatility target to range
-def calculate_portfolio(ticker_compatibility_df, target_volatility, use_markowitz):
+def calculate_portfolio(ticker_compatibility_df, cash_percent, use_markowitz, return_summary_statistics = True):
 
     performance_summaries = pd.read_csv("data_science/quant/sp500_performance_summaries.csv")
     #sp500_tickers = performance_summaries.columns.tolist()
@@ -92,45 +74,145 @@ def calculate_portfolio(ticker_compatibility_df, target_volatility, use_markowit
         tangent_portfolio = markowitz_portfolios.iloc[tangent_portfolio_index]
 
         # interpolate the line between (0, risk_free_rate) and the tangent portfolio
-        # target_vol = alpha * tangent_vol + (1-alpha) * 0
-
-        alpha = target_volatility / tangent_portfolio['annual_volatility']
-
-        alpha = round_alpha(alpha)
         
-        if alpha < 1:        
-            ideal_weights = np.array(alpha * tangent_portfolio['weights']).reshape(n, 1)
+        # cash percent is 1-alpha
+
+        alpha = 1 - cash_percent
         
-        # rare case: the client's volatility tolerance is higher than the tangent portfolio
-        # find the portfolio with the closest volatility
-        # assuming there is a portfolio that high
-        else:
-            # TODO debug this case giving returns around 5%, not 15+%
-            # for the time being, this case never hits as volatility input doesn't go this high
-            closest_portfolio_index = markowitz_portfolios.loc[tangent_portfolio_index:, 'annual_volatility'].sub(target_volatility).abs().argmin()
-            closest_portfolio = markowitz_portfolios.iloc[closest_portfolio_index]
-            print(tangent_portfolio_index, closest_portfolio_index)
-            print(closest_portfolio)
-            ideal_weights = np.array(closest_portfolio['weights']).reshape(n, 1)
+        ideal_weights = np.array(alpha * tangent_portfolio['weights']).reshape(n, 1)
 
     # not markowitz -> equal weights
     else:
-        ideal_weights = np.repeat(1.0/n, n).reshape(n, 1)
-        # still want to hit close to the target volatility using cash to reduce volatility
-        equal_weights_volatility = np.sqrt(252 * (ideal_weights.T @ true_cov_matrix @ ideal_weights)[0][0])
+        alpha = 1- cash_percent
+        ideal_weights = np.repeat(alpha/n, n).reshape(n, 1)
 
-        alpha = round_alpha(target_volatility / equal_weights_volatility)
-
-        if alpha < 1:
-            ideal_weights = ideal_weights * alpha
-        # else case: no change to ideal weights
-
-    expected_return = np.dot(ideal_weights.reshape(n,), annual_returns)
+    
+    if(not return_summary_statistics):
+        # convert to row vector of weights
+        return ideal_weights.T.tolist()[0]
+    
+    expected_return = np.dot(ideal_weights.reshape(n,), annual_returns) + cash_percent * ANNUAL_RISK_FREE_RATE
 
     expected_volatility = np.sqrt(252 * 
                                   (ideal_weights.T @ true_cov_matrix @ ideal_weights)[0][0])
 
     sharpe = (expected_return - ANNUAL_RISK_FREE_RATE) / expected_volatility
 
-    # convert to row vector of weights
     return ideal_weights.T.tolist()[0], expected_return, expected_volatility, sharpe
+
+
+def extract_value(var):
+    if isinstance(var, list) and len(var) == 1:
+        return var[0]
+    return var
+
+# TODO handle include_spy = False better
+def portfolio_history(portfolio, include_spy = True):
+    
+    spy_log_returns = pd.read_csv("data_science/quant/spy_timeseries_13-24.csv")['SPY']
+    
+    tickers = portfolio.index.tolist()
+    
+    tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
+    # print(tickers_log_returns.head())
+    
+    # TODO clean this up using pandas objects instead of python lists
+    
+    # print(len(spy_log_returns))
+    # print(len(tickers_log_returns))
+    days = len(spy_log_returns)
+    # major assumption: since length is the same, the days automatically line up
+    
+    init_value = 100
+    cash_daily_return = np.log(1+ANNUAL_RISK_FREE_RATE) / 252
+    
+    # cash position earning risk free rate is the same for spy and portfolio:
+    t = np.arange(start = 0, stop = days + 1)
+    cash_percent =  1- (portfolio['weight'].sum())
+    
+    cash_portion = (init_value * cash_percent) * np.exp((cash_daily_return) * t)  # Exponential growth formula
+    
+    # calculate spy growth
+    
+    spy_timeseries = [init_value * (1-cash_percent)]
+     
+    for log_return in spy_log_returns.values:
+        spy_timeseries.append(spy_timeseries[-1] * np.exp(log_return))
+        
+        
+    ticker_timeseries = {}
+    
+    for ticker in tickers:
+        
+        timeseries = [init_value]
+        
+        for log_return in tickers_log_returns[ticker].values:
+            log_return = extract_value(log_return)
+            # print(log_return)
+            if pd.isna(log_return):
+                log_return = cash_daily_return
+            timeseries.append(timeseries[-1] * np.exp(log_return))
+        
+        # get weight for current ticker
+        weight = portfolio.loc[ticker]['weight']
+        
+        # sometimes weight is a list... TODO figure out why
+        if isinstance(weight, (list, np.ndarray, pd.Series)) and len(weight) == 1:
+            weight = weight[0]
+            
+        ticker_timeseries[ticker] = [value * weight for value in timeseries]
+    
+    # initially all 0's. 
+    # days + 1 because start is init_value, then data actually starts
+    portfolio_timeseries = [0] * (days + 1)
+    # add portfolios one by one, elementwise, to result
+    for timeseries in ticker_timeseries.values():
+        portfolio_timeseries = [p + t for p, t in zip(portfolio_timeseries, timeseries)]
+    
+    
+    # add cash to both portfolios
+    spy_timeseries = [spy + cash for spy, cash in zip(spy_timeseries, cash_portion)]
+    portfolio_timeseries = [p + cash for p, cash in zip(portfolio_timeseries, cash_portion)]
+        
+    # calculate max drawdown as a percent
+    # https://quant.stackexchange.com/a/43544/78596
+    def get_max_drawdown(nvs: pd.Series, window=None) -> float:
+        """
+        :param nvs: net value series
+        :param window: lookback window, int or None
+        if None, look back entire history
+        """
+        n = len(nvs)
+        if window is None:
+            window = n
+        # rolling peak values
+        peak_series = nvs.rolling(window=window, min_periods=1).max()
+        return (nvs / peak_series - 1.0).min()
+    
+    spy_max_drawdown = get_max_drawdown(pd.Series(spy_timeseries))
+    portfolio_max_drawdown = get_max_drawdown(pd.Series(portfolio_timeseries))
+    
+    if(include_spy):
+        return spy_timeseries, portfolio_timeseries, tickers_log_returns['date'].tolist(), spy_max_drawdown, portfolio_max_drawdown
+    else:
+        return portfolio_timeseries, tickers_log_returns['date'].tolist(), portfolio_max_drawdown
+    
+# d = {'ticker': ['ABNB', 'AAPL', 'MSFT'], 'weight': [0.3, 0.3, 0.4]}
+# df = pd.DataFrame(data=d)
+# df.set_index('ticker', drop = True, inplace=True)
+
+# portfolio_history(df)
+
+def calculate_summary_statistics(timeseries, return_as_range = False):
+    '''
+    Given a timeseries (Python list), calculate return and volatility
+    '''
+    
+    log_returns = np.log(np.array(timeseries[1:]) / np.array(timeseries[:-1]))
+    
+    average_return = (np.exp(np.mean(log_returns)) - 1) * 252
+    volatility = np.std(log_returns) * np.sqrt(252)
+    
+    sharpe = (average_return - ANNUAL_RISK_FREE_RATE) / volatility
+    
+    return average_return, volatility, sharpe

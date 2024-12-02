@@ -291,12 +291,12 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     //   sp500: `$${(10000 * Math.pow(1 + sp500_average_return, 10)).toFixed(2)}`,
     // },
     {
-      field: "Sharpe Ratio Estimate",
+      field: "Estimated Sharpe Ratio",
       portfolio: `${portfolioSummaryStatistics.sharpe.toFixed(2)}`,
       sp500: `${sp500SummaryStatistics.sharpe.toFixed(2)}`,
     },
     {
-      field: "Max Drawdown Estimate",
+      field: "Estimated Max Drawdown",
       portfolio: `${(portfolioSummaryStatistics.maxDD * 100).toFixed(2)}%`,
       sp500: `${(sp500SummaryStatistics.maxDD * 100).toFixed(2)}%`,
     },
@@ -476,12 +476,12 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
       <h2 className="text-xl font-bold mb-2">Results Summary</h2>
       <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
         {/* Comparison Table */}
-        <div className="flex-none w-full sm:w-[35%] min-w-[200px]">
+        <div className="flex-none w-full sm:w-[30%] min-w-[200px]">
           <ComparisonTable data={comparisonTableData} />
         </div>
 
         {/* Timeseries Chart */}
-        <div className="flex-grow w-[40%]">
+        <div className="flex-grow w-[45%]">
           <TimeseriesChart
             portfolio={portfolioSummaryStatistics.timeseries}
             spy={sp500SummaryStatistics.timeseries}

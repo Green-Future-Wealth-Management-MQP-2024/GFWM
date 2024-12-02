@@ -4,9 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 from data_science.stock_filter import filter_stocks
-from data_science.quant.portfolio_calculator import calculate_portfolio, ANNUAL_RISK_FREE_RATE
-
-from data_science.quant.portfolio_history import portfolio_history
+from data_science.quant.portfolio_calculator import calculate_portfolio, ANNUAL_RISK_FREE_RATE, portfolio_history, calculate_summary_statistics
 
 @csrf_exempt
 def hello_api(request):
@@ -40,7 +38,8 @@ def submit_form(request):
             esg_preferences[avoid_factor] = client_responses[avoid_factor]
         
         esg_flexibility = client_responses['flexibility']
-        target_volatility = client_responses['risk_appetite']
+        # map risk appetite (0 - 0.2) to cash percent (50% - 10%)
+        cash_percent = 0.5 - 2 * client_responses['risk_appetite']
         
         use_markowitz = (client_responses['weighing_scheme'] == 'Markowitz Optimized')
         
@@ -52,9 +51,10 @@ def submit_form(request):
         portfolio = filter_results.head(100).copy()
         
         # calculate best fit portfolio for the client
-        ideal_portfolio_weights, expected_return, expected_volatility, sharpe = calculate_portfolio(portfolio[['ticker', 'compatibility']], 
-                                                                                                    target_volatility,
-                                                                                                    use_markowitz)
+        ideal_portfolio_weights = calculate_portfolio(portfolio[['ticker', 'compatibility']], 
+                                                                                                    cash_percent,
+                                                                                                    use_markowitz,
+                                                                                                    return_summary_statistics=False)
         
         portfolio['weight'] = ideal_portfolio_weights
         
@@ -62,26 +62,30 @@ def submit_form(request):
                                                                                                                  'weight']]
                                                                                                       .set_index('ticker', drop = True))
         
-        #calculate summary statistics        
+        #calculate summary statistics  
+        
+        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=False)
+        spy_return, spy_volatility, spy_sharpe = calculate_summary_statistics(spy_timeseries, return_as_range=False)
+           
         summary_statistics = {
             "portfolio_esg_score": portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
             
-            "portfolio_average_return": expected_return,
-            "growth_of_10k_10_years": 1e4 * (1 + expected_return) ** 10,
+            "portfolio_average_return": portfolio_return,
             
-            "portfolio_volatility": expected_volatility,
-            "portfolio_sharpe": sharpe,
+            "portfolio_volatility": portfolio_volatility,
+            "portfolio_sharpe": portfolio_sharpe,
             
-            "sp500_average_return": 0.1345,
-            "sp500_average_volatility": 0.156,
-            "sp500_sharpe": (0.1345 - ANNUAL_RISK_FREE_RATE) / 0.156,
+            "sp500_average_return": spy_return,
+            "sp500_average_volatility": spy_volatility,
+            "sp500_sharpe": spy_sharpe,
             
             "spy_max_dd": spy_max_dd,
             "portfolio_max_dd": portfolio_max_dd,
             
-            "spy_timeseries": spy_timeseries,
-            "portfolio_timeseries": portfolio_timeseries,
-            "timeseries_dates": dates,
+            # save memory by only returning / graphing every 5th datapoint
+            "spy_timeseries": spy_timeseries[::5],
+            "portfolio_timeseries": portfolio_timeseries[::5],
+            "timeseries_dates": dates[::5],
             
             "portfolio_weighing_scheme": use_markowitz
         }
@@ -107,30 +111,37 @@ def update_weights(request):
         # TODO update to process ticker and compatibility columns
         client_portfolio = pd.DataFrame(update_request_dict['client_portfolio'])
         
-        target_volatility = update_request_dict['risk_appetite']
+        # map risk appetite (0 - 0.2) to cash percent (50% - 10%)
+        cash_percent = 0.5 - 2 * update_request_dict['risk_appetite']
         
         use_markowitz = (update_request_dict['weighing_scheme'] == 'Markowitz Optimized')
         
         # calculate best fit portfolio for the client
-        ideal_portfolio_weights, expected_return, expected_volatility, sharpe = calculate_portfolio(client_portfolio[['ticker', 'compatibility']], 
-                                                                                                    target_volatility,
-                                                                                                    use_markowitz)
+        ideal_portfolio_weights = calculate_portfolio(client_portfolio[['ticker', 'compatibility']],
+                                                      cash_percent=cash_percent,
+                                                      use_markowitz=use_markowitz,
+                                                      return_summary_statistics=False)
+        
         client_portfolio['weight'] = ideal_portfolio_weights
         
         portfolio_timeseries, dates, portfolio_max_dd = portfolio_history(client_portfolio[['ticker','weight']].set_index('ticker', drop = True),
                                                                           include_spy=False)
         
-        #calculate summary statistics        
+        #calculate summary statistics   
+        
+        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=False)
+        
+             
         summary_statistics = {            
-            "portfolio_average_return": expected_return,
+            "portfolio_average_return": portfolio_return,
             
-            "portfolio_volatility": expected_volatility,
-            "portfolio_sharpe": sharpe,
+            "portfolio_volatility": portfolio_volatility,
+            "portfolio_sharpe": portfolio_sharpe,
             
             "portfolio_max_dd": portfolio_max_dd,
             
-            "portfolio_timeseries": portfolio_timeseries,
-            "timeseries_dates": dates,
+            "portfolio_timeseries": portfolio_timeseries[::5],
+            "timeseries_dates": dates[::5],
             
             "portfolio_weighing_scheme": use_markowitz
         }
