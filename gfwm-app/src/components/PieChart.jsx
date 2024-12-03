@@ -74,6 +74,9 @@ const PieChart = ({ weights }) => {
         enabled: true,
       },
     },
+    layout: {
+      padding: 0, // Reduce extra padding around the chart
+    },
   };
 
   return <Pie data={chartData} options={options} />;

@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.20",
     "chart.js": "^4.4.5",
+    "chartjs-plugin-zoom": "^2.1.0",
     "concurrently": "^6.2.1",
     "papaparse": "^5.4.1",
     "postcss": "^8.4.47",

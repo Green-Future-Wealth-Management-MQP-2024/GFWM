@@ -1,0 +1,90 @@
+import pandas as pd
+import numpy as np
+
+from data_science.quant.portfolio_calculator import ANNUAL_RISK_FREE_RATE
+
+def portfolio_history(portfolio):
+    
+    spy_log_returns = pd.read_csv("data_science/quant/spy_timeseries_13-24.csv")['SPY']
+    
+    tickers = portfolio.index.tolist()
+    
+    tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
+    
+    # TODO clean this up using pandas objects instead of python lists
+    
+    # print(len(spy_log_returns))
+    # print(len(tickers_log_returns))
+    days = len(spy_log_returns)
+    # major assumption: since length is the same, the days automatically line up
+    
+    init_value = 100
+    cash_daily_return = np.log(1+ANNUAL_RISK_FREE_RATE) / 252
+    
+    spy_timeseries = [init_value]
+     
+    for log_return in spy_log_returns.values:
+        spy_timeseries.append(spy_timeseries[-1] * np.exp(log_return))
+        
+        
+    ticker_timeseries = {}
+    
+    for ticker in tickers:
+        
+        timeseries = [init_value]
+        
+        for log_return in tickers_log_returns[ticker].values:
+            
+            if pd.isna(log_return):
+                log_return = cash_daily_return
+            timeseries.append(timeseries[-1] * np.exp(log_return))
+        
+        # get weight for current ticker
+        weight = portfolio.loc[ticker]['weight']
+        
+        # sometimes weight is a list... TODO figure out why
+        if isinstance(weight, (list, np.ndarray, pd.Series)) and len(weight) == 1:
+            weight = weight[0]
+            
+        ticker_timeseries[ticker] = [value * weight for value in timeseries]
+    
+    # initially all 0's. 
+    # days + 1 because start is init_value, then data actually starts
+    portfolio_timeseries = [0] * (days + 1)
+    # add portfolios one by one, elementwise, to result
+    for timeseries in ticker_timeseries.values():
+        portfolio_timeseries = [p + t for p, t in zip(portfolio_timeseries, timeseries)]
+        
+    # add cash position earning risk free rate:
+    t = np.arange(start = 0, stop = days + 1)
+    portfolio_cash_start = 100 * (1 - (portfolio['weight'].sum()))
+    
+    portfolio_cash = portfolio_cash_start * np.exp((cash_daily_return) * t)  # Exponential growth formula
+    portfolio_timeseries = [p + c for p, c in zip(portfolio_timeseries, portfolio_cash)]
+        
+    # calculate max drawdown as a percent
+    # https://quant.stackexchange.com/a/43544/78596
+    def get_max_drawdown(nvs: pd.Series, window=None) -> float:
+        """
+        :param nvs: net value series
+        :param window: lookback window, int or None
+        if None, look back entire history
+        """
+        n = len(nvs)
+        if window is None:
+            window = n
+        # rolling peak values
+        peak_series = nvs.rolling(window=window, min_periods=1).max()
+        return (nvs / peak_series - 1.0).min()
+    
+    spy_max_drawdown = get_max_drawdown(pd.Series(spy_timeseries))
+    portfolio_max_drawdown = get_max_drawdown(pd.Series(portfolio_timeseries))
+    
+    return spy_timeseries[::5], portfolio_timeseries[::5], tickers_log_returns['date'][::5].tolist(), spy_max_drawdown, portfolio_max_drawdown
+
+
+# d = {'ticker': ['ABNB', 'AAPL', 'MSFT'], 'weight': [0.3, 0.3, 0.4]}
+# df = pd.DataFrame(data=d)
+# df.set_index('ticker', drop = True, inplace=True)
+
+# portfolio_history(df)

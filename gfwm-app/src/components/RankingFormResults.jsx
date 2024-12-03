@@ -1,155 +1,302 @@
 import React from "react";
 import { Bar } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
 import StockSearchModal from "./StockSearchModal";
 
 import ComparisonTable from "./ComparisonTable";
 import PieChart from "./PieChart";
+import TimeseriesChart from "./TimeseriesChart";
 
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+const RankingFormResults = ({ results, columns }) => {
+  // unpack results object into df, df, dict
 
-const RankingFormResults = ({ results }) => {
-   
-  results = results || {};
-  
-  const{average_esg_score, portfolio_average_return, sp500_average_return,
-    growth_of_10k_10_years, portfolio_volatility, portfolio_sharpe} = results.summary_statistics;
+  // 'sp500_compatibility': filter_results[['ticker', 'compatibility']].to_dict(orient='records'),
+  // 'portfolio': portfolio[['ticker', 'weight']].to_dict(orient = 'records'),
+  // 'summary_statistics':
 
-  const [portfolio_data, setPortfolioData] = useState(results.top_100);
-  useEffect(() => { 
-    setPortfolioData(results.top_100);
-    }, [results]);
+  const {
+    sp500_compatibility: server_compatibility_scores,
+    portfolio: server_portfolio_weights,
+    summary_statistics,
+  } = results;
 
-  const [sortConfig, setSortConfig] = useState({ key: 'compatibility_score', direction: 'descending' });
+  const {
+    portfolio_esg_score,
+    portfolio_average_return,
+    growth_of_10k_10_years,
+    portfolio_volatility,
+    portfolio_sharpe,
+    sp500_average_return,
+    sp500_average_volatility,
+    sp500_sharpe,
+    spy_max_dd,
+    portfolio_max_dd,
+    spy_timeseries,
+    portfolio_timeseries,
+    timeseries_dates,
+  } = summary_statistics;
 
+  // MANAGE STOCK DATA OBJECT
 
-  //get SNP 500
-  const [csvData, setCsvData] = useState([]);
-  const [snp500Data, setSnp500Data] = useState([]);
+  // contains all stocks the client might want to invest in
+  // stocks removed by fossil fuels / weapons have compatibility 0 by default
+  const [stock_data, setStockData] = useState([]);
+
+  // runs when server's compatibility score changes
+  // augments preprocessed csv with compatibility scores from server
   useEffect(() => {
-    const fetchData = async () => {
-      const csvData = await CSVdata();
-      setCsvData(csvData);
+    // stop if there are no compatibility scores to augment stock_data with
+    if (!server_compatibility_scores) return;
+
+    const augmentStockData = async () => {
+      try {
+        const preprocessedCSV = await fetch("/preprocessed_refinitiv.csv"); //public version of preprocessed
+        const preprocessedCSVText = await preprocessedCSV.text();
+        const parseResult = Papa.parse(preprocessedCSVText, {
+          header: true,
+          skipEmptyLines: true,
+        });
+        // List of columns known to be numeric
+        //TODO make this not hardcoded
+        const numericColumns = [
+          "esg_combined",
+          "controversy",
+          "environment",
+          "social",
+          "governance",
+          "human_rights",
+          "community",
+          "workforce",
+          "product_responsibility",
+          "shareholders",
+          "management",
+          "annual_return",
+          "volatility",
+          "fossil_fuels",
+          "weapons",
+          "tobacco",
+        ];
+
+        //augment data with compatibility column pulled from server response
+        const augmentedData = parseResult.data.map((row) => {
+          // Convert specific numeric columns
+          const parsedRow = {
+            ...row,
+            ...Object.fromEntries(
+              numericColumns.map((col) => [col, Number(row[col]) || 0]) // Convert or default to 0
+            ),
+          };
+
+          // Match ticker to score or assign 0
+          // 0 happens if the ticker was excluded for fossil fuels or weapons involvement
+          const compatibility = server_compatibility_scores[row.ticker] || 0;
+
+          return {
+            ...parsedRow,
+            compatibility, // Add compatibility score as a new property
+          };
+        });
+
+        console.log("updated stock data wth compatibility", augmentedData);
+
+        setStockData(augmentedData);
+      } catch (error) {
+        console.error(
+          "Error with augmenting preprocessed CSV with server's compatibility scores:",
+          error
+        );
+      }
     };
-    fetchData();
-  }, []);
 
+    augmentStockData();
+  }, [server_compatibility_scores]);
+  //--------------------------------
+
+  // MANAGE PORTFOLIO DATA OBJECT
+
+  // copy of the selected stocks from the overall S&P 500 data
+  // also includes weight column
+  const [portfolio_data, setPortfolioData] = useState([]);
+
+  // runs when the server updates the portfolio weights object
+  // copies correct rows (tickers) from stock_data and augments with given weight
   useEffect(() => {
-    if (csvData.length > 0 && results.snp500_compatibility) {
-      const combinedData = combineData(csvData, results.snp500_compatibility);
-      setSnp500Data(combinedData);
-    }
-  }, [csvData, results.snp500_compatibility]);
+    if (!server_portfolio_weights) return;
 
-  const CSVdata = async () => {
-    try {
-      const csvSNP = await fetch('/preprocessed.csv');
-      const csvSNPData = await csvSNP.text();
-      const parsedData = Papa.parse(csvSNPData, { header: true, skipEmptyLines: true });
-      return parsedData.data;
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
+    const updatePortfolioData = async () => {
+      //TODO speed this up either by
+      // 1. returning a proper object of {ticker1: weight1, ticker2: weight2 ...}
+      // 2. making a hashmap on the client of the same format
 
-  const renameColumns = (data) => {
-    return data.map((item) => ({
-      ticker: item['Symbol'],
-      name: item['Name'],
-      esg: parseFloat(item['ESG Score']) || -1,
-      controversy: parseFloat(item['ESG Controversies Score']) || -1,
-      environment: parseFloat(item['Environment Pillar Score']) || -1,
-      social: parseFloat(item['Social Pillar Score']) || -1,
-      governance: parseFloat(item['Governance Pillar Score']) || -1,
-      annual_return: parseFloat(item['Total Returns']) || -1,
-      sd: parseFloat(item['Standard Deviation']) || -1,
-      emissions: parseFloat(item['Emissions Score']) || -1,
-      product_responsibility: parseFloat(item['Product Responsibility Score']) || -1,
-      human_rights: parseFloat(item['Human Rights Score']) || -1,
-      compatibility_score: parseFloat(item['compatibility_score']) || -1,
-    }));
-  };
+      // first check if the ticker exists in the portfolio object
+      const portfolioData = stock_data
+        .filter(
+          (row) => server_portfolio_weights.hasOwnProperty(row.ticker)
 
-  const combineData = (csvData, snp500Compatibility) => {
-    const renamedData = renameColumns(csvData);
-    const combinedData = renamedData.map((item) => {
-      const snp500Item = snp500Compatibility.find((snpItem) => snpItem.ticker === item.ticker);
-      return {
-        ...item,
-        compatibility_score: snp500Item ? snp500Item.compatibility_score : item.compatibility_score,
-      };
-    });
-    //console.log(combinedData);
-    return combinedData;
-  };
+          //then access the weight directly by ticker
+        )
+        .map((row) => {
+          const weight = server_portfolio_weights[row.ticker] || 0;
+          return {
+            ...row,
+            weight, // Add the weight property
+          };
+        });
+      setPortfolioData(portfolioData);
+    };
 
+    updatePortfolioData();
+  }, [server_portfolio_weights, stock_data]);
+  //-----------------------------------
 
+  // HANDLE SORTING OF PORTFOLIO DATA
 
+  const [sortConfig, setSortConfig] = useState({
+    key: "compatibility", //default sort by compatibility
+    direction: "descending",
+  });
 
-  
-  const rowRefs = React.useRef([]);
-
-  //PORTFOLIO RETURNS VS S&P INDEX GRAPH
-
-  //ALLOW FOR SORTING OF PORTFOLIO DATA
   // Sort portfolio_data based on sortConfig
   const sorted_portfolio_data = React.useMemo(() => {
     let sortableData = [...portfolio_data]; //shallow copy of memoized data
     if (sortConfig !== null) {
       sortableData.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
+          return sortConfig.direction === "ascending" ? -1 : 1;
         }
         if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
+          return sortConfig.direction === "ascending" ? 1 : -1;
         }
         return 0;
       });
     }
     return sortableData;
-    
-    //objects watched by react to update sorted_portfolio_data when these change
-  }, [portfolio_data, sortConfig]); 
+  }, [portfolio_data, sortConfig]); // update sorted_portfolio_data when these change
 
   // Handle sorting
-  const requestSort = key => {
-    let direction = 'descending';
-    if (sortConfig.key === key && sortConfig.direction === 'descending') {
-      direction = 'ascending';
+  const requestSort = (key) => {
+    let direction = "descending";
+    if (sortConfig.key === key && sortConfig.direction === "descending") {
+      direction = "ascending";
     }
     setSortConfig({ key, direction });
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(value);
   };
+  //------------------------------
 
-  // TODO get the sp500 data from the server (benchmarks csv)
+  // HANDLE TOP 20s OBJECT
+
+  const [top_20s, setTop20s] = useState([]);
+
+  useEffect(() => {
+    if (!stock_data) return;
+
+    const combinedList = [
+      ...columns.highImportance,
+      ...columns.midImportance,
+      ...columns.notImportant,
+    ];
+
+    const updateTop20s = async () => {
+      // build top 20s from the list of factors and stock data
+      const top20s_builder = combinedList.map((factor) => {
+        // Sort stock_data by the factor, descending order, and slice the first 20
+        const sortedStocks = [...stock_data]
+          .sort((a, b) => b[factor] - a[factor])
+          .slice(0, 20);
+
+        return {
+          factor: factor,
+          stocks: sortedStocks,
+        };
+      });
+      setTop20s(top20s_builder);
+    };
+
+    updateTop20s();
+  }, [stock_data, columns]); // update top 20s when stock data or columns change
+  //--------------------------
+
+  const rowRefs = React.useRef([]);
+
+  // VALUES FOR COMPARISON TABLE
   const comparisonTableData = [
-    {field: "Annual Return", portfolio: `${(portfolio_average_return * 100).toFixed(2)}%`, sp500: `${(sp500_average_return * 100).toFixed(2)}%`},
-    {field: "Delta Return", portfolio: `${((portfolio_average_return - sp500_average_return) * 100).toFixed(2)}%`, sp500: `${((sp500_average_return - portfolio_average_return) * 100).toFixed(2)}%`},
-    {field: "Annual Volatility", portfolio: `${(portfolio_volatility * 100).toFixed(2)}%`, sp500:"15.6%"},
-    { field: "Growth of $10k in 10 years", portfolio: `${formatCurrency(growth_of_10k_10_years)}`, sp500: `${formatCurrency(10000 * Math.pow(1 + 0.1, 10))}`},
-    { field: "Sharpe Ratio", portfolio: `${portfolio_sharpe.toFixed(2)}`, sp500: "0.73"},
-    { field: "Average ESG Score", portfolio: `${average_esg_score.toFixed(2)}`, sp500:"66.66"},
-    { field: "Number of stocks", portfolio: `${portfolio_data.length}`, sp500: "500" }
+    {
+      field: "Average Return",
+      portfolio: `${(portfolio_average_return * 100).toFixed(2)}% (delta ${(
+        (portfolio_average_return - sp500_average_return) *
+        100
+      ).toFixed(2)}%)`,
+      sp500: `${(sp500_average_return * 100).toFixed(2)}%`,
+    },
+    {
+      field: "Average Standard Deviation",
+      portfolio: `${(portfolio_volatility * 100).toFixed(2)}% (delta ${(
+        (portfolio_volatility - sp500_average_volatility) *
+        100
+      ).toFixed(2)}%)`,
+      sp500: `${(sp500_average_volatility * 100).toFixed(2)}%`,
+    },
+    // {
+    //   field: "Growth of $10k in 10 years",
+    //   portfolio: `$${growth_of_10k_10_years.toFixed(2)}`,
+    //   sp500: `$${(10000 * Math.pow(1 + sp500_average_return, 10)).toFixed(2)}`,
+    // },
+    {
+      field: "Sharpe Ratio",
+      portfolio: `${portfolio_sharpe.toFixed(2)}`,
+      sp500: `${sp500_sharpe.toFixed(2)}`,
+    },
+    {
+      field: "Max Drawdown",
+      portfolio: `${(portfolio_max_dd * 100).toFixed(2)}%`,
+      sp500: `${(spy_max_dd * 100).toFixed(2)}%`,
+    },
+    {
+      field: "Average ESG Score",
+      portfolio: `${portfolio_esg_score.toFixed(2)}`,
+      sp500: "66.66",
+    },
+    {
+      field: "Number of stocks",
+      portfolio: `${portfolio_data.length}`,
+      sp500: "500",
+    },
   ];
 
-
-  //SELECTED TICKER AND OPEN TABLEAU DASHBOARD
+  // OPEN TABLEAU DASHBOARD FOR SELECTED TICKER
   const [selectedTicker, setSelectedTicker] = React.useState(null);
 
-    const openTableauDashboard = (ticker) => {
-      setSelectedTicker(ticker);
+  const openTableauDashboard = (ticker) => {
+    setSelectedTicker(ticker);
 
-      const popup = window.open('', '_blank', 'width=1600,height=950');
-      const embedCode = `
+    const popup = window.open("", "_blank", "width=1600,height=950");
+    const embedCode = `
     <div class='tableauPlaceholder' id='viz1731438480314' style='position: relative'>
         <noscript>
           <a href='#'>
@@ -185,30 +332,32 @@ const RankingFormResults = ({ results }) => {
         vizElement.parentNode.insertBefore(scriptElement, vizElement);
       </script>
       `;
-      popup.document.open();
-      popup.document.write(embedCode);
-      popup.document.close();
-
+    popup.document.open();
+    popup.document.write(embedCode);
+    popup.document.close();
   };
-  //SCROLL TO TOP
-    const scrollToTop = () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+  //--------------
 
-    //ADD REMOVE
-    const handleAddToPortfolio = (stock) => {
-      if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
-        setPortfolioData((prevData) => [...prevData, stock]);
-      }
-      setSelectedTicker(stock.ticker);
-    };
-  
-    const handleRemoveFromPortfolio = (ticker) => {
-      setPortfolioData((prevPortfolioData) =>
-        prevPortfolioData.filter((item) => !ticker.includes(item.ticker))
-      );
-      setSelectedTicker(ticker);
-    };
+  //SCROLL TO TOP
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  //ADD REMOVE
+  const handleAddToPortfolio = (stock) => {
+    // if not already in portfolio, add it
+    if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
+      const stockWithWeight = { ...stock, weight: 0 }; // Add the weight field
+
+      setPortfolioData((prevData) => [...prevData, stockWithWeight]);
+    }
+    setSelectedTicker(stock.ticker);
+  };
+
+  const handleRemoveFromPortfolio = (ticker) => {
+    setPortfolioData(portfolio_data.filter((item) => item.ticker !== ticker));
+    setSelectedTicker(ticker);
+  };
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedStocks, setSelectedStocks] = useState([]);
@@ -224,38 +373,48 @@ const RankingFormResults = ({ results }) => {
 
   return (
     <div className="ranking-form-results p-4 bg-white rounded-lg">
-
-      <h2 className="text-xl font-bold mb-2">Results</h2>
-      
-
-      <div className="flex flex-wrap flex-col lg:flex-row lg:items-start ">
-        {/* <div className="flex-1 max-w-2xl" style={{ minWidth: '32rem' }}>
-          <Bar data={AnnualReturnBar_chartData} options={AnnualReturnBar_Options} />
+      <h2 className="text-xl font-bold mb-2">Results Summary</h2>
+      <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
+        {/* Comparison Table */}
+        <div className="flex-none w-full sm:w-[35%] min-w-[200px]">
+          <ComparisonTable data={comparisonTableData} />
         </div>
 
-        <div className="flex-1 min-w-72 max-w-sm ">
-          <Bar data={sp500_return_data} options={sp500_return_options} />
-        </div> */}
-
-        <div className="ml-5 shrink grow min-w-72 max-w-5xl basis-0 ">
-          <ComparisonTable data = {comparisonTableData}></ComparisonTable>
+        {/* Timeseries Chart */}
+        <div className="flex-grow w-[40%]">
+          <TimeseriesChart
+            portfolio={portfolio_timeseries}
+            spy={spy_timeseries}
+            dates={timeseries_dates}
+          />
         </div>
 
-        <div className="flex-1 min-w-72 max-w-sm ">
+        {/* Pie Chart */}
+        <div className="flex-none w-[20%] min-w-[100px]">
           <PieChart weights={portfolio_data.map((item) => item.weight * 100)} />
         </div>
-
-        
       </div>
-      <button onClick={() => setIsModalOpen(true)} className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded mb-4">
-        Edit Portfolio
-      </button>
+      <h2 className="text-xl font-bold mb-2">Portfolio</h2>
+      <div className="flex gap-4 mb-4">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Edit Portfolio
+        </button>
 
+        {/* <button
+          disabled={true} // Disables the button
+          className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+        >
+          Recalculate Weights
+        </button> */}
+      </div>
       <StockSearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         currentStocks={portfolio_data}
-        stocks={snp500Data}
+        stocks={stock_data}
         onAddToPortfolio={handleAddToPortfolio}
         onRemovePortfolio={handleRemoveFromPortfolio}
         onClickStock={openTableauDashboard}
@@ -263,86 +422,300 @@ const RankingFormResults = ({ results }) => {
         setSelectedStocks={setSelectedStocks}
         handleSelectStock={handleSelectStock}
       />
-  
-<div className="relative">
-      <table className="min-w-full bg-white mb-2 text-sm">
-        <thead className="sticky top-0 bg-white z-10">
-        <tr title="Sort data">
-        <th className="border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
-            <th className="py-0 px-0 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('ticker')}>
-              Symbol {sortConfig.key === 'ticker' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('name')}>
-              Name {sortConfig.key === 'name' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('annual_return')}>
-              Annualized Return {sortConfig.key === 'annual_return' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('sd')}>
-              SD {sortConfig.key === 'sd' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('esg')}>
-             ESG {sortConfig.key === 'esg' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('environment')}>
-              Environment {sortConfig.key === 'environment' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('social')}>
-              Social {sortConfig.key === 'social' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('governance')}>
-              Governance {sortConfig.key === 'governance' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('compatibility_score')}>
-              Compatibility {sortConfig.key === 'compatibility_score' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-            <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer" onClick={() => requestSort('weight')}>
-              Weight {sortConfig.key === 'weight' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
-            </th>
-  
-          </tr>
-        </thead>
-        <tbody>
-          {sorted_portfolio_data.map((item, index) => {
+      <div className="relative">
+        <table className="min-w-full bg-white mb-2 text-sm">
+          <thead className="sticky top-0 bg-white </tr>z-10">
+            <tr title="Sort data">
+              <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
 
-            const isSelected = selectedStocks.includes(item.ticker);
-          
-          
-          return (
-            <tr ref={(el) => (rowRefs.current[item.ticker] = el)} key={item.ticker} 
-            className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? 'bg-gray-100' : ''}`} onClick={() => openTableauDashboard(item.ticker)}
-            title="Show more">
-                <td className="border-b text-right pl-2 border-gray-300 cursor-pointer " onClick={(e) => {e.stopPropagation(); handleSelectStock(item.ticker)}}>
-                      <input
-                        className='cursor-pointer'
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectStock(item.ticker)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </td>
-              <td className="py-0 px-0 border-b border-gray-300 text-gray-400 text-right" onClick={(e) => {e.stopPropagation(); handleSelectStock(item.ticker)}}>{index +1}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
-              <td className="py-1 px-2 border-b border-gray-300">{(item.sd * 100).toFixed(2)}%</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.esg.toFixed(2)}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
-              <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
-              <td className="py-1 px-2 border-b border-gray-300 ">{item.compatibility_score.toFixed(0)}%</td>
-                <td className="py-1 px-2 border-b border-gray-300">{(item.weight * 100).toFixed(2)}%</td>
-              
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("ticker")}
+              >
+                Symbol{" "}
+                {sortConfig.key === "ticker" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
 
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("name")}
+              >
+                Name{" "}
+                {sortConfig.key === "name" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("annual_return")}
+              >
+                Annualized Return{" "}
+                {sortConfig.key === "annual_return" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("sd")}
+              >
+                Standard Deviation{" "}
+                {sortConfig.key === "volatility" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("esg")}
+              >
+                Combined ESG{" "}
+                {sortConfig.key === "esg_combined" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("environment")}
+              >
+                Environment{" "}
+                {sortConfig.key === "environment" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("social")}
+              >
+                Social{" "}
+                {sortConfig.key === "social" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("governance")}
+              >
+                Governance{" "}
+                {sortConfig.key === "governance" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("compatibility")}
+              >
+                Compatibility{" "}
+                {sortConfig.key === "compatibility" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
+              <th
+                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                onClick={() => requestSort("weight")}
+              >
+                Weight{" "}
+                {sortConfig.key === "weight" &&
+                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+              </th>
             </tr>
-          )})}
-        </tbody>
-      </table>
-    
-      </div>
+          </thead>
+          <tbody>
+            {sorted_portfolio_data.map((item, index) => {
+              const isSelected = selectedStocks.includes(item.ticker);
+              return (
+                <tr
+                  ref={(el) => (rowRefs.current[item.ticker] = el)}
+                  key={item.ticker}
+                  className={`hover:bg-gray-100 cursor-pointer ${
+                    selectedTicker === item.ticker ? "bg-gray-100" : ""
+                  }`}
+                  onClick={() => openTableauDashboard(item.ticker)}
+                  title="Show more"
+                >
+                  <td
+                    className="border-b text-right pl-2 border-gray-300 cursor-pointer "
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectStock(item.ticker);
+                    }}
+                  >
+                    <input
+                      className="cursor-pointer"
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleSelectStock(item.ticker)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </td>
 
-  <button onClick={scrollToTop} className="fixed bottom-4 right-4 bg-green-700 text-white p-2 rounded-full shadow-lg">↑</button>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.ticker}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.name}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.annual_return * 100).toFixed(2)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.volatility * 100).toFixed(2)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.esg_combined.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.environment.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.social.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {item.governance.toFixed(2)}
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300 ">
+                    {item.compatibility.toFixed(0)}%
+                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">
+                    {(item.weight * 100).toFixed(2)}%
+                  </td>
+                  <td
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFromPortfolio(item.ticker);
+                    }}
+                  >
+                    <button className="bg-red-500 text-white px-1 rounded">
+                      X
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {top_20s.map(({ factor, stocks }) => (
+        <div className="relative">
+          <h2 className="text-xl font-bold mb-2">Top {factor} Stocks</h2>
+          <table className="min-w-full bg-white mb-2 text-sm">
+            <thead className="sticky top-0 bg-white </tr>z-10">
+              <tr>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Ticker
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
+                  Name
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
+                  Annualized Return
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
+                  Standard Deviation
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Combined ESG
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
+                  Environment
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Human Rights
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Community
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Workforce
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Product Responsibility
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Shareholders
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Management
+                </th>
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  Compatibility
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {stocks.map((row) => {
+                const isInPortfolio = portfolio_data.find(
+                  (item) => item.ticker === row.ticker
+                );
+                return (
+                  <tr
+                    key={row.ticker}
+                    className={`hover:bg-gray-100 cursor-pointer ${
+                      selectedTicker === row.ticker ? "bg-gray-100" : ""
+                    }`}
+                    onClick={() => openTableauDashboard(row.ticker)}
+                    title="Show more"
+                  >
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.ticker}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.name}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {(row.annual_return * 100).toFixed(2)}%
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {(row.volatility * 100).toFixed(2)}%
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.esg_combined}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.environment.toFixed(2)}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.human_rights.toFixed(2)}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.community.toFixed(2)}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.workforce.toFixed(2)}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.product_responsibility.toFixed(2)}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.shareholders.toFixed(2)}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.management.toFixed(2)}
+                    </td>
+                    <td className="py-1 px-2 border-b border-gray-300">
+                      {row.compatibility.toFixed(0)}%
+                    </td>
+                    <td
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToPortfolio(row);
+                      }}
+                    >
+                      <button
+                        className={`px-1 rounded mr-2 ${
+                          isInPortfolio
+                            ? "bg-gray-500 cursor-not-allowed"
+                            : "bg-green-500 text-white"
+                        }`}
+                        disabled={isInPortfolio}
+                      >
+                        {isInPortfolio ? "✓" : " + "}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-4 right-4 bg-green-700 text-white p-2 rounded-full shadow-lg"
+          >
+            ↑
+          </button>
+        </div>
+      ))}
     </div>
   );
 };
