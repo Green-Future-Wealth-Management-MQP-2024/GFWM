@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import HoverPopup from "./HoverPopup";
 
 const StockSearchModal = ({
   isOpen,
@@ -60,9 +61,16 @@ const StockSearchModal = ({
   if (!isOpen) return null;
 
   const handleAddSelected = () => {
+    const addStockNumber = selectedTickers.filter((ticker) => !currentStocks.some((cs) => cs.ticker === ticker)).length;
+    var addStockMessage = `Are you sure you want to add the ${addStockNumber} selected stock(s) to your portfolio?`;
+    if (addStockNumber === 0) {
+      alert("No selected stocks are in your portfolio.");
+      return;
+    } else if (addStockNumber < selectedTickers.length) {
+      addStockMessage = `Some of the selected stocks are already in your portfolio. Do you want to add the remaining ${addStockNumber} selected stock(s) to your portfolio?`;
+    }
     if (
-      !window.confirm(`Are you sure you want to add the 
-      ${selectedTickers.length} selected stock(s) to your portfolio?`)
+      !window.confirm(addStockMessage)
     ) {
       return;
     }
@@ -75,10 +83,17 @@ const StockSearchModal = ({
   };
 
   const handleRemoveSelected = () => {
+    const removeStockNumber = selectedTickers.filter((ticker) => currentStocks.some((cs) => cs.ticker === ticker)).length;
+     var removeStockMessage = `Are you sure you want to remove the ${removeStockNumber} selected stock(s) from your portfolio?`;
+    if (removeStockNumber === 0) {
+      alert("No selected stocks are in your portfolio.");
+      return;
+    } else if (removeStockNumber < selectedTickers.length) {
+      removeStockMessage = `Some of the selected stocks are not in your portfolio. Do you want to remove the remaining ${removeStockNumber} selected stock(s) from your portfolio?`;
+    }
+
     if (
-      !window.confirm(
-        `Are you sure you want to remove the selected ${selectedTickers.length} stock(s) from your portfolio?`
-      )
+      !window.confirm(removeStockMessage)
     ) {
       return;
     }
@@ -246,7 +261,24 @@ const StockSearchModal = ({
         </div>
         <div className="flex justify-end space-x-4 mt-4">
           <div className="flex flex-col text-gray-700">
-            <span className="cursor-pointer hover:underline"        onClick={() => {setSelectedCategory('selected');   setSearchTerm("");}}>{selectedTickers.length} stock(s) selected</span>
+          <HoverPopup
+              content={
+                <div>
+                  <p className="text-sm text-gray-700">Selected stocks:</p>
+                  <ul className="list-disc list-inside">
+                    {selectedTickers.map((ticker, index) => (
+                      <li key={index} className="text-sm text-gray-700">
+                        {ticker}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              }
+            >
+              <span className="cursor-pointer hover:underline" onClick={() => {setSelectedCategory('selected'); setSearchTerm("")}}>
+                {selectedTickers.length} stock(s) selected
+              </span>
+            </HoverPopup>
             <button
               onClick={() => setSelectedTickers([])}
               className=" text-xs hover:underline text-gray-500 hover:opacity-75"
@@ -254,13 +286,54 @@ const StockSearchModal = ({
               Clear Selected Stocks
             </button>
           </div>
+          <HoverPopup
+      content={
+        <div>
+          <p className="text-sm text-gray-700">{selectedTickers.filter((ticker) =>
+              currentStocks.some((cs) => cs.ticker === ticker)
+            ).length} stock(s) to be removed:</p>
+          <ul className="list-disc list-inside">
+            {selectedTickers.filter((ticker) =>
+              currentStocks.some((cs) => cs.ticker === ticker)
+            ).map((ticker, index) => (
+              <li key={index} className="text-sm text-gray-700">
+                {ticker}
+              </li>
+            ))}
+          </ul>
+        </div>
+      }
+    >
+      <button
+        onClick={handleRemoveSelected}
+        className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded"
+      >
+        Remove Selected
+      </button>
+    </HoverPopup>
 
-          <button onClick={handleRemoveSelected} className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded">
-            Remove Selected
-          </button>
+    <HoverPopup content={
+        <div>
+
+          <p className="text-sm text-gray-700">{selectedTickers.filter((ticker) =>
+              !currentStocks.some((cs) => cs.ticker === ticker)
+            ).length} stock(s) to be added:</p>
+          <ul className="list-disc list-inside">
+            {selectedTickers.filter((ticker) =>
+              !currentStocks.some((cs) => cs.ticker === ticker)
+            ).map((ticker, index) => (
+              <li key={index} className="text-sm text-gray-700">
+                {ticker}
+              </li>
+            ))}
+          </ul>
+        </div>
+      }
+    >
           <button onClick={handleAddSelected} className="hover:opacity-75 px-4 py-2 bg-green-500 text-white rounded">
             Add Selected
           </button>
+        </HoverPopup>
         </div>
       </div>
     </div>
