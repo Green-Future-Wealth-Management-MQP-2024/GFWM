@@ -226,7 +226,7 @@ const StockSearchModal = ({
         </div>
         <div className="flex justify-end space-x-4 mt-4">
           <div className="flex flex-col text-gray-700">
-            <span className="">{selectedTickers.length} stock(s) selected</span>
+            <span className="cursor-pointer hover:underline"        onClick={() => {setSelectedCategory('selected');   setSearchTerm("");}}>{selectedTickers.length} stock(s) selected</span>
             <button
               onClick={() => setSelectedTickers([])}
               className=" text-xs hover:underline text-gray-500 hover:opacity-75"
