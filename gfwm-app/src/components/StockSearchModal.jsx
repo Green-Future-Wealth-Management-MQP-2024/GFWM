@@ -15,6 +15,7 @@ const StockSearchModal = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+
   useEffect(() => {
     setSearchTerm("");
     if (isOpen && selectedTickers.length > 0) {
@@ -140,7 +141,26 @@ const StockSearchModal = ({
           <table className="min-w-full bg-white mb-2 text-sm">
             <thead className="sticky top-0 bg-white z-10">
               <tr>
-                <th className=" border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
+
+                <th className="pl-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"> <input 
+                className='cursor-pointer'
+                type="checkbox"
+                checked={selectedTickers.length === sortedStocks.length}
+                onChange={() => {
+                  if (selectedTickers.length === sortedStocks.length) {
+                    setSelectedTickers([]);
+                  } // if all stocked in the current filter is in the selectedStocks, then clear the selectedStocks
+                
+                  else {
+                    setSelectedTickers(prevSelected => [
+                      ...prevSelected,
+                      ...sortedStocks
+                      .filter(stock => !prevSelected.includes(stock.ticker))
+                      .map(stock => stock.ticker)
+                    ]);
+                  }
+                }}
+                ></input> </th>
                 <th className="py-0 px-0 border-b-2 border-gray-300 text-left leading-4 text-gray-600"></th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
                   Symbol
