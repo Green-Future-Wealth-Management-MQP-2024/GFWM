@@ -1,23 +1,25 @@
 import React, { useEffect, useState } from "react";
+import HoverPopup from "./HoverPopup";
 
 const StockSearchModal = ({
   isOpen,
   onClose,
   stocks,
   currentStocks,
-  onAddToPortfolio,
-  onRemovePortfolio,
+  onAddStocks,
+  onRemoveTickers,
   onClickStock,
-  selectedStocks,
-  setSelectedStocks,
+  selectedTickers,
+  setSelectedTickers,
   handleSelectStock,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+
   useEffect(() => {
     setSearchTerm("");
-    if (isOpen && selectedStocks.length > 0) {
+    if (isOpen && selectedTickers.length > 0) {
       setSelectedCategory("selected");
     }
   }, [isOpen]);
@@ -46,64 +48,67 @@ const StockSearchModal = ({
     selectedCategory === "all"
       ? filteredStocks
       : selectedCategory === "selected"
-      ? filteredStocks.filter((stock) => selectedStocks.includes(stock.ticker))
+      ? filteredStocks.filter((stock) => selectedTickers.includes(stock.ticker))
       : selectedCategory === "current_portfolio"
-      ? filteredStocks.filter((stock) =>
-          currentStocks.some((cs) => cs.ticker === stock.ticker)
-        )
+      ? filteredStocks.filter((stock) => currentStocks.some((cs) => cs.ticker === stock.ticker))
       : selectedCategory === "not_in_portfolio"
-      ? filteredStocks.filter(
-          (stock) => !currentStocks.some((cs) => cs.ticker === stock.ticker)
-        )
+      ? filteredStocks.filter((stock) => !currentStocks.some((cs) => cs.ticker === stock.ticker))
       : filteredStocks
           .filter((stock) => stock[selectedCategory] !== undefined)
-          .sort(
-            (a, b) => (b[selectedCategory] || 0) - (a[selectedCategory] || 0)
-          )
-          .slice(0, 20);
+          .sort((a, b) => (b[selectedCategory] || 0) - (a[selectedCategory] || 0))
+          .slice(0, 25);
 
   if (!isOpen) return null;
 
   const handleAddSelected = () => {
+    const addStockNumber = selectedTickers.filter((ticker) => !currentStocks.some((cs) => cs.ticker === ticker)).length;
+    var addStockMessage = `Are you sure you want to add the ${addStockNumber} selected stock(s) to your portfolio?`;
+    if (addStockNumber === 0) {
+      alert("No selected stocks are in your portfolio.");
+      return;
+    } else if (addStockNumber < selectedTickers.length) {
+      addStockMessage = `Some of the selected stocks are already in your portfolio. Do you want to add the remaining ${addStockNumber} selected stock(s) to your portfolio?`;
+    }
     if (
-      !window.confirm(
-        `Are you sure you want to add the selected ${selectedStocks.length} stock(s) to your portfolio?`
-      )
+      !window.confirm(addStockMessage)
     ) {
       return;
     }
-    const stocksToAdd = stocks.filter((stock) =>
-      selectedStocks.includes(stock.ticker)
+    // handle adding list of tickers accounting for duplicates
+    const stocksToAdd = stocks.filter(
+      (stock) => selectedTickers.includes(stock.ticker) && !currentStocks.includes(stock.ticker)
     );
-    stocksToAdd.forEach((stock) => onAddToPortfolio(stock));
-    setSelectedStocks([]);
+    onAddStocks(stocksToAdd);
+    setSelectedTickers([]);
   };
 
   const handleRemoveSelected = () => {
+    const removeStockNumber = selectedTickers.filter((ticker) => currentStocks.some((cs) => cs.ticker === ticker)).length;
+     var removeStockMessage = `Are you sure you want to remove the ${removeStockNumber} selected stock(s) from your portfolio?`;
+    if (removeStockNumber === 0) {
+      alert("No selected stocks are in your portfolio.");
+      return;
+    } else if (removeStockNumber < selectedTickers.length) {
+      removeStockMessage = `Some of the selected stocks are not in your portfolio. Do you want to remove the remaining ${removeStockNumber} selected stock(s) from your portfolio?`;
+    }
+
     if (
-      !window.confirm(
-        `Are you sure you want to remove the selected ${selectedStocks.length} stock(s) from your portfolio?`
-      )
+      !window.confirm(removeStockMessage)
     ) {
       return;
     }
-    selectedStocks.forEach((ticker) => onRemovePortfolio(ticker));
-    setSelectedStocks([]);
+    // handle removing list of selected tickers from portfolio
+    onRemoveTickers(selectedTickers);
+    setSelectedTickers([]);
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div
-        className="fixed inset-0 bg-black opacity-50"
-        onClick={onClose}
-      ></div>
+      <div className="fixed inset-0 bg-black opacity-50" onClick={onClose}></div>
       <div className="bg-white rounded-lg shadow-lg p-6 z-50 max-w-3xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Portfolio Edit</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             &times;
           </button>
         </div>
@@ -151,7 +156,26 @@ const StockSearchModal = ({
           <table className="min-w-full bg-white mb-2 text-sm">
             <thead className="sticky top-0 bg-white z-10">
               <tr>
-                <th className=" border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
+
+                <th className="pl-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"> <input 
+                className='cursor-pointer'
+                type="checkbox"
+                checked={selectedTickers.length === sortedStocks.length}
+                onChange={() => {
+                  if (selectedTickers.length === sortedStocks.length) {
+                    setSelectedTickers([]);
+                  } // if all stocked in the current filter is in the selectedStocks, then clear the selectedStocks
+                
+                  else {
+                    setSelectedTickers(prevSelected => [
+                      ...prevSelected,
+                      ...sortedStocks
+                      .filter(stock => !prevSelected.includes(stock.ticker))
+                      .map(stock => stock.ticker)
+                    ]);
+                  }
+                }}
+                ></input> </th>
                 <th className="py-0 px-0 border-b-2 border-gray-300 text-left leading-4 text-gray-600"></th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
                   Symbol
@@ -172,10 +196,8 @@ const StockSearchModal = ({
             </thead>
             <tbody>
               {sortedStocks.map((stock, index) => {
-                const isInPortfolio = currentStocks.find(
-                  (pI) => pI.ticker === stock.ticker
-                );
-                const isSelected = selectedStocks.includes(stock.ticker);
+                const isInPortfolio = currentStocks.find((pI) => pI.ticker === stock.ticker);
+                const isSelected = selectedTickers.includes(stock.ticker);
                 return (
                   <tr key={stock.ticker} className="hover:bg-gray-100  ">
                     <td
@@ -228,9 +250,7 @@ const StockSearchModal = ({
                       {isInPortfolio ? (
                         <span className="text-green-500">In Portfolio</span>
                       ) : (
-                        <span className="text-gray-500 text-xs">
-                          Not In Portfolio
-                        </span>
+                        <span className="text-gray-500 text-xs">Not In Portfolio</span>
                       )}
                     </td>
                   </tr>
@@ -241,27 +261,79 @@ const StockSearchModal = ({
         </div>
         <div className="flex justify-end space-x-4 mt-4">
           <div className="flex flex-col text-gray-700">
-            <span className="">{selectedStocks.length} stock(s) selected</span>
+          <HoverPopup
+              content={
+                <div>
+                  <p className="text-sm text-gray-700">Selected stocks:</p>
+                  <ul className="list-disc list-inside">
+                    {selectedTickers.map((ticker, index) => (
+                      <li key={index} className="text-sm text-gray-700">
+                        {ticker}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              }
+            >
+              <span className="cursor-pointer hover:underline" onClick={() => {setSelectedCategory('selected'); setSearchTerm("")}}>
+                {selectedTickers.length} stock(s) selected
+              </span>
+            </HoverPopup>
             <button
-              onClick={() => setSelectedStocks([])}
+              onClick={() => setSelectedTickers([])}
               className=" text-xs hover:underline text-gray-500 hover:opacity-75"
             >
               Clear Selected Stocks
             </button>
           </div>
+          <HoverPopup
+      content={
+        <div>
+          <p className="text-sm text-gray-700">{selectedTickers.filter((ticker) =>
+              currentStocks.some((cs) => cs.ticker === ticker)
+            ).length} stock(s) to be removed:</p>
+          <ul className="list-disc list-inside">
+            {selectedTickers.filter((ticker) =>
+              currentStocks.some((cs) => cs.ticker === ticker)
+            ).map((ticker, index) => (
+              <li key={index} className="text-sm text-gray-700">
+                {ticker}
+              </li>
+            ))}
+          </ul>
+        </div>
+      }
+    >
+      <button
+        onClick={handleRemoveSelected}
+        className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded"
+      >
+        Remove Selected
+      </button>
+    </HoverPopup>
 
-          <button
-            onClick={handleRemoveSelected}
-            className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded"
-          >
-            Remove Selected
-          </button>
-          <button
-            onClick={handleAddSelected}
-            className="hover:opacity-75 px-4 py-2 bg-green-500 text-white rounded"
-          >
+    <HoverPopup content={
+        <div>
+
+          <p className="text-sm text-gray-700">{selectedTickers.filter((ticker) =>
+              !currentStocks.some((cs) => cs.ticker === ticker)
+            ).length} stock(s) to be added:</p>
+          <ul className="list-disc list-inside">
+            {selectedTickers.filter((ticker) =>
+              !currentStocks.some((cs) => cs.ticker === ticker)
+            ).map((ticker, index) => (
+              <li key={index} className="text-sm text-gray-700">
+                {ticker}
+              </li>
+            ))}
+          </ul>
+        </div>
+      }
+    >
+          <button onClick={handleAddSelected} className="hover:opacity-75 px-4 py-2 bg-green-500 text-white rounded">
             Add Selected
           </button>
+        </HoverPopup>
         </div>
       </div>
     </div>

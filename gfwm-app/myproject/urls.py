@@ -22,5 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('submitForm/', views.submit_form, name='submit_form'),
     path('hello/', views.hello_api, name='hello_api'),
+    path('updateWeights/', views.update_weights, name = 'update_weights')
 
 ]

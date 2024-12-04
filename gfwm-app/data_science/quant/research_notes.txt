@@ -33,3 +33,12 @@ different risk measures
 
 lower downside semi variance
 instead of averaging x-xbar, only include if x < xbar
+
+
+11/30
+
+compare apples to apples, ie sp500 benchmark should include same cash percent as portfolio
+when adding the bond fund, compare (esg stocks - esg bond - cash) to (sp500 - regular bonds - cash)
+also have toggle to switch between market cap sp500 and equal weight sp500
+make risk slider give both esg and benchmark portfolio the same cash / bond allocation
+    also be able to adjust while editing portfolio content

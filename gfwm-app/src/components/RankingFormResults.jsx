@@ -1,5 +1,6 @@
 import React from "react";
-import { Bar } from "react-chartjs-2";
+import { useEffect, useState } from "react";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,7 +10,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { useEffect, useState } from "react";
+
 import Papa from "papaparse";
 import StockSearchModal from "./StockSearchModal";
 
@@ -26,46 +27,103 @@ ChartJS.register(
   Legend
 );
 
-const RankingFormResults = ({ results, columns }) => {
-  // unpack results object into df, df, dict
+const RankingFormResults = ({ serverResponse, formResults }) => {
 
-  // 'sp500_compatibility': filter_results[['ticker', 'compatibility']].to_dict(orient='records'),
-  // 'portfolio': portfolio[['ticker', 'weight']].to_dict(orient = 'records'),
-  // 'summary_statistics':
+  console.log('received props ', serverResponse, formResults);
 
-  const {
-    sp500_compatibility: server_compatibility_scores,
-    portfolio: server_portfolio_weights,
-    summary_statistics,
-  } = results;
+  const [compatibilityScores, setCompatibilityScores] = useState({});
+  const [portfolioWeights, setPortfolioWeights] = useState({});
+  const [portfolioSummaryStatistics, setPortfolioSummaryStatistics] = useState({
+    "ESGScore": 0,
+    "averageReturn": 0,
+    "volatility": 0,
+    "sharpe": 0,
+    "maxDD": 0,
+    "timeseries": [],
+  });
+  const [sp500SummaryStatistics, setSP500SummaryStatistics] = useState({
+    "averageReturn": 0,
+    "volatility": 0,
+    "sharpe": 0,
+    "maxDD": 0,
+    "timeseries": [],
+    "timeseriesDates": []
+  });
 
-  const {
-    portfolio_esg_score,
-    portfolio_average_return,
-    growth_of_10k_10_years,
-    portfolio_volatility,
-    portfolio_sharpe,
-    sp500_average_return,
-    sp500_average_volatility,
-    sp500_sharpe,
-    spy_max_dd,
-    portfolio_max_dd,
-    spy_timeseries,
-    portfolio_timeseries,
-    timeseries_dates,
-  } = summary_statistics;
+  useEffect(() => {
+    if (serverResponse) {
+
+      setCompatibilityScores(serverResponse.sp500_compatibility);
+
+      // stores portfolio weights in {ticker: weight} object format
+      // initialized by server response to form submission
+      // modified when user adds and removes stocks in portfolio
+      setPortfolioWeights(serverResponse.portfolio)
+
+      // unpack server's summary statistics
+      const {
+        portfolio_esg_score: portfolioESGScore,
+        portfolio_average_return: portfolioAverageReturn,
+        portfolio_volatility: portfolioVolatility,
+        portfolio_sharpe: portfolioSharpe,
+        portfolio_max_dd: portfolioMaxDD,
+        portfolio_timeseries: portfolioTimeseries,
+        sp500_average_return: sp500AverageReturn,
+        sp500_average_volatility: sp500AverageVolatility,
+        sp500_sharpe: sp500Sharpe,
+        spy_max_dd: spyMaxDD,
+        spy_timeseries: spyTimeseries,
+        timeseries_dates: timeseriesDates,
+      } = serverResponse.summary_statistics;
+
+      console.log("portfolioSharpe ", portfolioSharpe)
+
+      setPortfolioSummaryStatistics({
+        "ESGScore": portfolioESGScore,
+        "averageReturn": portfolioAverageReturn,
+        "volatility": portfolioVolatility,
+        "sharpe": portfolioSharpe,
+        "maxDD": portfolioMaxDD,
+        "timeseries": portfolioTimeseries,
+      });
+      setSP500SummaryStatistics({
+        "averageReturn": sp500AverageReturn,
+        "volatility": sp500AverageVolatility,
+        "sharpe": sp500Sharpe,
+        "maxDD": spyMaxDD,
+        "timeseries": spyTimeseries,
+        timeseriesDates,
+      });
+    }
+  }, [serverResponse]);
+
+  const [localFormResults, setLocalFormResults] = useState({});
+
+  useEffect(() => {
+    if (formResults) {
+      // unpack form results here
+      const { risk_appetite: riskAppetite, weighing_scheme: weighingScheme } =
+        formResults;
+
+      setLocalFormResults({
+        riskAppetite,
+        weighingScheme,
+      });
+    }
+  }, [formResults]);
 
   // MANAGE STOCK DATA OBJECT
 
-  // contains all stocks the client might want to invest in
-  // stocks removed by fossil fuels / weapons have compatibility 0 by default
-  const [stock_data, setStockData] = useState([]);
+  // contains all stocks the client might want to invest in along with compatibility scores
+  // stocks removed by fossil fuels / weapons have compatibility 0 by default 
+  //    (as the server does not return compatibilities for those)
+  const [stockData, setStockData] = useState([]);
 
   // runs when server's compatibility score changes
   // augments preprocessed csv with compatibility scores from server
   useEffect(() => {
-    // stop if there are no compatibility scores to augment stock_data with
-    if (!server_compatibility_scores) return;
+    // stop if there are no compatibility scores to augment stockData with
+    if (!compatibilityScores) return;
 
     const augmentStockData = async () => {
       try {
@@ -98,7 +156,7 @@ const RankingFormResults = ({ results, columns }) => {
 
         //augment data with compatibility column pulled from server response
         const augmentedData = parseResult.data.map((row) => {
-          // Convert specific numeric columns
+          // Convert specific numeric columns from strings to numbers
           const parsedRow = {
             ...row,
             ...Object.fromEntries(
@@ -108,7 +166,7 @@ const RankingFormResults = ({ results, columns }) => {
 
           // Match ticker to score or assign 0
           // 0 happens if the ticker was excluded for fossil fuels or weapons involvement
-          const compatibility = server_compatibility_scores[row.ticker] || 0;
+          const compatibility = compatibilityScores[row.ticker] || 0;
 
           return {
             ...parsedRow,
@@ -128,34 +186,38 @@ const RankingFormResults = ({ results, columns }) => {
     };
 
     augmentStockData();
-  }, [server_compatibility_scores]);
+  }, [compatibilityScores]);
   //--------------------------------
+
 
   // MANAGE PORTFOLIO DATA OBJECT
 
   // copy of the selected stocks from the overall S&P 500 data
   // also includes weight column
-  const [portfolio_data, setPortfolioData] = useState([]);
+  const [portfolioData, setPortfolioData] = useState([]);
+ 
 
   // runs when the server updates the portfolio weights object
-  // copies correct rows (tickers) from stock_data and augments with given weight
+  // copies correct rows (tickers) from stockData and augments with given weight
   useEffect(() => {
-    if (!server_portfolio_weights) return;
+    if (!portfolioWeights) return;
 
     const updatePortfolioData = async () => {
+      console.log(
+        "updating portfolio data based off weights change: ",
+        Object.keys(portfolioWeights).length
+      );
+
       //TODO speed this up either by
       // 1. returning a proper object of {ticker1: weight1, ticker2: weight2 ...}
       // 2. making a hashmap on the client of the same format
 
       // first check if the ticker exists in the portfolio object
-      const portfolioData = stock_data
-        .filter(
-          (row) => server_portfolio_weights.hasOwnProperty(row.ticker)
-
-          //then access the weight directly by ticker
-        )
+      const portfolioData = stockData
+        .filter((row) => portfolioWeights.hasOwnProperty(row.ticker))
         .map((row) => {
-          const weight = server_portfolio_weights[row.ticker] || 0;
+          //then access the weight directly by ticker
+          const weight = portfolioWeights[row.ticker] || 0;
           return {
             ...row,
             weight, // Add the weight property
@@ -165,8 +227,9 @@ const RankingFormResults = ({ results, columns }) => {
     };
 
     updatePortfolioData();
-  }, [server_portfolio_weights, stock_data]);
+  }, [portfolioWeights, stockData]);
   //-----------------------------------
+
 
   // HANDLE SORTING OF PORTFOLIO DATA
 
@@ -175,9 +238,9 @@ const RankingFormResults = ({ results, columns }) => {
     direction: "descending",
   });
 
-  // Sort portfolio_data based on sortConfig
-  const sorted_portfolio_data = React.useMemo(() => {
-    let sortableData = [...portfolio_data]; //shallow copy of memoized data
+  // Sort portfolio data based on sortConfig
+  const sortedPortfolioData = React.useMemo(() => {
+    let sortableData = [...portfolioData]; //shallow copy of memoized data
     if (sortConfig !== null) {
       sortableData.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -190,7 +253,7 @@ const RankingFormResults = ({ results, columns }) => {
       });
     }
     return sortableData;
-  }, [portfolio_data, sortConfig]); // update sorted_portfolio_data when these change
+  }, [portfolioData, sortConfig]); 
 
   // Handle sorting
   const requestSort = (key) => {
@@ -200,47 +263,7 @@ const RankingFormResults = ({ results, columns }) => {
     }
     setSortConfig({ key, direction });
   };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value);
-  };
   //------------------------------
-
-  // HANDLE TOP 20s OBJECT
-
-  const [top_20s, setTop20s] = useState([]);
-
-  useEffect(() => {
-    if (!stock_data) return;
-
-    const combinedList = [
-      ...columns.highImportance,
-      ...columns.midImportance,
-      ...columns.notImportant,
-    ];
-
-    const updateTop20s = async () => {
-      // build top 20s from the list of factors and stock data
-      const top20s_builder = combinedList.map((factor) => {
-        // Sort stock_data by the factor, descending order, and slice the first 20
-        const sortedStocks = [...stock_data]
-          .sort((a, b) => b[factor] - a[factor])
-          .slice(0, 20);
-
-        return {
-          factor: factor,
-          stocks: sortedStocks,
-        };
-      });
-      setTop20s(top20s_builder);
-    };
-
-    updateTop20s();
-  }, [stock_data, columns]); // update top 20s when stock data or columns change
-  //--------------------------
 
   const rowRefs = React.useRef([]);
 
@@ -248,19 +271,19 @@ const RankingFormResults = ({ results, columns }) => {
   const comparisonTableData = [
     {
       field: "Average Return",
-      portfolio: `${(portfolio_average_return * 100).toFixed(2)}% (delta ${(
-        (portfolio_average_return - sp500_average_return) *
-        100
-      ).toFixed(2)}%)`,
-      sp500: `${(sp500_average_return * 100).toFixed(2)}%`,
+      portfolio: `${(portfolioSummaryStatistics.averageReturn * 100).toFixed(2)}%`,
+      sp500: `${(sp500SummaryStatistics.averageReturn * 100).toFixed(2)}%`,
+    },
+    {
+      field: "Average Return Compared to Benchmark",
+      portfolio: `${((portfolioSummaryStatistics.averageReturn - sp500SummaryStatistics.averageReturn) 
+        *100).toFixed(2)}%`,
+      sp500: '',
     },
     {
       field: "Average Standard Deviation",
-      portfolio: `${(portfolio_volatility * 100).toFixed(2)}% (delta ${(
-        (portfolio_volatility - sp500_average_volatility) *
-        100
-      ).toFixed(2)}%)`,
-      sp500: `${(sp500_average_volatility * 100).toFixed(2)}%`,
+      portfolio: `${(portfolioSummaryStatistics.volatility * 100).toFixed(2)}%`,
+      sp500: `${(sp500SummaryStatistics.volatility * 100).toFixed(2)}%`,
     },
     // {
     //   field: "Growth of $10k in 10 years",
@@ -268,23 +291,23 @@ const RankingFormResults = ({ results, columns }) => {
     //   sp500: `$${(10000 * Math.pow(1 + sp500_average_return, 10)).toFixed(2)}`,
     // },
     {
-      field: "Sharpe Ratio",
-      portfolio: `${portfolio_sharpe.toFixed(2)}`,
-      sp500: `${sp500_sharpe.toFixed(2)}`,
+      field: "Estimated Sharpe Ratio",
+      portfolio: `${portfolioSummaryStatistics.sharpe.toFixed(2)}`,
+      sp500: `${sp500SummaryStatistics.sharpe.toFixed(2)}`,
     },
     {
-      field: "Max Drawdown",
-      portfolio: `${(portfolio_max_dd * 100).toFixed(2)}%`,
-      sp500: `${(spy_max_dd * 100).toFixed(2)}%`,
+      field: "Estimated Max Drawdown",
+      portfolio: `${(portfolioSummaryStatistics.maxDD * 100).toFixed(2)}%`,
+      sp500: `${(sp500SummaryStatistics.maxDD * 100).toFixed(2)}%`,
     },
     {
       field: "Average ESG Score",
-      portfolio: `${portfolio_esg_score.toFixed(2)}`,
+      portfolio: `${portfolioSummaryStatistics.ESGScore.toFixed(2)}`,
       sp500: "66.66",
     },
     {
       field: "Number of stocks",
-      portfolio: `${portfolio_data.length}`,
+      portfolio: `${portfolioData.length}`,
       sp500: "500",
     },
   ];
@@ -343,27 +366,104 @@ const RankingFormResults = ({ results, columns }) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  //ADD REMOVE
-  const handleAddToPortfolio = (stock) => {
-    // if not already in portfolio, add it
-    if (!portfolio_data.find((item) => item.ticker === stock.ticker)) {
-      const stockWithWeight = { ...stock, weight: 0 }; // Add the weight field
+  //ADD and REMOVE from portfolio
 
-      setPortfolioData((prevData) => [...prevData, stockWithWeight]);
-    }
-    setSelectedTicker(stock.ticker);
+  const updatePortfolioWeights = (tickers) => {
+
+    // package up ticker and compatibility columns to send to server
+    const clientPortfolio = tickers.map((ticker) => {
+
+      // Find the object in portfolio that matches the ticker
+      const match = stockData.find((item) => item.ticker === ticker);
+
+      if (!match) {
+        console.log("match not found for ", ticker);
+      }
+
+      return {
+        ticker: ticker,
+        compatibility: match.compatibility,
+      };
+    });
+
+    const body = JSON.stringify({
+      "client_portfolio": clientPortfolio,
+      "risk_appetite": localFormResults.riskAppetite,
+      "weighing_scheme": localFormResults.weighingScheme,
+    });
+
+    // Send the necessary data to the server
+    fetch(`//${import.meta.env.VITE_API_DOMAIN}/updateWeights/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: body,
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.log(res);
+          throw new Error("Network response was not ok");
+        }
+        return res.json();
+      })
+      .then(({ updated_portfolio: updatedPortfolio, updated_summary_statistics: updatedSummaryStatistics }) => {
+        //unpack response to get portfolio object (tickers and weights) and summary statistics
+
+        console.log("Server response updated portfolio: ", updatedPortfolio);
+        console.log("Server response updated summary stats: ", updatedSummaryStatistics);
+
+        // update portfolio data with new weights via listener on portfolioWeights
+        setPortfolioWeights(updatedPortfolio);
+
+        const {
+          portfolio_average_return: portfolioAverageReturn, 
+          portfolio_volatility: portfolioVolatility, 
+          portfolio_sharpe: portfolioSharpe, 
+          portfolio_max_dd: portfolioMaxDD, 
+          portfolio_timeseries: portfolioTimeseries} = updatedSummaryStatistics
+
+        setPortfolioSummaryStatistics({
+          "ESGScore": portfolioSummaryStatistics.ESGScore, //unchanged esg score
+          "averageReturn": portfolioAverageReturn,
+          "volatility": portfolioVolatility,
+          "sharpe": portfolioSharpe,
+          "maxDD": portfolioMaxDD,
+          "timeseries": portfolioTimeseries,
+        });
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   };
 
-  const handleRemoveFromPortfolio = (ticker) => {
-    setPortfolioData(portfolio_data.filter((item) => item.ticker !== ticker));
-    setSelectedTicker(ticker);
+  const handleAddStocks = (addedStocks) => {
+    const oldTickers = portfolioData.map((item) => item.ticker);
+    const newTickers = addedStocks.map((item) => item.ticker);
+
+    // updating weights triggers updating rest of portfolio data
+    updatePortfolioWeights(oldTickers.concat(newTickers));
+
+    setSelectedTicker(addedStocks[0].ticker);
+  };
+
+  const handleRemoveTickers = (removedTickers) => {
+    const oldTickers = portfolioData.map((item) => item.ticker);
+
+    // keep the rows whose ticker is not in the list of tickers to remove
+    updatePortfolioWeights(
+      oldTickers.filter((ticker) => !removedTickers.includes(ticker))
+    );
+
+    setSelectedTicker(removedTickers[0]);
   };
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [selectedStocks, setSelectedStocks] = useState([]);
+  const [selectedTickers, setSelectedTickers] = useState([]);
 
   const handleSelectStock = (ticker) => {
-    setSelectedStocks((prevSelected) =>
+    // toggle selected ticker to or from list of selected tickers
+    setSelectedTickers((prevSelected) =>
       prevSelected.includes(ticker)
         ? prevSelected.filter((item) => item !== ticker)
         : [...prevSelected, ticker]
@@ -376,25 +476,25 @@ const RankingFormResults = ({ results, columns }) => {
       <h2 className="text-xl font-bold mb-2">Results Summary</h2>
       <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
         {/* Comparison Table */}
-        <div className="flex-none w-full sm:w-[35%] min-w-[200px]">
+        <div className="flex-none w-full sm:w-[30%] min-w-[200px]">
           <ComparisonTable data={comparisonTableData} />
         </div>
 
         {/* Timeseries Chart */}
-        <div className="flex-grow w-[40%]">
+        <div className="flex-grow w-[45%]">
           <TimeseriesChart
-            portfolio={portfolio_timeseries}
-            spy={spy_timeseries}
-            dates={timeseries_dates}
+            portfolio={portfolioSummaryStatistics.timeseries}
+            spy={sp500SummaryStatistics.timeseries}
+            dates={sp500SummaryStatistics.timeseriesDates}
           />
         </div>
 
         {/* Pie Chart */}
         <div className="flex-none w-[20%] min-w-[100px]">
-          <PieChart weights={portfolio_data.map((item) => item.weight * 100)} />
+          <PieChart weights={portfolioData.map((item) => item.weight * 100)} />
         </div>
       </div>
-      <h2 className="text-xl font-bold mb-2">Portfolio</h2>
+      <h2 className="text-xl font-bold mb-2">Your Portfolio</h2>
       <div className="flex gap-4 mb-4">
         <button
           onClick={() => setIsModalOpen(true)}
@@ -413,13 +513,13 @@ const RankingFormResults = ({ results, columns }) => {
       <StockSearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        currentStocks={portfolio_data}
-        stocks={stock_data}
-        onAddToPortfolio={handleAddToPortfolio}
-        onRemovePortfolio={handleRemoveFromPortfolio}
+        currentStocks={portfolioData}
+        stocks={stockData}
+        onAddStocks={handleAddStocks}
+        onRemoveTickers={handleRemoveTickers}
         onClickStock={openTableauDashboard}
-        selectedStocks={selectedStocks}
-        setSelectedStocks={setSelectedStocks}
+        selectedTickers={selectedTickers}
+        setSelectedTickers={setSelectedTickers}
         handleSelectStock={handleSelectStock}
       />
       <div className="relative">
@@ -455,7 +555,7 @@ const RankingFormResults = ({ results, columns }) => {
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("sd")}
+                onClick={() => requestSort("volatility")}
               >
                 Standard Deviation{" "}
                 {sortConfig.key === "volatility" &&
@@ -463,7 +563,7 @@ const RankingFormResults = ({ results, columns }) => {
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("esg")}
+                onClick={() => requestSort("esg_combined")}
               >
                 Combined ESG{" "}
                 {sortConfig.key === "esg_combined" &&
@@ -512,8 +612,8 @@ const RankingFormResults = ({ results, columns }) => {
             </tr>
           </thead>
           <tbody>
-            {sorted_portfolio_data.map((item, index) => {
-              const isSelected = selectedStocks.includes(item.ticker);
+            {sortedPortfolioData.map((item, index) => {
+              const isSelected = selectedTickers.includes(item.ticker);
               return (
                 <tr
                   ref={(el) => (rowRefs.current[item.ticker] = el)}
@@ -570,152 +670,12 @@ const RankingFormResults = ({ results, columns }) => {
                   <td className="py-1 px-2 border-b border-gray-300">
                     {(item.weight * 100).toFixed(2)}%
                   </td>
-                  <td
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFromPortfolio(item.ticker);
-                    }}
-                  >
-                    <button className="bg-red-500 text-white px-1 rounded">
-                      X
-                    </button>
-                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      {top_20s.map(({ factor, stocks }) => (
-        <div className="relative">
-          <h2 className="text-xl font-bold mb-2">Top {factor} Stocks</h2>
-          <table className="min-w-full bg-white mb-2 text-sm">
-            <thead className="sticky top-0 bg-white </tr>z-10">
-              <tr>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Ticker
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Name
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Annualized Return
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Standard Deviation
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Combined ESG
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider ">
-                  Environment
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Human Rights
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Community
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Workforce
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Product Responsibility
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Shareholders
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Management
-                </th>
-                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
-                  Compatibility
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {stocks.map((row) => {
-                const isInPortfolio = portfolio_data.find(
-                  (item) => item.ticker === row.ticker
-                );
-                return (
-                  <tr
-                    key={row.ticker}
-                    className={`hover:bg-gray-100 cursor-pointer ${
-                      selectedTicker === row.ticker ? "bg-gray-100" : ""
-                    }`}
-                    onClick={() => openTableauDashboard(row.ticker)}
-                    title="Show more"
-                  >
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.ticker}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.name}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {(row.annual_return * 100).toFixed(2)}%
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {(row.volatility * 100).toFixed(2)}%
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.esg_combined}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.environment.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.human_rights.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.community.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.workforce.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.product_responsibility.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.shareholders.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.management.toFixed(2)}
-                    </td>
-                    <td className="py-1 px-2 border-b border-gray-300">
-                      {row.compatibility.toFixed(0)}%
-                    </td>
-                    <td
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToPortfolio(row);
-                      }}
-                    >
-                      <button
-                        className={`px-1 rounded mr-2 ${
-                          isInPortfolio
-                            ? "bg-gray-500 cursor-not-allowed"
-                            : "bg-green-500 text-white"
-                        }`}
-                        disabled={isInPortfolio}
-                      >
-                        {isInPortfolio ? "✓" : " + "}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <button
-            onClick={scrollToTop}
-            className="fixed bottom-4 right-4 bg-green-700 text-white p-2 rounded-full shadow-lg"
-          >
-            ↑
-          </button>
-        </div>
-      ))}
     </div>
   );
 };

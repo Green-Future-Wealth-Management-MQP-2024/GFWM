@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import RankingFormResults from "./RankingFormResults";
 import DragAndDrop from "./DragAndDrop";
@@ -11,13 +11,10 @@ import BinaryChoice from "./BinaryChoice";
 // flexibility, risk
 
 const RankingForm = () => {
-
   //map factor name to the text shown in the drag and drop box
   const factor_text_map = {
-    environment: 
-      "Environmental protection",
-    human_rights: 
-      "Respecting fundamental human rights conventions",
+    environment: "Environmental protection",
+    human_rights: "Respecting fundamental human rights conventions",
     community:
       "Respecting business ethics, protecting public health, commitment to being good citizens",
     workforce:
@@ -49,16 +46,22 @@ const RankingForm = () => {
     setWeaponsChecked(!weaponsChecked);
   };
 
-  const [volatilitySlider, setVolatilitySliderValue] = useState(10);
+  const [riskSlider, setRiskSliderValue] = useState(10);
   const [flexibilitySlider, setFlexibilitySliderValue] = useState(5);
 
   const weighing_scheme_choices = {
     choice1: "Equal Weights",
     choice2: "Markowitz Optimized",
   };
-  const [weighingScheme, setWeighingScheme] = useState("choice1"); //equal weights as the default
+  const [weighingScheme, setWeighingScheme] = useState("choice1"); //equal weights (choice1) as the default
 
-  const [returnData, setReturnData] = useState({});
+  const [formResults, setFormResults] = useState({});
+
+  const [serverResponse, setServerResponse] = useState({});
+
+  useEffect(() => {
+    console.log("updated server response state: ", serverResponse);
+  }, [serverResponse]);
 
   const [showResults, setShowResults] = useState(false);
 
@@ -91,9 +94,13 @@ const RankingForm = () => {
     results["avoid_fossil_fuels"] = fossilFuelsChecked;
     results["avoid_weapons"] = weaponsChecked;
     results["flexibility"] = flexibilitySlider / 100.0;
-    results["risk_appetite"] = volatilitySlider / 100.0;
+    results["risk_appetite"] = riskSlider / 100.0;
     results["weighing_scheme"] = weighing_scheme_choices[weighingScheme];
-    console.log("submitted: ", results); // or send to an API or other destinations
+
+    // save the form results to pass along with server response to results display
+    setFormResults(results);
+
+    console.log("Form submitted:", results);
 
     // Send the data to the server
     fetch(`//${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
@@ -111,8 +118,8 @@ const RankingForm = () => {
         return res.json();
       })
       .then((data) => {
-        setReturnData(data);
-        console.log("Server response:", data); // Use the server response if needed
+        console.log("Server response:", data);
+        setServerResponse(data);
         setShowResults(true); // Show results after successful response
       })
       .catch((error) => {
@@ -130,33 +137,37 @@ const RankingForm = () => {
         />
 
         {/* fossil fuels checkbox */}
-      <label className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={fossilFuelsChecked}
-          onChange={handleFossilFuelsCheckboxChange}
-          className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
-        />
-        <span className="text-gray-700">Avoid investing in fossil fuels?</span>
-      </label>
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={fossilFuelsChecked}
+            onChange={handleFossilFuelsCheckboxChange}
+            className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
+          />
+          <span className="text-gray-700">
+            Avoid investing in fossil fuels?
+          </span>
+        </label>
 
-      {/* weapons manufacturers checkbox */}
-      <label className="flex items-center space-x-2">
-        <input
-          type="checkbox"
-          checked={weaponsChecked}
-          onChange={handleWeaponsCheckboxChange}
-          className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
-        />
-        <span className="text-gray-700">Avoid investing in weapons manufacturers?</span>
-      </label>
+        {/* weapons manufacturers checkbox */}
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={weaponsChecked}
+            onChange={handleWeaponsCheckboxChange}
+            className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
+          />
+          <span className="text-gray-700">
+            Avoid investing in weapons manufacturers?
+          </span>
+        </label>
 
-
-        {/* Sliders 
-          flexiblity*/}
+        {/* flexiblity slider*/}
         <p>Rate your flexibility with these ESG preferences.</p>
         <div className="w-3/4 flex items-center space-x-4">
-          <span className="text-gray-600 text-lg whitespace-nowrap">Not flexible</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Not flexible
+          </span>
           <input
             type="range"
             min="0"
@@ -165,23 +176,31 @@ const RankingForm = () => {
             onChange={(e) => setFlexibilitySliderValue(e.target.value)}
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
-          <span className="text-gray-600 text-lg whitespace-nowrap">Most flexible</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Most flexible
+          </span>
         </div>
         <p>Rate your risk level.</p>
-        {/* volatility / risk slider */}
+        {/* risk slider */}
         <div className="w-3/4 flex items-center space-x-4">
-          <span className="text-gray-600 text-lg whitespace-nowrap">Conservative</span>
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Conservative
+          </span>
           <input
             type="range"
-            min="5"
-            max="16"
-            value={volatilitySlider}
-            onChange={(e) => setVolatilitySliderValue(e.target.value)}
+            min="0"
+            max="20"
+            value={riskSlider}
+            onChange={(e) => setRiskSliderValue(e.target.value)}
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
-          <span className="text-gray-600 text-lg whitespace-nowrap">Growth</span>
-          {/* <div>Selected Value: {volatilitySlider}%</div> */}
+          <span className="text-gray-600 text-lg whitespace-nowrap">
+            Growth
+          </span>
+          {/* <div>Selected Value: {riskSlider}%</div> */}
         </div>
+
+        {/* weighing scheme checkboxes: equal weight or markowitz optimized */}
 
         <div className="flex justify-left space-x-4">
           {Object.entries(weighing_scheme_choices).map(([key, value]) => (
@@ -199,12 +218,18 @@ const RankingForm = () => {
           ))}
         </div>
 
-        <button type="submit" className="hover:opacity-75 bg-green-700 text-white px-4 py-2 rounded mb-4">
+        <button
+          type="submit"
+          className="hover:opacity-75 bg-green-700 text-white px-4 py-2 rounded mb-4"
+        >
           Get Results
         </button>
       </form>
 
-      {showResults && <RankingFormResults results={returnData} columns = {columns} />}
+      {/* shorthand for if showResults, then ... */}
+      {showResults && (
+        <RankingFormResults serverResponse={serverResponse} formResults={formResults} />
+      )}
     </div>
   );
 };

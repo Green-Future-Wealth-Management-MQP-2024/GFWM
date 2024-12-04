@@ -57,11 +57,11 @@ def filter_stocks(user_preferences, count=100, flexibility=0, tickers_only=False
         else:
             # don't lose points in factors ranked not important
             compatibility_penalties[factor] = 0
-    
     combined_exclusion_mask = np.ones(len(data), dtype = bool)
     #combine exclusion masks, not the result to be used as a filter
     if(len(exclusion_masks) > 0):
-        combined_exclusion_mask = ~np.logical_and.reduce(exclusion_masks)
+        # sum(exclusion_masks) adds the masks elementwise. 0s mean no issues, keep!
+        combined_exclusion_mask = np.array([s==0 for s in sum(exclusion_masks)])
     
     #calculate compatibility scores for all stocks
     # calculating it after filtering would rank within the filtered results
