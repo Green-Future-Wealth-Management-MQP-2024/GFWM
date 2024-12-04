@@ -439,7 +439,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
 
   const handleAddStocks = (addedStocks) => {
     const oldTickers = portfolioData.map((item) => item.ticker);
-    const newTickers = addedStocks.map((item) => item.ticker);
+    var newTickers = addedStocks.map((item) => item.ticker);
+    newTickers = newTickers.filter((ticker) => !oldTickers.includes(ticker));
 
     // updating weights triggers updating rest of portfolio data
     updatePortfolioWeights(oldTickers.concat(newTickers));
@@ -448,7 +449,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   };
 
   const handleRemoveTickers = (removedTickers) => {
-    const oldTickers = portfolioData.map((item) => item.ticker);
+    var oldTickers = portfolioData.map((item) => item.ticker);
+    oldTickers = oldTickers.filter((ticker) => !removedTickers.includes(ticker));
 
     // keep the rows whose ticker is not in the list of tickers to remove
     updatePortfolioWeights(

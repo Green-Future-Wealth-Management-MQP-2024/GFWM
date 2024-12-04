@@ -162,24 +162,7 @@ const RankingForm = () => {
           </span>
         </label>
 
-        {/* flexiblity slider*/}
-        <p>Rate your flexibility with these ESG preferences.</p>
-        <div className="w-3/4 flex items-center space-x-4">
-          <span className="text-gray-600 text-lg whitespace-nowrap">
-            Not flexible
-          </span>
-          <input
-            type="range"
-            min="0"
-            max="30"
-            value={flexibilitySlider}
-            onChange={(e) => setFlexibilitySliderValue(e.target.value)}
-            className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
-          />
-          <span className="text-gray-600 text-lg whitespace-nowrap">
-            Most flexible
-          </span>
-        </div>
+        
         <p>Rate your risk level.</p>
         {/* risk slider */}
         <div className="w-3/4 flex items-center space-x-4">
