@@ -35,6 +35,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   const [portfolioWeights, setPortfolioWeights] = useState({});
   const [portfolioSummaryStatistics, setPortfolioSummaryStatistics] = useState({
     "ESGScore": 0,
+    "returnRange": [0, 0],
     "averageReturn": 0,
     "volatility": 0,
     "sharpe": 0,
@@ -63,7 +64,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
       // unpack server's summary statistics
       const {
         portfolio_esg_score: portfolioESGScore,
-        portfolio_average_return: portfolioAverageReturn,
+        portfolio_return_range: portfolioReturnRange,
         portfolio_volatility: portfolioVolatility,
         portfolio_sharpe: portfolioSharpe,
         portfolio_max_dd: portfolioMaxDD,
@@ -80,7 +81,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
 
       setPortfolioSummaryStatistics({
         "ESGScore": portfolioESGScore,
-        "averageReturn": portfolioAverageReturn,
+        "returnRange": portfolioReturnRange,
+        "averageReturn": (portfolioReturnRange[0] + portfolioReturnRange[1])/2.0,
         "volatility": portfolioVolatility,
         "sharpe": portfolioSharpe,
         "maxDD": portfolioMaxDD,
@@ -270,8 +272,9 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   // VALUES FOR COMPARISON TABLE
   const comparisonTableData = [
     {
-      field: "Average Return",
-      portfolio: `${(portfolioSummaryStatistics.averageReturn * 100).toFixed(2)}%`,
+      field: "Annual Return",
+      portfolio: `${(portfolioSummaryStatistics.returnRange[0] * 100).toFixed(2)}%,
+      ${(portfolioSummaryStatistics.returnRange[1] * 100).toFixed(2)}%`,
       sp500: `${(sp500SummaryStatistics.averageReturn * 100).toFixed(2)}%`,
     },
     {
@@ -417,7 +420,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         setPortfolioWeights(updatedPortfolio);
 
         const {
-          portfolio_average_return: portfolioAverageReturn, 
+          portfolio_return_range: portfolioReturnRange, 
           portfolio_volatility: portfolioVolatility, 
           portfolio_sharpe: portfolioSharpe, 
           portfolio_max_dd: portfolioMaxDD, 
@@ -425,7 +428,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
 
         setPortfolioSummaryStatistics({
           "ESGScore": portfolioSummaryStatistics.ESGScore, //unchanged esg score
-          "averageReturn": portfolioAverageReturn,
+          "returnRange": portfolioReturnRange,
+          "averageReturn": (portfolioReturnRange[0] + portfolioReturnRange[1])/2.0,
           "volatility": portfolioVolatility,
           "sharpe": portfolioSharpe,
           "maxDD": portfolioMaxDD,

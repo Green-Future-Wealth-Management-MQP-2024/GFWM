@@ -64,13 +64,13 @@ def submit_form(request):
         
         #calculate summary statistics  
         
-        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=False)
+        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=True)
         spy_return, spy_volatility, spy_sharpe = calculate_summary_statistics(spy_timeseries, return_as_range=False)
            
         summary_statistics = {
             "portfolio_esg_score": portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
             
-            "portfolio_average_return": portfolio_return,
+            "portfolio_return_range": portfolio_return,
             
             "portfolio_volatility": portfolio_volatility,
             "portfolio_sharpe": portfolio_sharpe,
@@ -129,11 +129,11 @@ def update_weights(request):
         
         #calculate summary statistics   
         
-        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=False)
+        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=True)
         
              
         summary_statistics = {            
-            "portfolio_average_return": portfolio_return,
+            "portfolio_return_range": portfolio_return,
             
             "portfolio_volatility": portfolio_volatility,
             "portfolio_sharpe": portfolio_sharpe,
