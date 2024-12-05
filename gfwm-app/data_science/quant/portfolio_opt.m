@@ -1,8 +1,8 @@
 %Omega = xlsread('Returns_Covariance_Matrix_no_RZV.xlsx');
 %mu = xlsread('Expected_Returns_no_RZV.xlsx');
 
-Omega = readtable('sp500_covariance_matrix.csv');
-data = readtable('sp500_daily_data.csv');
+Omega = readtable('sp500_adjusted_cov_matrix.csv');
+data = readtable('sp500_timeseries_13-24.csv');
 
 row_tickers = Omega.Properties.VariableNames(2:end); % Exclude the first column header
 col_tickers = Omega{:, 1}; % First column as tickers
@@ -10,11 +10,11 @@ col_tickers = Omega{:, 1}; % First column as tickers
 % Convert the table to a numeric matrix, excluding the first column
 Omega = Omega{:, 2:end};
 
-% get eigenvalues before adjustments to check positive semidefinite
+%{ 
+get eigenvalues before adjustments to check positive semidefinite
 [~, eigenvalues_matrix] = eig(Omega);
 eigenvalues_before = diag(eigenvalues_matrix);
 
-%{
 threshold = 0.0008; % Set an appropriate threshold based on your data scale
 [row, col] = find(abs(Omega) > threshold & ~eye(size(Omega)));
 pairs = unique(sort([row, col], 2), 'rows');
@@ -26,19 +26,22 @@ Omega(tickers_to_remove, :) = [];
 
 epsilon = 0.0003; % Small regularization term
 Omega = Omega + epsilon * eye(size(Omega));
-%}
 
 %alternative: find nearest positive semi definite
 
 % get eigenvalues after adjustments to confirm positive semidefinite
 [~, eigenvalues_matrix] = eig(Omega);
 eigenvalues_after = diag(eigenvalues_matrix);
+%}
 
-% Group by ticker and calculate the mean of the 'log_return' column
-mu = varfun(@mean, data, 'InputVariables', 'log_return', 'GroupingVariables', 'ticker');
+% Exclude the date column and calculate the mean for each ticker column
+ticker_columns = data{:, 2:end};
+
+% Calculate the mean of each ticker column
+mu = mean(ticker_columns, "omitnan"); % This will be a numeric row vector
 %mu(tickers_to_remove,:) = [];
 
-p = Portfolio('AssetMean',mu.mean_log_return, 'AssetCovar',Omega,'lb', 0,'budget', 1);
+p = Portfolio('AssetMean',mu, 'AssetCovar',Omega,'lb', 0,'budget', 1);
 plotFrontier(p, 20);
 
 p = setSolver(p, 'fmincon', 'Display', 'off', 'Algorithm', 'sqp', ...
@@ -50,6 +53,8 @@ weights = estimateMaxSharpeRatio(p);
 te = 0.08;
 p = setTrackingError(p,te,weights);
 
+orange_color = [255, 165, 0] / 255; % Convert RGB (0-255) to MATLAB scale (0-1)
+
 [risk, ret] = estimatePortMoments(p,weights);
 hold on
-plot(risk,ret,'*r');
+plot(risk, ret, 'o', 'MarkerSize', 9, 'MarkerEdgeColor', orange_color, 'MarkerFaceColor', orange_color);
