@@ -23,7 +23,7 @@ def submit_form(request):
         
         avoid_factors = ['avoid_fossil_fuels', 'avoid_weapons']
         
-        missing_keys = [key for key in required_factors + avoid_factors + ['flexibility', 'risk_appetite']
+        missing_keys = [key for key in required_factors + avoid_factors + ['risk_appetite']
                         if key not in client_responses.keys()]
         if len(missing_keys) > 0:
             return JsonResponse({"error": f"Missing keys: {missing_keys}"}, status=400)
@@ -36,8 +36,6 @@ def submit_form(request):
         # avoid factors (checkbox)
         for avoid_factor in avoid_factors:
             esg_preferences[avoid_factor] = client_responses[avoid_factor]
-        
-        esg_flexibility = client_responses['flexibility']
         # map risk appetite (0 - 0.2) to cash percent (50% - 10%)
         cash_percent = 0.5 - 2 * client_responses['risk_appetite']
         
@@ -45,22 +43,23 @@ def submit_form(request):
         
         # filter stocks using client responses
         # df with two columns: ticker, compatibility
-        filter_results = filter_stocks(user_preferences= esg_preferences, flexibility= esg_flexibility)
+        filter_results = filter_stocks(user_preferences= esg_preferences)
         
         # this value determines how many stocks to include in portfolio
         portfolio = filter_results.head(100).copy()
         
         # calculate best fit portfolio for the client
-        ideal_portfolio_weights = calculate_portfolio(portfolio[['ticker', 'compatibility']], 
-                                                                                                    cash_percent,
-                                                                                                    use_markowitz,
-                                                                                                    return_summary_statistics=False)
+        ideal_portfolio_weights = calculate_portfolio(portfolio[['ticker', 'compatibility']],
+                                                      cash_percent,
+                                                      use_markowitz,
+                                                      return_summary_statistics=False)
         
         portfolio['weight'] = ideal_portfolio_weights
         
         spy_timeseries, portfolio_timeseries, dates, spy_max_dd, portfolio_max_dd = portfolio_history(portfolio[['ticker',
                                                                                                                  'weight']]
-                                                                                                      .set_index('ticker', drop = True))
+                                                                                                      .set_index('ticker', 
+                                                                                                                 drop = True))
         
         #calculate summary statistics  
         
