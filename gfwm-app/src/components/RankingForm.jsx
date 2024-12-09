@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 import RankingFormResults from "./RankingFormResults";
 import DragAndDrop from "./DragAndDrop";
-import BinaryChoice from "./BinaryChoice";
 
 // factors to get answers for:
 // environment,
@@ -15,14 +14,11 @@ const RankingForm = () => {
   const factor_text_map = {
     environment: "Environmental protection",
     human_rights: "Respecting fundamental human rights conventions",
-    community:
-      "Respecting business ethics, protecting public health, commitment to being good citizens",
-    workforce:
-      "Promoting job satisfaction, safe workplaces, diversity, and development opportunities",
+    community: "Respecting business ethics, protecting public health, commitment to being good citizens",
+    workforce: "Promoting job satisfaction, safe workplaces, diversity, and development opportunities",
     product_responsibility:
       "Producing quality products, incorporating customer health and safety, maintaining data privacy, marketing responsibly",
-    shareholders:
-      "Equal treatment of shareholders and protection from hostile takeovers",
+    shareholders: "Equal treatment of shareholders and protection from hostile takeovers",
     management: "Maintaining best practices in management",
   };
 
@@ -47,6 +43,7 @@ const RankingForm = () => {
   };
 
   const [riskSlider, setRiskSliderValue] = useState(10);
+  const riskSliderTemp = useRef(10);
 
   const weighing_scheme_choices = {
     choice1: "Equal Weights",
@@ -55,6 +52,15 @@ const RankingForm = () => {
   const [weighingScheme, setWeighingScheme] = useState("choice1"); //equal weights (choice1) as the default
 
   const [formResults, setFormResults] = useState({});
+
+  // update risk and weighing scheme changes to send to results object
+  useEffect(() => {
+    setFormResults((prevState) => ({
+      ...prevState,
+      risk_appetite: riskSlider / 100.0,
+      weighing_scheme: weighing_scheme_choices[weighingScheme],
+    }));
+  }, [riskSlider, weighingScheme]);
 
   const [serverResponse, setServerResponse] = useState({});
 
@@ -125,92 +131,126 @@ const RankingForm = () => {
       });
   };
 
+  const handleSliderChange = (e) => {
+    riskSliderTemp.current = e.target.value; // Update temp value on slider movement
+    console.log("Slider moving:", riskSliderTemp.current); // Debugging
+  };
+
+  const handleSliderRelease = () => {
+    const newValue = Number(riskSliderTemp.current);
+    console.log("Slider dropped with value:", newValue); // Debugging
+    setRiskSliderValue(newValue); // Commit the value to state
+  };
+
   return (
     <div>
       <form onSubmit={handleSubmit} className="ranking-form">
-        <DragAndDrop
-          columns={columns}
-          setColumns={setColumns}
-          factor_text_map={factor_text_map}
-        />
+        {/* ESG preferences section */}
+        <div className="mb-8 space-y-4">
+          <header className="mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">ESG Preferences</h2>
+            <p className="text-lg text-gray-600">
+              Drag and drop the ESG factors below into the importance category that the best suits your values.
+            </p>
+          </header>
 
-        {/* fossil fuels checkbox */}
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            checked={fossilFuelsChecked}
-            onChange={handleFossilFuelsCheckboxChange}
-            className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
-          />
-          <span className="text-gray-700">
-            Avoid investing in fossil fuels?
-          </span>
-        </label>
+          <DragAndDrop columns={columns} setColumns={setColumns} factor_text_map={factor_text_map} />
 
-        {/* weapons manufacturers checkbox */}
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            checked={weaponsChecked}
-            onChange={handleWeaponsCheckboxChange}
-            className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
-          />
-          <span className="text-gray-700">
-            Avoid investing in weapons manufacturers?
-          </span>
-        </label>
+          {/* checkbox container */}
+          <div className="space-y-2 pl-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              Choose to avoid investing in the following industries:
+            </h3>
 
-        
-        <p>Rate your risk level.</p>
-        {/* risk slider */}
-        <div className="w-3/4 flex items-center space-x-4">
-          <span className="text-gray-600 text-lg whitespace-nowrap">
-            Conservative
-          </span>
-          <input
-            type="range"
-            min="0"
-            max="20"
-            value={riskSlider}
-            onChange={(e) => setRiskSliderValue(e.target.value)}
-            className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
-          />
-          <span className="text-gray-600 text-lg whitespace-nowrap">
-            Growth
-          </span>
-          {/* <div>Selected Value: {riskSlider}%</div> */}
-        </div>
-
-        {/* weighing scheme checkboxes: equal weight or markowitz optimized */}
-
-        <div className="flex justify-left space-x-4">
-          {Object.entries(weighing_scheme_choices).map(([key, value]) => (
-            <label key={key} className="flex items-center space-x-2">
+            {/* fossil fuels checkbox */}
+            <label className="flex items-center space-x-2">
               <input
-                type="radio"
-                name="binaryChoice"
-                value={key}
-                checked={weighingScheme === key}
-                onChange={() => setWeighingScheme(key)}
-                className="form-radio"
+                type="checkbox"
+                checked={fossilFuelsChecked}
+                onChange={handleFossilFuelsCheckboxChange}
+                className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
               />
-              <span>{value}</span>
+              <span className="text-gray-700">Avoid investing in fossil fuels?</span>
             </label>
-          ))}
+
+            {/* weapons manufacturers checkbox */}
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={weaponsChecked}
+                onChange={handleWeaponsCheckboxChange}
+                className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
+              />
+              <span className="text-gray-700">Avoid investing in weapons manufacturers?</span>
+            </label>
+          </div>
         </div>
 
-        <button
-          type="submit"
-          className="hover:opacity-75 bg-green-700 text-white px-4 py-2 rounded mb-4"
-        >
+        {/* Portfolio preferences section */}
+        <div className="mb-8">
+          <header className="mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Portfolio Preferences</h2>
+            <p className="text-lg text-gray-600">
+              You can modify these choices later and see how your portfolio changes in real time.
+            </p>
+          </header>
+
+          <div className="space-y-4 pl-4">
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Rate your risk tolerance on the spectrum below.
+              </h3>
+              {/* risk slider */}
+              <div className="w-3/4 flex items-center space-x-4">
+                <span className="text-gray-600 text-lg whitespace-nowrap">Conservative</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  defaultValue={riskSlider}
+                  onChange={handleSliderChange} // Capture every slider movement
+                  onMouseUp={handleSliderRelease} // For desktop devices
+                  onTouchEnd={handleSliderRelease} // For touch devices
+                  className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
+                />
+                <span className="text-gray-600 text-lg whitespace-nowrap">Growth</span>
+                {/* <div>Selected Value: {riskSlider}%</div> */}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Select how your portfolio will be allocated between the large number of equities. It is recommended to
+                start with Equal Weights.
+              </h3>
+              {/* weighing scheme checkboxes: equal weight or markowitz optimized */}
+              <div className="flex justify-left space-x-4">
+                {Object.entries(weighing_scheme_choices).map(([key, value]) => (
+                  <label key={key} className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="binaryChoice"
+                      value={key}
+                      checked={weighingScheme === key}
+                      onChange={() => setWeighingScheme(key)}
+                      className="form-radio"
+                    />
+                    <span>{value}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" className="hover:opacity-75 bg-green-700 text-white px-4 py-2 rounded mb-4">
           Get Results
         </button>
       </form>
 
       {/* shorthand for if showResults, then ... */}
-      {showResults && (
-        <RankingFormResults serverResponse={serverResponse} formResults={formResults} />
-      )}
+      {showResults && <RankingFormResults serverResponse={serverResponse} formResults={formResults} />}
     </div>
   );
 };

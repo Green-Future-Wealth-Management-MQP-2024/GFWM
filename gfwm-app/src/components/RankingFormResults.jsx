@@ -1,15 +1,7 @@
 import React from "react";
 import { useEffect, useState } from "react";
 
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 
 import Papa from "papaparse";
 import StockSearchModal from "./StockSearchModal";
@@ -18,48 +10,41 @@ import ComparisonTable from "./ComparisonTable";
 import PieChart from "./PieChart";
 import TimeseriesChart from "./TimeseriesChart";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const RankingFormResults = ({ serverResponse, formResults }) => {
-
-  console.log('received props ', serverResponse, formResults);
+  //console.log('received props ', serverResponse, formResults);
 
   const [compatibilityScores, setCompatibilityScores] = useState({});
   const [portfolioWeights, setPortfolioWeights] = useState({});
+
+  // unpack server response
   const [portfolioSummaryStatistics, setPortfolioSummaryStatistics] = useState({
-    "ESGScore": 0,
-    "returnRange": [0, 0],
-    "averageReturn": 0,
-    "volatility": 0,
-    "sharpe": 0,
-    "maxDD": 0,
-    "timeseries": [],
+    ESGScore: 0,
+    returnRange: [0, 0],
+    averageReturn: 0,
+    volatility: 0,
+    sharpe: 0,
+    maxDD: 0,
+    timeseries: [],
   });
   const [sp500SummaryStatistics, setSP500SummaryStatistics] = useState({
-    "averageReturn": 0,
-    "volatility": 0,
-    "sharpe": 0,
-    "maxDD": 0,
-    "timeseries": [],
-    "timeseriesDates": []
+    averageReturn: 0,
+    volatility: 0,
+    sharpe: 0,
+    maxDD: 0,
+    timeseries: [],
+    timeseriesDates: [],
   });
 
   useEffect(() => {
     if (serverResponse) {
-
       setCompatibilityScores(serverResponse.sp500_compatibility);
 
       // stores portfolio weights in {ticker: weight} object format
       // initialized by server response to form submission
       // modified when user adds and removes stocks in portfolio
-      setPortfolioWeights(serverResponse.portfolio)
+      setPortfolioWeights(serverResponse.portfolio);
 
       // unpack server's summary statistics
       const {
@@ -77,47 +62,112 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         timeseries_dates: timeseriesDates,
       } = serverResponse.summary_statistics;
 
-      console.log("portfolioSharpe ", portfolioSharpe)
+      console.log("portfolioSharpe ", portfolioSharpe);
 
       setPortfolioSummaryStatistics({
-        "ESGScore": portfolioESGScore,
-        "returnRange": portfolioReturnRange,
-        "averageReturn": (portfolioReturnRange[0] + portfolioReturnRange[1])/2.0,
-        "volatility": portfolioVolatility,
-        "sharpe": portfolioSharpe,
-        "maxDD": portfolioMaxDD,
-        "timeseries": portfolioTimeseries,
+        ESGScore: portfolioESGScore,
+        returnRange: portfolioReturnRange,
+        averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
+        volatility: portfolioVolatility,
+        sharpe: portfolioSharpe,
+        maxDD: portfolioMaxDD,
+        timeseries: portfolioTimeseries,
       });
       setSP500SummaryStatistics({
-        "averageReturn": sp500AverageReturn,
-        "volatility": sp500AverageVolatility,
-        "sharpe": sp500Sharpe,
-        "maxDD": spyMaxDD,
-        "timeseries": spyTimeseries,
+        averageReturn: sp500AverageReturn,
+        volatility: sp500AverageVolatility,
+        sharpe: sp500Sharpe,
+        maxDD: spyMaxDD,
+        timeseries: spyTimeseries,
         timeseriesDates,
       });
     }
   }, [serverResponse]);
 
-  const [localFormResults, setLocalFormResults] = useState({});
+  const [riskAppetite, setRiskAppetite] = useState(0.1);
+  const [weighingScheme, setWeighingScheme] = useState("");
 
   useEffect(() => {
     if (formResults) {
-      // unpack form results here
-      const { risk_appetite: riskAppetite, weighing_scheme: weighingScheme } =
-        formResults;
+      // unpack form results
+      const { risk_appetite: riskAppetite, weighing_scheme: weighingScheme } = formResults;
 
-      setLocalFormResults({
-        riskAppetite,
-        weighingScheme,
-      });
+      setRiskAppetite(riskAppetite);
+      setWeighingScheme(weighingScheme);
     }
   }, [formResults]);
+
+  //TODO fix
+  useEffect(() => {
+    //check if server response is truthy, ie some data sent back already
+    if (serverResponse) {
+      // package up ticker and weight columns to send to server
+      const clientPortfolio = portfolioData.map((row) => {
+        return {
+          ticker: row.ticker,
+          weight: row.weight,
+        };
+      });
+
+      if (clientPortfolio.length > 0) {
+        const body = JSON.stringify({
+          client_portfolio: clientPortfolio,
+          risk_appetite: riskAppetite,
+        });
+
+        // Send the necessary data to the server
+        fetch(`//${import.meta.env.VITE_API_DOMAIN}/updateRisk/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: body,
+        })
+          .then((res) => {
+            if (!res.ok) {
+              console.log(res);
+              throw new Error("Network response was not ok");
+            }
+            return res.json();
+          })
+          .then(({ updated_portfolio: updatedPortfolio, updated_summary_statistics: updatedSummaryStatistics }) => {
+            //unpack response to get portfolio object (tickers and weights) and summary statistics
+
+            console.log("Server response updated portfolio: ", updatedPortfolio);
+            console.log("Server response updated summary stats: ", updatedSummaryStatistics);
+
+            // update portfolio data with new weights via listener on portfolioWeights
+            setPortfolioWeights(updatedPortfolio);
+
+            const {
+              portfolio_return_range: portfolioReturnRange,
+              portfolio_volatility: portfolioVolatility,
+              portfolio_sharpe: portfolioSharpe,
+              portfolio_max_dd: portfolioMaxDD,
+              portfolio_timeseries: portfolioTimeseries,
+            } = updatedSummaryStatistics;
+
+            setPortfolioSummaryStatistics({
+              ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score
+              returnRange: portfolioReturnRange,
+              averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
+              volatility: portfolioVolatility,
+              sharpe: portfolioSharpe,
+              maxDD: portfolioMaxDD,
+              timeseries: portfolioTimeseries,
+            });
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+    }
+  }, [riskAppetite]);
 
   // MANAGE STOCK DATA OBJECT
 
   // contains all stocks the client might want to invest in along with compatibility scores
-  // stocks removed by fossil fuels / weapons have compatibility 0 by default 
+  // stocks removed by fossil fuels / weapons have compatibility 0 by default
   //    (as the server does not return compatibilities for those)
   const [stockData, setStockData] = useState([]);
 
@@ -180,10 +230,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
 
         setStockData(augmentedData);
       } catch (error) {
-        console.error(
-          "Error with augmenting preprocessed CSV with server's compatibility scores:",
-          error
-        );
+        console.error("Error with augmenting preprocessed CSV with server's compatibility scores:", error);
       }
     };
 
@@ -191,13 +238,11 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   }, [compatibilityScores]);
   //--------------------------------
 
-
   // MANAGE PORTFOLIO DATA OBJECT
 
   // copy of the selected stocks from the overall S&P 500 data
   // also includes weight column
   const [portfolioData, setPortfolioData] = useState([]);
- 
 
   // runs when the server updates the portfolio weights object
   // copies correct rows (tickers) from stockData and augments with given weight
@@ -205,10 +250,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     if (!portfolioWeights) return;
 
     const updatePortfolioData = async () => {
-      console.log(
-        "updating portfolio data based off weights change: ",
-        Object.keys(portfolioWeights).length
-      );
+      console.log("updating portfolio data based off weights change: ", Object.keys(portfolioWeights).length);
 
       //TODO speed this up either by
       // 1. returning a proper object of {ticker1: weight1, ticker2: weight2 ...}
@@ -232,7 +274,6 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   }, [portfolioWeights, stockData]);
   //-----------------------------------
 
-
   // HANDLE SORTING OF PORTFOLIO DATA
 
   const [sortConfig, setSortConfig] = useState({
@@ -255,7 +296,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
       });
     }
     return sortableData;
-  }, [portfolioData, sortConfig]); 
+  }, [portfolioData, sortConfig]);
 
   // Handle sorting
   const requestSort = (key) => {
@@ -279,9 +320,10 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     },
     {
       field: "Average Return Compared to Benchmark",
-      portfolio: `${((portfolioSummaryStatistics.averageReturn - sp500SummaryStatistics.averageReturn) 
-        *100).toFixed(2)}%`,
-      sp500: '',
+      portfolio: `${((portfolioSummaryStatistics.averageReturn - sp500SummaryStatistics.averageReturn) * 100).toFixed(
+        2
+      )}%`,
+      sp500: "",
     },
     {
       field: "Average Standard Deviation",
@@ -373,10 +415,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   //ADD and REMOVE from portfolio
 
   const updatePortfolioWeights = (tickers) => {
-
     // package up ticker and compatibility columns to send to server
     const clientPortfolio = tickers.map((ticker) => {
-
       // Find the object in portfolio that matches the ticker
       const match = stockData.find((item) => item.ticker === ticker);
 
@@ -391,9 +431,9 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     });
 
     const body = JSON.stringify({
-      "client_portfolio": clientPortfolio,
-      "risk_appetite": localFormResults.riskAppetite,
-      "weighing_scheme": localFormResults.weighingScheme,
+      client_portfolio: clientPortfolio,
+      risk_appetite: riskAppetite,
+      weighing_scheme: weighingScheme,
     });
 
     // Send the necessary data to the server
@@ -421,20 +461,21 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         setPortfolioWeights(updatedPortfolio);
 
         const {
-          portfolio_return_range: portfolioReturnRange, 
-          portfolio_volatility: portfolioVolatility, 
-          portfolio_sharpe: portfolioSharpe, 
-          portfolio_max_dd: portfolioMaxDD, 
-          portfolio_timeseries: portfolioTimeseries} = updatedSummaryStatistics
+          portfolio_return_range: portfolioReturnRange,
+          portfolio_volatility: portfolioVolatility,
+          portfolio_sharpe: portfolioSharpe,
+          portfolio_max_dd: portfolioMaxDD,
+          portfolio_timeseries: portfolioTimeseries,
+        } = updatedSummaryStatistics;
 
         setPortfolioSummaryStatistics({
-          "ESGScore": portfolioSummaryStatistics.ESGScore, //unchanged esg score
-          "returnRange": portfolioReturnRange,
-          "averageReturn": (portfolioReturnRange[0] + portfolioReturnRange[1])/2.0,
-          "volatility": portfolioVolatility,
-          "sharpe": portfolioSharpe,
-          "maxDD": portfolioMaxDD,
-          "timeseries": portfolioTimeseries,
+          ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score
+          returnRange: portfolioReturnRange,
+          averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
+          volatility: portfolioVolatility,
+          sharpe: portfolioSharpe,
+          maxDD: portfolioMaxDD,
+          timeseries: portfolioTimeseries,
         });
       })
       .catch((error) => {
@@ -458,9 +499,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     oldTickers = oldTickers.filter((ticker) => !removedTickers.includes(ticker));
 
     // keep the rows whose ticker is not in the list of tickers to remove
-    updatePortfolioWeights(
-      oldTickers.filter((ticker) => !removedTickers.includes(ticker))
-    );
+    updatePortfolioWeights(oldTickers.filter((ticker) => !removedTickers.includes(ticker)));
 
     setSelectedTicker(removedTickers[0]);
   };
@@ -471,16 +510,16 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   const handleSelectStock = (ticker) => {
     // toggle selected ticker to or from list of selected tickers
     setSelectedTickers((prevSelected) =>
-      prevSelected.includes(ticker)
-        ? prevSelected.filter((item) => item !== ticker)
-        : [...prevSelected, ticker]
+      prevSelected.includes(ticker) ? prevSelected.filter((item) => item !== ticker) : [...prevSelected, ticker]
     );
     setSelectedTicker(ticker);
   };
 
   return (
-    <div className="ranking-form-results p-4 bg-white rounded-lg">
-      <h2 className="text-xl font-bold mb-2">Results Summary</h2>
+    <div className="ranking-form-results">
+      <h2 className="text-2xl font-bold text-gray-800">Portfolio Summary</h2>
+      
+      {/* portfolio summary statistics */}
       <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
         {/* Comparison Table */}
         <div className="flex-none w-full sm:w-[30%] min-w-[200px]">
@@ -501,22 +540,17 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
           <PieChart weights={portfolioData.map((item) => item.weight * 100)} />
         </div>
       </div>
-      <h2 className="text-xl font-bold mb-2">Your Portfolio</h2>
-      <div className="flex gap-4 mb-4">
+
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Your Portfolio</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded"
+          className="hover:opacity-75 bg-green-600 text-white px-4 py-2 rounded"
         >
           Edit Portfolio
         </button>
-
-        {/* <button
-          disabled={true} // Disables the button
-          className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
-        >
-          Recalculate Weights
-        </button> */}
       </div>
+
       <StockSearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -539,82 +573,64 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("ticker")}
               >
-                Symbol{" "}
-                {sortConfig.key === "ticker" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Symbol {sortConfig.key === "ticker" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
 
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("name")}
               >
-                Name{" "}
-                {sortConfig.key === "name" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Name {sortConfig.key === "name" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("annual_return")}
               >
                 Annualized Return{" "}
-                {sortConfig.key === "annual_return" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                {sortConfig.key === "annual_return" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("volatility")}
               >
                 Standard Deviation{" "}
-                {sortConfig.key === "volatility" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                {sortConfig.key === "volatility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("esg_combined")}
               >
-                Combined ESG{" "}
-                {sortConfig.key === "esg_combined" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Combined ESG {sortConfig.key === "esg_combined" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("environment")}
               >
-                Environment{" "}
-                {sortConfig.key === "environment" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Environment {sortConfig.key === "environment" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("social")}
               >
-                Social{" "}
-                {sortConfig.key === "social" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Social {sortConfig.key === "social" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("governance")}
               >
-                Governance{" "}
-                {sortConfig.key === "governance" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Governance {sortConfig.key === "governance" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("compatibility")}
               >
-                Compatibility{" "}
-                {sortConfig.key === "compatibility" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Compatibility {sortConfig.key === "compatibility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
               <th
                 className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
                 onClick={() => requestSort("weight")}
               >
-                Weight{" "}
-                {sortConfig.key === "weight" &&
-                  (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                Weight {sortConfig.key === "weight" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
               </th>
             </tr>
           </thead>
@@ -625,9 +641,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
                 <tr
                   ref={(el) => (rowRefs.current[item.ticker] = el)}
                   key={item.ticker}
-                  className={`hover:bg-gray-100 cursor-pointer ${
-                    selectedTicker === item.ticker ? "bg-gray-100" : ""
-                  }`}
+                  className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? "bg-gray-100" : ""}`}
                   onClick={() => openTableauDashboard(item.ticker)}
                   title="Show more"
                 >
@@ -647,36 +661,16 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
                     />
                   </td>
 
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {item.ticker}
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {item.name}
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {(item.annual_return * 100).toFixed(2)}%
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {(item.volatility * 100).toFixed(2)}%
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {item.esg_combined.toFixed(2)}
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {item.environment.toFixed(2)}
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {item.social.toFixed(2)}
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {item.governance.toFixed(2)}
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300 ">
-                    {item.compatibility.toFixed(0)}%
-                  </td>
-                  <td className="py-1 px-2 border-b border-gray-300">
-                    {(item.weight * 100).toFixed(2)}%
-                  </td>
+                  <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{(item.volatility * 100).toFixed(2)}%</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{item.esg_combined.toFixed(2)}</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
+                  <td className="py-1 px-2 border-b border-gray-300 ">{item.compatibility.toFixed(0)}%</td>
+                  <td className="py-1 px-2 border-b border-gray-300">{(item.weight * 100).toFixed(2)}%</td>
                 </tr>
               );
             })}
