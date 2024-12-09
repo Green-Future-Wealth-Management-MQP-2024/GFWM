@@ -30,7 +30,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
-    config('VITE_API_DOMAIN'),
+    config('VITE_API_DOMAIN_2'),
 ]
 
 
@@ -135,8 +135,8 @@ STATIC_URL = '/static/'
 # Allow all origins
 CORS_ALLOW_ALL_ORIGINS = True
 
-# # # Or allow specific origins
+# Or allow specific origins
 # CORS_ALLOWED_ORIGINS = [
 #     "http://localhost:3000",
-#     config('VITE_API_DOMAIN'),
+#     config('VITE_API_DOMAIN_2'),
 # ]

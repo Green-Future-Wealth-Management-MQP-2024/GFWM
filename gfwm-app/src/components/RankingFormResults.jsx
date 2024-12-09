@@ -148,7 +148,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
             } = updatedSummaryStatistics;
 
             setPortfolioSummaryStatistics({
-              ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score
+              ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score when modifying risk
               returnRange: portfolioReturnRange,
               averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
               volatility: portfolioVolatility,
@@ -469,7 +469,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         } = updatedSummaryStatistics;
 
         setPortfolioSummaryStatistics({
-          ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score
+          ESGScore: portfolioSummaryStatistics.ESGScore, // TODO MUST CHANGE ESG SCORE
           returnRange: portfolioReturnRange,
           averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
           volatility: portfolioVolatility,

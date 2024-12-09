@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import data_science.quant.markowitz_optimization as markowitz_optimization
-from math import floor
 
 # TODO move this to .env
 # risk free rate based of historical average of 30d yield
@@ -9,7 +8,6 @@ ANNUAL_RISK_FREE_RATE = 0.0153
 
 def map_risk_appetite_to_cash_percent(risk_appetite):
     return 0.5 - 2 * risk_appetite
-
 
 def calculate_portfolio(ticker_compatibility_df, cash_percent, use_markowitz, return_summary_statistics = True):
 
@@ -109,14 +107,37 @@ def extract_value(var):
         return var[0]
     return var
 
+# calculate max drawdown as a percent
+# https://quant.stackexchange.com/a/43544/78596
+def get_max_drawdown(nvs: pd.Series, window=None) -> float:
+    """
+    :param nvs: net value series
+    :param window: lookback window, int or None
+    if None, look back entire history
+    """
+    n = len(nvs)
+    if window is None:
+        window = n
+    # rolling peak values
+    peak_series = nvs.rolling(window=window, min_periods=1).max()
+    return (nvs / peak_series - 1.0).min()
+
 # TODO handle include_spy = False better
 def portfolio_history(portfolio, include_spy = True):
     
     spy_log_returns = pd.read_csv("data_science/quant/spy_timeseries_13-24.csv")['SPY']
     
-    tickers = portfolio.index.tolist()
+    if(portfolio.empty):
+        tickers = []
+    else:
+        tickers = portfolio.index.tolist()
+    
+    print("tickers are ", tickers)
     
     tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
+    
+    print(tickers_log_returns.head())
+    
     # print(tickers_log_returns.head())
     
     # TODO clean this up using pandas objects instead of python lists
@@ -176,21 +197,6 @@ def portfolio_history(portfolio, include_spy = True):
     # add cash to both portfolios
     spy_timeseries = [spy + cash for spy, cash in zip(spy_timeseries, cash_portion)]
     portfolio_timeseries = [p + cash for p, cash in zip(portfolio_timeseries, cash_portion)]
-        
-    # calculate max drawdown as a percent
-    # https://quant.stackexchange.com/a/43544/78596
-    def get_max_drawdown(nvs: pd.Series, window=None) -> float:
-        """
-        :param nvs: net value series
-        :param window: lookback window, int or None
-        if None, look back entire history
-        """
-        n = len(nvs)
-        if window is None:
-            window = n
-        # rolling peak values
-        peak_series = nvs.rolling(window=window, min_periods=1).max()
-        return (nvs / peak_series - 1.0).min()
     
     spy_max_drawdown = get_max_drawdown(pd.Series(spy_timeseries))
     portfolio_max_drawdown = get_max_drawdown(pd.Series(portfolio_timeseries))
