@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 
 import RankingFormResults from "./RankingFormResults";
 import DragAndDrop from "./DragAndDrop";
+import CircularProgress from '@mui/material/CircularProgress';
+
 
 // factors to get answers for:
 // environment,
@@ -10,6 +12,7 @@ import DragAndDrop from "./DragAndDrop";
 // flexibility, risk
 
 const RankingForm = () => {
+  const [loading, setLoading] = useState(false);
   //map factor name to the text shown in the drag and drop box
   const factor_text_map = {
     environment: "Environmental protection",
@@ -86,7 +89,7 @@ const RankingForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    setLoading(true); // Start loading
     let results = {};
 
     // collect dict of esg results from importance columns
@@ -117,6 +120,8 @@ const RankingForm = () => {
       .then((res) => {
         if (!res.ok) {
           console.log(res);
+          setLoading(false);
+          alert("There was an error with the server. Please try again later.");
           throw new Error("Network response was not ok");
         }
         return res.json();
@@ -126,9 +131,11 @@ const RankingForm = () => {
         console.log(import.meta.env);
         setServerResponse(data);
         setShowResults(true); // Show results after successful response
+        setLoading(false);
       })
       .catch((error) => {
         console.error("Error:", error);
+        setLoading(false);
       });
   };
 
@@ -145,6 +152,7 @@ const RankingForm = () => {
 
   return (
     <div>
+    
       <form onSubmit={handleSubmit} className="ranking-form">
         {/* ESG preferences section */}
         <div className="mb-8 space-y-4">
@@ -186,16 +194,42 @@ const RankingForm = () => {
             </label>
           </div>
         </div>
+        <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Select how your portfolio will be allocated between the large number of equities. It is recommended to
+                start with Equal Weights.
+              </h3>
+              {/* weighing scheme checkboxes: equal weight or markowitz optimized */}
+              <div className="flex justify-left space-x-4">
+                {Object.entries(weighing_scheme_choices).map(([key, value]) => (
+                  <label key={key} className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="binaryChoice"
+                      value={key}
+                      checked={weighingScheme === key}
+                      onChange={() => setWeighingScheme(key)}
+                      className="h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded-full bg-white"
+                    />
+                    <span>{value}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
-        {/* Portfolio preferences section */}
-        <div className="mb-8">
+      
+
+        <button type="submit" className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded mb-4">
+          Get Results
+        </button>       {loading && <CircularProgress />}
+          {/* Portfolio preferences section */}
+          <div className="mb-8">
           <header className="mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Portfolio Preferences</h2>
+            <h2 className="text-xl font-bold text-gray-800">Portfolio Preferences</h2>
             <p className="text-lg text-gray-600">
               You can modify these choices later and see how your portfolio changes in real time.
             </p>
           </header>
-
           <div className="space-y-4 pl-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
@@ -219,37 +253,15 @@ const RankingForm = () => {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Select how your portfolio will be allocated between the large number of equities. It is recommended to
-                start with Equal Weights.
-              </h3>
-              {/* weighing scheme checkboxes: equal weight or markowitz optimized */}
-              <div className="flex justify-left space-x-4">
-                {Object.entries(weighing_scheme_choices).map(([key, value]) => (
-                  <label key={key} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="binaryChoice"
-                      value={key}
-                      checked={weighingScheme === key}
-                      onChange={() => setWeighingScheme(key)}
-                      className="h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded-full bg-white"
-                    />
-                    <span>{value}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+          
           </div>
+      
         </div>
-
-        <button type="submit" className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded mb-4">
-          Get Results
-        </button>
+      
       </form>
 
       {/* shorthand for if showResults, then ... */}
+
       {showResults && <RankingFormResults serverResponse={serverResponse} formResults={formResults} />}
     </div>
   );
