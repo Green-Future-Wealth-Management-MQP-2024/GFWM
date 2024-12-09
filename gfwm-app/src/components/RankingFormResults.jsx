@@ -129,7 +129,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
 
     const augmentStockData = async () => {
       try {
-        const preprocessedCSV = await fetch("/preprocessed_refinitiv.csv"); //public version of preprocessed
+        const preprocessedCSV = await fetch("./preprocessed_refinitiv.csv"); //public version of preprocessed
         const preprocessedCSVText = await preprocessedCSV.text();
         const parseResult = Papa.parse(preprocessedCSVText, {
           header: true,
@@ -397,7 +397,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     });
 
     // Send the necessary data to the server
-    fetch(`//${import.meta.env.VITE_API_DOMAIN}/updateWeights/`, {
+    fetch(`http://${import.meta.env.VITE_API_DOMAIN}/updateWeights/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

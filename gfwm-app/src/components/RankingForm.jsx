@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 
 import RankingFormResults from "./RankingFormResults";
 import DragAndDrop from "./DragAndDrop";
-import BinaryChoice from "./BinaryChoice";
-
 // factors to get answers for:
 // environment,
 //social: community, human_rights, product_responsibility, workforce,
@@ -101,7 +99,7 @@ const RankingForm = () => {
     console.log("Form submitted:", results);
 
     // Send the data to the server
-    fetch(`//${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
+    fetch(`http://${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
       method: "POST", // or 'PUT' if updating existing data
       headers: {
         "Content-Type": "application/json",
