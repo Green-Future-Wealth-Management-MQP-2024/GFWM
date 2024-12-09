@@ -3,7 +3,6 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
-
 // Create the Electron window
 function createWindow() {
   const win = new BrowserWindow({
@@ -14,22 +13,8 @@ function createWindow() {
     },
   });
 
-
-
-if (process.env.NODE_ENV === 'development') {
-  // Load the React app (running on localhost:3000 during development)
-  win.loadURL(`http://${process.env.VITE_REACT_DOMAIN}` || 'http://localhost:3000');
-    win.webContents.openDevTools();
-
-    console.log( process.env.NODE_ENV);
-} else {
-  win.loadFile(path.join(__dirname,  'index.html'));
-  win.webContents.openDevTools();
-}
 win.loadFile(path.join(__dirname,  'index.html'));
 win.webContents.openDevTools();
-
-
 }
 
 // This will be called once Electron is ready
