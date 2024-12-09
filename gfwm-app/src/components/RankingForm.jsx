@@ -107,7 +107,7 @@ const RankingForm = () => {
     console.log("Form submitted:", results);
 
     // Send the data to the server
-    fetch(`http://${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
+    fetch(`http://${import.meta.env.VITE_API_DOMAIN_2}/submitForm/`, {
       method: "POST", // or 'PUT' if updating existing data
       headers: {
         "Content-Type": "application/json",
@@ -123,6 +123,7 @@ const RankingForm = () => {
       })
       .then((data) => {
         console.log("Server response:", data);
+        console.log(import.meta.env);
         setServerResponse(data);
         setShowResults(true); // Show results after successful response
       })
