@@ -7,6 +7,9 @@ from math import floor
 # risk free rate based of historical average of 30d yield
 ANNUAL_RISK_FREE_RATE = 0.0153
 
+def map_risk_appetite_to_cash_percent(risk_appetite):
+    return 0.5 - 2 * risk_appetite
+
 
 def calculate_portfolio(ticker_compatibility_df, cash_percent, use_markowitz, return_summary_statistics = True):
 
