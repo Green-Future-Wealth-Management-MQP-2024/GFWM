@@ -318,9 +318,10 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   const openTableauDashboard = (ticker) => {
     setSelectedTicker(ticker);
 
-    const popup = window.open("", "_blank", "width=1600,height=950");
+    const popup = window.open("", "_blank", "width=1300,height=800");
     const embedCode = `
     <div class='tableauPlaceholder' id='viz1731438480314' style='position: relative'>
+    <head><title>Individual Stock View</title></head>
         <noscript>
           <a href='#'>
             <img alt='Dashboard 1' src='https://public.tableau.com/static/images/In/IndividualStock3_0/Dashboard1/1_rss.png' style='border: none' />

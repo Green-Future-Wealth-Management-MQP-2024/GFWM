@@ -3,11 +3,12 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  root: '.',
+  root: '.', 
+  base: './', // This is the directory where Vite will serve the files from
   server: {
     port: 3000, // Vite will serve on this port
   },
   build: {
-    outDir: 'dist', // Where the build files will go
+    outDir: 'build', // Where the build files will go
   }
 })
