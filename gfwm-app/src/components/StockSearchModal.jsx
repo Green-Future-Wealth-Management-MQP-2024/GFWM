@@ -301,7 +301,7 @@ const StockSearchModal = ({
                   {selectedTickers
                     .filter((ticker) => currentStocks.some((cs) => cs.ticker === ticker))
                     .map((ticker, index) => (
-                      <li key={index} className="text-sm text-gray-700">
+                      <li key={index} className="list-none text-sm text-gray-700">
                         {ticker}
                       </li>
                     ))}
@@ -325,7 +325,7 @@ const StockSearchModal = ({
                   {selectedTickers
                     .filter((ticker) => !currentStocks.some((cs) => cs.ticker === ticker))
                     .map((ticker, index) => (
-                      <li key={index} className="text-sm text-gray-700">
+                      <li key={index} className="list-none text-sm text-gray-700">
                         {ticker}
                       </li>
                     ))}
