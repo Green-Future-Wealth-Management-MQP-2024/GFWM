@@ -10,7 +10,7 @@ function createWindow() {
     height: 800,
     webPreferences: {
       nodeIntegration: true,
-    },
+    }
   });
 
 win.loadFile(path.join(__dirname,  'index.html'));
