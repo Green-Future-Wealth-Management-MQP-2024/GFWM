@@ -67,7 +67,7 @@ def submit_form(request):
         spy_return, spy_volatility, spy_sharpe = pc.calculate_summary_statistics(spy_timeseries, return_as_range=False)
            
         summary_statistics = {
-            "portfolio_esg_score": portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
+            "portfolio_esg_score": pc.calculate_esg_score(portfolio[['ticker','weight']].set_index('ticker', drop = True)),
             
             "portfolio_return_range": portfolio_return,
             
@@ -142,6 +142,7 @@ def update_weights(request):
             #calculate summary statistics   
             portfolio_return, portfolio_volatility, portfolio_sharpe = pc.calculate_summary_statistics(portfolio_timeseries, 
                                                                                                        return_as_range=True)
+            portfolio_esg_score = pc.calculate_esg_score(client_portfolio)
             
         else:
             # empty portfolio case
@@ -150,13 +151,16 @@ def update_weights(request):
             
             # calculate timeseries which is only cash
             portfolio_timeseries, dates, portfolio_max_dd = pc.portfolio_history(empty_portfolio, include_spy=False)
-            
+            portfolio_esg_score = 0
             weights_dict = {}
         
         #calculate summary statistics   
         
         portfolio_return, portfolio_volatility, portfolio_sharpe = pc.calculate_summary_statistics(portfolio_timeseries, return_as_range=True)
         
+        if(client_portfolio.empty):
+            # overwrite calculation which overflows
+            portfolio_sharpe = 0
         
              
         summary_statistics = {            
@@ -166,6 +170,8 @@ def update_weights(request):
             "portfolio_sharpe": portfolio_sharpe,
             
             "portfolio_max_dd": portfolio_max_dd,
+            
+            "portfolio_esg_score": portfolio_esg_score,
             
             "portfolio_timeseries": portfolio_timeseries[::5],
             "timeseries_dates": dates[::5],

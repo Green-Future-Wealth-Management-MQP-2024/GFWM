@@ -346,7 +346,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
       sp500: `${(sp500SummaryStatistics.maxDD * 100).toFixed(2)}%`,
     },
     {
-      field: "Average ESG Score",
+      field: "Portfolio ESG Score",
       portfolio: `${portfolioSummaryStatistics.ESGScore.toFixed(2)}`,
       sp500: "66.66",
     },
@@ -465,11 +465,12 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
           portfolio_volatility: portfolioVolatility,
           portfolio_sharpe: portfolioSharpe,
           portfolio_max_dd: portfolioMaxDD,
+          portfolio_esg_score: portfolioESGScore,
           portfolio_timeseries: portfolioTimeseries,
         } = updatedSummaryStatistics;
 
         setPortfolioSummaryStatistics({
-          ESGScore: portfolioSummaryStatistics.ESGScore, // TODO MUST CHANGE ESG SCORE
+          ESGScore: portfolioESGScore, // TODO MUST CHANGE ESG SCORE
           returnRange: portfolioReturnRange,
           averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
           volatility: portfolioVolatility,

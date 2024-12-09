@@ -122,7 +122,6 @@ def get_max_drawdown(nvs: pd.Series, window=None) -> float:
     peak_series = nvs.rolling(window=window, min_periods=1).max()
     return (nvs / peak_series - 1.0).min()
 
-# TODO handle include_spy = False better
 def portfolio_history(portfolio, include_spy = True):
     
     spy_log_returns = pd.read_csv("data_science/quant/spy_timeseries_13-24.csv")['SPY']
@@ -214,7 +213,7 @@ def portfolio_history(portfolio, include_spy = True):
 
 def calculate_summary_statistics(timeseries, return_as_range = False):
     '''
-    Given a timeseries (Python list), calculate return and volatility
+    Given a timeseries (Python list), calculate return range,  volatility, sharpe
     '''
     
     log_returns = np.log(np.array(timeseries[1:]) / np.array(timeseries[:-1]))
@@ -241,3 +240,26 @@ def calculate_summary_statistics(timeseries, return_as_range = False):
         return (lower_bound, upper_bound), volatility, sharpe
     
     return average_return, volatility, sharpe
+
+def calculate_esg_score(portfolio):
+    
+    if(portfolio.empty):
+        return 0
+    
+    data = pd.read_csv("data_science/preprocessed_refinitiv.csv")[['ticker', 'environment', 'social', 'governance']].set_index('ticker', drop = True)
+    
+    merged_data = data.merge(portfolio, how='inner', left_index=True, right_index=True)
+
+    print(merged_data)
+    
+    # Calculate the weighted esg score per row
+    merged_data['weighted_score'] = (merged_data[['environment', 'social', 'governance']].sum(axis=1) / 3) * merged_data['weight']
+
+    merged_data['weight'] / merged_data['weight'].sum()
+    
+    # Sum the weighted scores over all rows
+    total_esg_score = merged_data['weighted_score'].sum()
+
+    print("Total Weighted Score:", total_esg_score)
+    
+    return total_esg_score
