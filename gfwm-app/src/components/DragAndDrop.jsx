@@ -142,10 +142,10 @@ const DroppableColumn = ({ id, title, children, isDragging }) => {
       id={id}
       style={{
         margin: 20,
-        border: "1px solid gray",
+        border: `2px solid ${isOver ? "#84c225" : "#f9f9f9"}`, // gfwm light green if over
         padding: isDragging ? 20 : 10,
         minHeight: isDragging ? 220 : 200,
-        backgroundColor: isOver ? "#d1ffd6" : "#f9f9f9",
+        backgroundColor: "#f9f9f9",
         position: "relative",
         overflow: "hidden",
         minWidth: "300px",  // Minimum width for the column

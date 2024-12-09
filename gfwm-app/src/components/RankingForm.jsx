@@ -168,9 +168,9 @@ const RankingForm = () => {
                 type="checkbox"
                 checked={fossilFuelsChecked}
                 onChange={handleFossilFuelsCheckboxChange}
-                className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
+                className="h-4 w-4 text-gfwmDarkGreen border-gray-300 rounded focus:ring-gfwmLightGreen"
               />
-              <span className="text-gray-700">Avoid investing in fossil fuels?</span>
+              <span className="text-gray-600">Avoid investing in fossil fuels?</span>
             </label>
 
             {/* weapons manufacturers checkbox */}
@@ -179,9 +179,9 @@ const RankingForm = () => {
                 type="checkbox"
                 checked={weaponsChecked}
                 onChange={handleWeaponsCheckboxChange}
-                className="h-4 w-4 text-green-700 focus:ring-green-800 border-gray-300 rounded"
+                className="h-4 w-4 text-gfwmDarkGreen border-gray-300 rounded focus:ring-gfwmLightGreen"
               />
-              <span className="text-gray-700">Avoid investing in weapons manufacturers?</span>
+              <span className="text-gray-600">Avoid investing in weapons manufacturers?</span>
             </label>
           </div>
         </div>
@@ -196,7 +196,6 @@ const RankingForm = () => {
           </header>
 
           <div className="space-y-4 pl-4">
-
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
                 Rate your risk tolerance on the spectrum below.
@@ -212,7 +211,7 @@ const RankingForm = () => {
                   onChange={handleSliderChange} // Capture every slider movement
                   onMouseUp={handleSliderRelease} // For desktop devices
                   onTouchEnd={handleSliderRelease} // For touch devices
-                  className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
+                  className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full slider-thumb"
                 />
                 <span className="text-gray-600 text-lg whitespace-nowrap">Growth</span>
                 {/* <div>Selected Value: {riskSlider}%</div> */}
@@ -234,7 +233,7 @@ const RankingForm = () => {
                       value={key}
                       checked={weighingScheme === key}
                       onChange={() => setWeighingScheme(key)}
-                      className="form-radio"
+                      className="h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded-full bg-white"
                     />
                     <span>{value}</span>
                   </label>
@@ -244,7 +243,7 @@ const RankingForm = () => {
           </div>
         </div>
 
-        <button type="submit" className="hover:opacity-75 bg-green-700 text-white px-4 py-2 rounded mb-4">
+        <button type="submit" className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded mb-4">
           Get Results
         </button>
       </form>

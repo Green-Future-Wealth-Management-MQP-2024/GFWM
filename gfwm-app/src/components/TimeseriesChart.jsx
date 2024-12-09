@@ -58,7 +58,7 @@ const Chart = ({ portfolio, spy, dates }) => {
       {
         label: "Portfolio",
         data: portfolio,
-        borderColor: "rgba(75, 192, 192, 1)", // Line color
+        borderColor: "#84c225", // Line color
         tension,
         borderWidth,
         pointRadius,
@@ -67,7 +67,7 @@ const Chart = ({ portfolio, spy, dates }) => {
       {
         label: "S&P 500",
         data: spy,
-        borderColor: "rgba(255, 99, 132, 1)", // Line color
+        borderColor: "#9ca3af", // Line color
         tension,
         borderWidth,
         pointRadius,

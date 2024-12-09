@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import RankingForm from "./RankingForm.jsx";
 
 const LandingPage = () => {
   return (
     <div className="landing-page">
-      <header className="top-bar">
+      <header className="bg-gfwmDarkGreen text-white p-2 text-left">
         <h2 className="text-2xl font-bold">Green Future Wealth Management ESG Questionnaire</h2>
       </header>
-      <div className="body-content">
+      <div className="flex-1 p-5 text-left">
         <RankingForm />
       </div>
 
@@ -29,7 +29,7 @@ const LandingPage = () => {
             dealer, member FINRA/SIPC. Advisory services offered through Cambridge Investment Research Advisors, Inc, a
             Registered Investment Adviser. Green Future Wealth Management and Cambridge are not affiliated.
           </p>
-          
+
         </div>
       </footer>
     </div>

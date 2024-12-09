@@ -16,7 +16,6 @@ const StockSearchModal = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-
   useEffect(() => {
     setSearchTerm("");
     if (isOpen && selectedTickers.length > 0) {
@@ -69,9 +68,7 @@ const StockSearchModal = ({
     } else if (addStockNumber < selectedTickers.length) {
       addStockMessage = `Some of the selected stocks are already in your portfolio. Do you want to add the remaining ${addStockNumber} selected stock(s) to your portfolio?`;
     }
-    if (
-      !window.confirm(addStockMessage)
-    ) {
+    if (!window.confirm(addStockMessage)) {
       return;
     }
     // handle adding list of tickers accounting for duplicates
@@ -83,8 +80,10 @@ const StockSearchModal = ({
   };
 
   const handleRemoveSelected = () => {
-    const removeStockNumber = selectedTickers.filter((ticker) => currentStocks.some((cs) => cs.ticker === ticker)).length;
-     var removeStockMessage = `Are you sure you want to remove the ${removeStockNumber} selected stock(s) from your portfolio?`;
+    const removeStockNumber = selectedTickers.filter((ticker) =>
+      currentStocks.some((cs) => cs.ticker === ticker)
+    ).length;
+    var removeStockMessage = `Are you sure you want to remove the ${removeStockNumber} selected stock(s) from your portfolio?`;
     if (removeStockNumber === 0) {
       alert("No selected stocks are in your portfolio.");
       return;
@@ -92,9 +91,7 @@ const StockSearchModal = ({
       removeStockMessage = `Some of the selected stocks are not in your portfolio. Do you want to remove the remaining ${removeStockNumber} selected stock(s) from your portfolio?`;
     }
 
-    if (
-      !window.confirm(removeStockMessage)
-    ) {
+    if (!window.confirm(removeStockMessage)) {
       return;
     }
     // handle removing list of selected tickers from portfolio
@@ -156,26 +153,27 @@ const StockSearchModal = ({
           <table className="min-w-full bg-white mb-2 text-sm">
             <thead className="sticky top-0 bg-white z-10">
               <tr>
-
-                <th className="pl-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"> <input 
-                className='cursor-pointer'
-                type="checkbox"
-                checked={selectedTickers.length === sortedStocks.length}
-                onChange={() => {
-                  if (selectedTickers.length === sortedStocks.length) {
-                    setSelectedTickers([]);
-                  } // if all stocked in the current filter is in the selectedStocks, then clear the selectedStocks
-                
-                  else {
-                    setSelectedTickers(prevSelected => [
-                      ...prevSelected,
-                      ...sortedStocks
-                      .filter(stock => !prevSelected.includes(stock.ticker))
-                      .map(stock => stock.ticker)
-                    ]);
-                  }
-                }}
-                ></input> </th>
+                <th className="pl-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
+                  {" "}
+                  <input
+                    className="cursor-pointer h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded bg-white"
+                    type="checkbox"
+                    checked={selectedTickers.length === sortedStocks.length}
+                    onChange={() => {
+                      if (selectedTickers.length === sortedStocks.length) {
+                        setSelectedTickers([]);
+                      } // if all stocked in the current filter is in the selectedStocks, then clear the selectedStocks
+                      else {
+                        setSelectedTickers((prevSelected) => [
+                          ...prevSelected,
+                          ...sortedStocks
+                            .filter((stock) => !prevSelected.includes(stock.ticker))
+                            .map((stock) => stock.ticker),
+                        ]);
+                      }
+                    }}
+                  ></input>{" "}
+                </th>
                 <th className="py-0 px-0 border-b-2 border-gray-300 text-left leading-4 text-gray-600"></th>
                 <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider">
                   Symbol
@@ -205,7 +203,7 @@ const StockSearchModal = ({
                       onClick={() => handleSelectStock(stock.ticker)}
                     >
                       <input
-                        className="cursor-pointer"
+                        className="cursor-pointer h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded bg-white"
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleSelectStock(stock.ticker)}
@@ -248,7 +246,7 @@ const StockSearchModal = ({
                       onClick={() => onClickStock(stock.ticker)}
                     >
                       {isInPortfolio ? (
-                        <span className="text-green-500">In Portfolio</span>
+                        <span className="text-gfwmDarkGreen">In Portfolio</span>
                       ) : (
                         <span className="text-gray-500 text-xs">Not In Portfolio</span>
                       )}
@@ -261,7 +259,7 @@ const StockSearchModal = ({
         </div>
         <div className="flex justify-end space-x-4 mt-4">
           <div className="flex flex-col text-gray-700">
-          <HoverPopup
+            <HoverPopup
               content={
                 <div>
                   <p className="text-sm text-gray-700">Selected stocks:</p>
@@ -275,7 +273,13 @@ const StockSearchModal = ({
                 </div>
               }
             >
-              <span className="cursor-pointer hover:underline" onClick={() => {setSelectedCategory('selected'); setSearchTerm("")}}>
+              <span
+                className="cursor-pointer hover:underline"
+                onClick={() => {
+                  setSelectedCategory("selected");
+                  setSearchTerm("");
+                }}
+              >
                 {selectedTickers.length} stock(s) selected
               </span>
             </HoverPopup>
@@ -287,53 +291,55 @@ const StockSearchModal = ({
             </button>
           </div>
           <HoverPopup
-      content={
-        <div>
-          <p className="text-sm text-gray-700">{selectedTickers.filter((ticker) =>
-              currentStocks.some((cs) => cs.ticker === ticker)
-            ).length} stock(s) to be removed:</p>
-          <ul className="list-disc list-inside">
-            {selectedTickers.filter((ticker) =>
-              currentStocks.some((cs) => cs.ticker === ticker)
-            ).map((ticker, index) => (
-              <li key={index} className="text-sm text-gray-700">
-                {ticker}
-              </li>
-            ))}
-          </ul>
-        </div>
-      }
-    >
-      <button
-        onClick={handleRemoveSelected}
-        className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded"
-      >
-        Remove Selected
-      </button>
-    </HoverPopup>
+            content={
+              <div>
+                <p className="text-sm text-gray-700">
+                  {selectedTickers.filter((ticker) => currentStocks.some((cs) => cs.ticker === ticker)).length} stock(s)
+                  to be removed:
+                </p>
+                <ul className="list-disc list-inside">
+                  {selectedTickers
+                    .filter((ticker) => currentStocks.some((cs) => cs.ticker === ticker))
+                    .map((ticker, index) => (
+                      <li key={index} className="text-sm text-gray-700">
+                        {ticker}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            }
+          >
+            <button onClick={handleRemoveSelected} className="hover:opacity-75 px-4 py-2 bg-red-500 text-white rounded">
+              Remove Selected
+            </button>
+          </HoverPopup>
 
-    <HoverPopup content={
-        <div>
-
-          <p className="text-sm text-gray-700">{selectedTickers.filter((ticker) =>
-              !currentStocks.some((cs) => cs.ticker === ticker)
-            ).length} stock(s) to be added:</p>
-          <ul className="list-disc list-inside">
-            {selectedTickers.filter((ticker) =>
-              !currentStocks.some((cs) => cs.ticker === ticker)
-            ).map((ticker, index) => (
-              <li key={index} className="text-sm text-gray-700">
-                {ticker}
-              </li>
-            ))}
-          </ul>
-        </div>
-      }
-    >
-          <button onClick={handleAddSelected} className="hover:opacity-75 px-4 py-2 bg-green-500 text-white rounded">
-            Add Selected
-          </button>
-        </HoverPopup>
+          <HoverPopup
+            content={
+              <div>
+                <p className="text-sm text-gray-700">
+                  {selectedTickers.filter((ticker) => !currentStocks.some((cs) => cs.ticker === ticker)).length}{" "}
+                  stock(s) to be added:
+                </p>
+                <ul className="list-disc list-inside">
+                  {selectedTickers
+                    .filter((ticker) => !currentStocks.some((cs) => cs.ticker === ticker))
+                    .map((ticker, index) => (
+                      <li key={index} className="text-sm text-gray-700">
+                        {ticker}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            }
+          >
+            <button
+              onClick={handleAddSelected}
+              className="hover:opacity-75 px-4 py-2 bg-gfwmDarkGreen text-white rounded"
+            >
+              Add Selected
+            </button>
+          </HoverPopup>
         </div>
       </div>
     </div>

@@ -376,7 +376,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
           <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
           <param name='embed_code_version' value='3' />
           <param name='site_root' value='' />
-          <param name='name' value='IndividualStock3_0/PrimaryDashboard' />
+          <param name='name' value='IndividualStock3_0_17337605280590/PrimaryDashboard' />
           <param name='tabs' value='no' />
           <param name='toolbar' value='yes' />
           <param name='static_image' value='https://public.tableau.com/static/images/In/IndividualStock3_0/Dashboard1/1.png' />
@@ -545,7 +545,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         <h2 className="text-2xl font-bold text-gray-800">Your Portfolio</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="hover:opacity-75 bg-green-600 text-white px-4 py-2 rounded"
+          className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded"
         >
           Edit Portfolio
         </button>
@@ -653,11 +653,12 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
                     }}
                   >
                     <input
-                      className="cursor-pointer"
+                      className="cursor-pointer h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded bg-white"
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleSelectStock(item.ticker)}
                       onClick={(e) => e.stopPropagation()}
+                      
                     />
                   </td>
 
