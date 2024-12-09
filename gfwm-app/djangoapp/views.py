@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 from data_science.stock_filter import filter_stocks
-from data_science.quant.portfolio_calculator import calculate_portfolio, ANNUAL_RISK_FREE_RATE, portfolio_history, calculate_summary_statistics
+import data_science.quant.portfolio_calculator as pc
 
 @csrf_exempt
 def hello_api(request):
@@ -23,7 +23,7 @@ def submit_form(request):
         
         avoid_factors = ['avoid_fossil_fuels', 'avoid_weapons']
         
-        missing_keys = [key for key in required_factors + avoid_factors + ['flexibility', 'risk_appetite']
+        missing_keys = [key for key in required_factors + avoid_factors + ['risk_appetite']
                         if key not in client_responses.keys()]
         if len(missing_keys) > 0:
             return JsonResponse({"error": f"Missing keys: {missing_keys}"}, status=400)
@@ -36,41 +36,40 @@ def submit_form(request):
         # avoid factors (checkbox)
         for avoid_factor in avoid_factors:
             esg_preferences[avoid_factor] = client_responses[avoid_factor]
-        
-        esg_flexibility = client_responses['flexibility']
         # map risk appetite (0 - 0.2) to cash percent (50% - 10%)
-        cash_percent = 0.5 - 2 * client_responses['risk_appetite']
+        cash_percent = pc.map_risk_appetite_to_cash_percent(client_responses['risk_appetite'])
         
         use_markowitz = (client_responses['weighing_scheme'] == 'Markowitz Optimized')
         
         # filter stocks using client responses
         # df with two columns: ticker, compatibility
-        filter_results = filter_stocks(user_preferences= esg_preferences, flexibility= esg_flexibility)
+        filter_results = filter_stocks(user_preferences= esg_preferences)
         
         # this value determines how many stocks to include in portfolio
         portfolio = filter_results.head(100).copy()
         
         # calculate best fit portfolio for the client
-        ideal_portfolio_weights = calculate_portfolio(portfolio[['ticker', 'compatibility']], 
-                                                                                                    cash_percent,
-                                                                                                    use_markowitz,
-                                                                                                    return_summary_statistics=False)
+        ideal_portfolio_weights = pc.calculate_portfolio(portfolio[['ticker', 'compatibility']],
+                                                      cash_percent,
+                                                      use_markowitz,
+                                                      return_summary_statistics=False)
         
         portfolio['weight'] = ideal_portfolio_weights
         
-        spy_timeseries, portfolio_timeseries, dates, spy_max_dd, portfolio_max_dd = portfolio_history(portfolio[['ticker',
+        spy_timeseries, portfolio_timeseries, dates, spy_max_dd, portfolio_max_dd = pc.portfolio_history(portfolio[['ticker',
                                                                                                                  'weight']]
-                                                                                                      .set_index('ticker', drop = True))
+                                                                                                      .set_index('ticker', 
+                                                                                                                 drop = True))
         
         #calculate summary statistics  
         
-        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=False)
-        spy_return, spy_volatility, spy_sharpe = calculate_summary_statistics(spy_timeseries, return_as_range=False)
+        portfolio_return, portfolio_volatility, portfolio_sharpe = pc.calculate_summary_statistics(portfolio_timeseries, return_as_range=True)
+        spy_return, spy_volatility, spy_sharpe = pc.calculate_summary_statistics(spy_timeseries, return_as_range=False)
            
         summary_statistics = {
             "portfolio_esg_score": portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
             
-            "portfolio_average_return": portfolio_return,
+            "portfolio_return_range": portfolio_return,
             
             "portfolio_volatility": portfolio_volatility,
             "portfolio_sharpe": portfolio_sharpe,
@@ -102,6 +101,7 @@ def submit_form(request):
 
 @csrf_exempt
 def update_weights(request):
+    
     if request.method == "POST":
         
         # dict of request body:
@@ -117,23 +117,23 @@ def update_weights(request):
         use_markowitz = (update_request_dict['weighing_scheme'] == 'Markowitz Optimized')
         
         # calculate best fit portfolio for the client
-        ideal_portfolio_weights = calculate_portfolio(client_portfolio[['ticker', 'compatibility']],
+        ideal_portfolio_weights = pc.calculate_portfolio(client_portfolio[['ticker', 'compatibility']],
                                                       cash_percent=cash_percent,
                                                       use_markowitz=use_markowitz,
                                                       return_summary_statistics=False)
         
         client_portfolio['weight'] = ideal_portfolio_weights
         
-        portfolio_timeseries, dates, portfolio_max_dd = portfolio_history(client_portfolio[['ticker','weight']].set_index('ticker', drop = True),
+        portfolio_timeseries, dates, portfolio_max_dd = pc.portfolio_history(client_portfolio[['ticker','weight']].set_index('ticker', drop = True),
                                                                           include_spy=False)
         
         #calculate summary statistics   
         
-        portfolio_return, portfolio_volatility, portfolio_sharpe = calculate_summary_statistics(portfolio_timeseries, return_as_range=False)
+        portfolio_return, portfolio_volatility, portfolio_sharpe = pc.calculate_summary_statistics(portfolio_timeseries, return_as_range=True)
         
              
         summary_statistics = {            
-            "portfolio_average_return": portfolio_return,
+            "portfolio_return_range": portfolio_return,
             
             "portfolio_volatility": portfolio_volatility,
             "portfolio_sharpe": portfolio_sharpe,
@@ -152,4 +152,54 @@ def update_weights(request):
             "updated_summary_statistics": summary_statistics
         })
     
+    return JsonResponse({"error": "Invalid request method."}, status=401)
+
+@csrf_exempt
+def update_risk(request):
+    
+    if request.method == "POST":
+        
+        # dict of request body:
+        # tickers, risk_appetite, weighing_scheme
+        update_request_dict = json.loads(request.body)
+        
+        # columns: ticker, weight
+        client_portfolio = pd.DataFrame(update_request_dict['client_portfolio'])
+        
+        print(client_portfolio.head())
+        
+        # map risk appetite (0 - 0.2) to cash percent (50% - 10%)
+        cash_percent = pc.map_risk_appetite_to_cash_percent(update_request_dict['risk_appetite'])
+        
+        current_equities_percent = client_portfolio['weight'].sum()
+        scaling_factor = (1-cash_percent) / current_equities_percent
+        
+        client_portfolio['weight'] = client_portfolio['weight'] * scaling_factor
+        
+        portfolio_timeseries, dates, portfolio_max_dd = pc.portfolio_history(client_portfolio[['ticker','weight']].set_index('ticker', drop = True),
+                                                                          include_spy=False)
+        
+        #calculate summary statistics   
+        
+        portfolio_return, portfolio_volatility, portfolio_sharpe = pc.calculate_summary_statistics(portfolio_timeseries, return_as_range=True)
+        
+             
+        summary_statistics = {            
+            "portfolio_return_range": portfolio_return,
+            
+            "portfolio_volatility": portfolio_volatility,
+            "portfolio_sharpe": portfolio_sharpe,
+            
+            "portfolio_max_dd": portfolio_max_dd,
+            
+            "portfolio_timeseries": portfolio_timeseries[::5],
+            "timeseries_dates": dates[::5],
+        }
+        
+        # return format for updated_portfolio: {ticker: weight, ticker: weight etc}
+        return JsonResponse({
+            "updated_portfolio": client_portfolio[['ticker','weight']].set_index('ticker', drop = True)['weight'].to_dict(),
+            "updated_summary_statistics": summary_statistics
+        })
+        
     return JsonResponse({"error": "Invalid request method."}, status=401)

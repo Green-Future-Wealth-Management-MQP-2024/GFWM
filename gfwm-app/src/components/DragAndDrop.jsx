@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import {
   DndContext,
+  rectIntersection,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
   useDroppable,
 } from "@dnd-kit/core";
 import {
@@ -17,17 +19,25 @@ import { CSS } from "@dnd-kit/utilities";
 
 const DragAndDrop = ({ columns, setColumns, factor_text_map }) => {
 
+  const [activeId, setActiveId] = useState(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor)
   );
 
+  const handleDragStart = (event) => {
+    setActiveId(event.active.id); // Set the active ID when dragging starts
+  };
+
+
   const handleDragEnd = (event) => {
     const { active, over } = event;
+    setActiveId(null);
 
-    if (active.id !== over?.id) {
+    if (over) {
         const activeColumnId = active.data.current.sortable.containerId;
-        const overColumnId = over.data.current.sortable.containerId
+        const overColumnId = over.id;
     //   const activeColumn = columns[active.data.current.sortable.containerId];
     //   const overColumn = columns[over.data.current.sortable.containerId];
       const updatedColumns = { ...columns };
@@ -48,7 +58,8 @@ const DragAndDrop = ({ columns, setColumns, factor_text_map }) => {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={rectIntersection}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <div
@@ -65,37 +76,67 @@ const DragAndDrop = ({ columns, setColumns, factor_text_map }) => {
             id={importance_level} // This assigns the column's ID
             strategy={verticalListSortingStrategy}
           >
-            <DroppableColumn id={importance_level} title={importance_level}>
+            <DroppableColumn id={importance_level} title={importance_level} isDragging = {!!activeId}>
               {
+                
+                columns[importance_level].length > 0 ? (
                 //populate the columns with their factors
                 columns[importance_level].map((factor) => (
                   <DraggableItem key={factor} id={factor}>
                     {factor_text_map[factor]}
                   </DraggableItem>
                 ))
-              }
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "gray",
+                    padding: "10px 0",
+                  }}
+                >
+                  Drag items here
+                </div>
+              )
+            }
             </DroppableColumn>
           </SortableContext>
         ))}
       </div>
+
+
+      <DragOverlay>
+        {activeId ? (
+          <div
+            style={{
+              padding: 10,
+              backgroundColor: "#f1f1f1",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+              borderRadius: 4,
+            }}
+          >
+            {factor_text_map[activeId]}
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 };
 
-const DroppableColumn = ({ id, title, children }) => {
+const DroppableColumn = ({ id, title, children, isDragging }) => {
   const { setNodeRef, isOver } = useDroppable({
     id, // The ID of the column as a droppable zone
   });
 
   return (
     <div
+      ref = {setNodeRef}
       id={id}
       style={{
         margin: 20,
         border: "1px solid gray",
-        padding: 10,
+        padding: isDragging ? 20 : 10,
         width: 400, // Increased width
-        minHeight: 200, // Optional: Increase height for more content
+        minHeight: isDragging ? 220 : 200, // Optional: Increase height for more content
         backgroundColor: isOver ? "#d1ffd6" : "#f9f9f9", // Highlight when a factor is dragged over
         position: "relative", // Prevent overlap during drag
         overflow: "hidden", // Prevent content overflow when dragging
