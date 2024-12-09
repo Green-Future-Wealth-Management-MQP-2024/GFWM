@@ -210,9 +210,25 @@ def calculate_summary_statistics(timeseries, return_as_range = False):
     
     log_returns = np.log(np.array(timeseries[1:]) / np.array(timeseries[:-1]))
     
-    average_return = (np.exp(np.mean(log_returns)) - 1) * 252
+    mean_log_return = np.mean(log_returns)
+    
+    average_return = (np.exp(mean_log_return) - 1) * 252
     volatility = np.std(log_returns) * np.sqrt(252)
     
     sharpe = (average_return - ANNUAL_RISK_FREE_RATE) / volatility
+    
+    if return_as_range:
+
+        # Margin of error uses z-score, which is 1.96 for 95% confidence interval
+        # use sample standard deviation
+        # moe = z-score * (std_dev / sqrt(n))
+        margin_of_error = 1.96 * (np.std(log_returns, ddof=1) / np.sqrt(len(log_returns)))
+
+        # Confidence interval for log return is mean +- moe
+        # convert to percent annual return
+        lower_bound = (np.exp(mean_log_return - margin_of_error) - 1) * 252 
+        upper_bound = (np.exp(mean_log_return + margin_of_error) - 1) * 252
+        
+        return (lower_bound, upper_bound), volatility, sharpe
     
     return average_return, volatility, sharpe

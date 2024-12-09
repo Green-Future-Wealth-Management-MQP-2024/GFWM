@@ -47,7 +47,6 @@ const RankingForm = () => {
   };
 
   const [riskSlider, setRiskSliderValue] = useState(10);
-  const [flexibilitySlider, setFlexibilitySliderValue] = useState(5);
 
   const weighing_scheme_choices = {
     choice1: "Equal Weights",
@@ -93,7 +92,6 @@ const RankingForm = () => {
     }
     results["avoid_fossil_fuels"] = fossilFuelsChecked;
     results["avoid_weapons"] = weaponsChecked;
-    results["flexibility"] = flexibilitySlider / 100.0;
     results["risk_appetite"] = riskSlider / 100.0;
     results["weighing_scheme"] = weighing_scheme_choices[weighingScheme];
 
