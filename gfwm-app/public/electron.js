@@ -1,6 +1,6 @@
 // main.js
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 
 // Create the Electron window
@@ -12,9 +12,39 @@ function createWindow() {
       nodeIntegration: true,
     }
   });
+  win.loadFile(path.join(__dirname,  'index.html'));
 
-win.loadFile(path.join(__dirname,  'index.html'));
-win.webContents.openDevTools();
+
+const menu = Menu.buildFromTemplate([
+  {
+    label: 'Menu',
+    submenu: [
+      {
+        label: 'Open Dev Tools',
+        click() {
+          win.webContents.openDevTools();
+        },
+      },
+      {
+        label: 'Reload',
+        role: 'reload',
+      },
+      {
+        label: 'Quit',
+        accelerator: 'CmdOrCtrl+Q',
+        click() {
+          app.quit();
+        },
+      },
+    ],
+  },
+]);
+
+Menu.setApplicationMenu(menu);
+
+mainWindow.on('closed', function () {
+  mainWindow = null;
+});
 }
 
 // This will be called once Electron is ready
