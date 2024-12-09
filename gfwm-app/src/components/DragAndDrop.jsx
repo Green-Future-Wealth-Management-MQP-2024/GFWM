@@ -10,11 +10,13 @@ import {
   DragOverlay,
   useDroppable,
 } from "@dnd-kit/core";
+
 import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+
 import { CSS } from "@dnd-kit/utilities";
 
 const DragAndDrop = ({ columns, setColumns, factor_text_map }) => {
@@ -127,6 +129,13 @@ const DroppableColumn = ({ id, title, children, isDragging }) => {
     id, // The ID of the column as a droppable zone
   });
 
+  const toCapitalCase = (str) => {
+    return str
+      .split(' ')                    // Split the string into words
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())  // Capitalize each word
+      .join(' ');                     // Join the words back into a single string
+  }
+
   return (
     <div
       ref = {setNodeRef}
@@ -135,14 +144,18 @@ const DroppableColumn = ({ id, title, children, isDragging }) => {
         margin: 20,
         border: "1px solid gray",
         padding: isDragging ? 20 : 10,
-        width: 400, // Increased width
-        minHeight: isDragging ? 220 : 200, // Optional: Increase height for more content
-        backgroundColor: isOver ? "#d1ffd6" : "#f9f9f9", // Highlight when a factor is dragged over
-        position: "relative", // Prevent overlap during drag
-        overflow: "hidden", // Prevent content overflow when dragging
+        minHeight: isDragging ? 220 : 200,
+        backgroundColor: isOver ? "#d1ffd6" : "#f9f9f9",
+        position: "relative",
+        overflow: "hidden",
+        minWidth: "300px",  // Minimum width for the column
+        width: "30%",       // Set a mid-width (percentage of the parent container)
+        //maxWidth: "450px",  // Maximum width for the column
       }}
+      
+      
     >
-      <h4>{title.replace(/([A-Z])/g, " $1").toUpperCase()}</h4>
+      <h2 className="text-xl font-bold text-gray-800 pl-2">{toCapitalCase(title.replace(/([A-Z])/g, " $1"))}</h2>
       {children}
     </div>
   );
@@ -156,9 +169,12 @@ const DraggableItem = ({ id, children }) => {
     transform: CSS.Transform.toString(transform),
     transition,
     padding: 10,
-    margin: "5px 0",
+    margin: "10px 0",
     backgroundColor: "#f1f1f1",
-    zIndex: transform ? 10 : 1, // Apply higher z-index during drag, when transform is truthy
+    zIndex: transform ? 10 : 1, // Apply higher z-index during drag
+    minWidth: "auto", // Let the item width adjust based on content
+    width: "100%", // Take up 100% of the column's width
+    maxWidth: "100%", // Ensure the item doesn't exceed column width
   };
 
   return (
