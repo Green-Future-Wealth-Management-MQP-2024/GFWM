@@ -6,7 +6,12 @@ import "./Landing.css";
 const LandingPage = () => {
   return (
     <div className="landing-page">
-      <TopBar />
+      <header className="top-bar">
+      <h2 className="text-2xl font-bold">
+        Green Future Wealth Management ESG Questionnaire
+      </h2>
+
+    </header>
       <div className="body-content">
         <h1>Welcome to Our ESG Questionnaire!</h1>
         <p>Thank you for taking the time to answer these questions.</p>
@@ -25,25 +30,11 @@ const LandingPage = () => {
   );
 };
 
-const TopBar = () => {
-  return (
-    <header className="top-bar">
-      <h2 className="text-2xl font-bold">
-        Green Future Wealth Management ESG Questionnaire
-      </h2>
-      <nav>
-        <a href="/">Home</a>
-        <a href="https://www.greenfuturewealth.com/about">About</a>
-        <a href="https://www.greenfuturewealth.com/contact">Contact</a>
-      </nav>
-    </header>
-  );
-};
-
 const FooterBar = () => {
   return (
     <footer className="footer-bar">
       <p>2024 Green Future Wealth Managagement MQP</p>
+      <p>Securities offered through Registered Representatives of Cambridge Investment Research, Inc., a broker dealer, member FINRA/SIPC. Advisory services offered through Cambridge Investment Research Advisors, Inc, a Registered Investment Adviser. Green Future Wealth Management and Cambridge are not affiliated. </p>
     </footer>
   );
 };

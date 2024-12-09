@@ -515,8 +515,10 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   };
 
   return (
-    <div className="ranking-form-results p-4 bg-white rounded-lg">
-      <h2 className="text-xl font-bold mb-2">Results Summary</h2>
+    <div className="ranking-form-results">
+      <h2 className="text-2xl font-bold text-gray-800">Portfolio Summary</h2>
+      
+      {/* portfolio summary statistics */}
       <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
         {/* Comparison Table */}
         <div className="flex-none w-full sm:w-[30%] min-w-[200px]">
@@ -537,22 +539,17 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
           <PieChart weights={portfolioData.map((item) => item.weight * 100)} />
         </div>
       </div>
-      <h2 className="text-xl font-bold mb-2">Your Portfolio</h2>
-      <div className="flex gap-4 mb-4">
+
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">Your Portfolio</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded"
+          className="hover:opacity-75 bg-green-600 text-white px-4 py-2 rounded"
         >
           Edit Portfolio
         </button>
-
-        {/* <button
-          disabled={true} // Disables the button
-          className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
-        >
-          Recalculate Weights
-        </button> */}
       </div>
+
       <StockSearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
