@@ -116,7 +116,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         });
 
         // Send the necessary data to the server
-        fetch(`//${import.meta.env.VITE_API_DOMAIN}/updateRisk/`, {
+        fetch(`http://${import.meta.env.VITE_API_DOMAIN}/updateRisk/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
