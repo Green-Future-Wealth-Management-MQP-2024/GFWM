@@ -110,7 +110,7 @@ const RankingForm = () => {
     console.log("Form submitted:", results);
 
     // Send the data to the server
-    fetch(`http://${import.meta.env.VITE_API_DOMAIN_2}/submitForm/`, {
+    fetch(`http://${import.meta.env.VITE_API_DOMAIN}/submitForm/`, {
       method: "POST", // or 'PUT' if updating existing data
       headers: {
         "Content-Type": "application/json",
@@ -135,6 +135,7 @@ const RankingForm = () => {
       })
       .catch((error) => {
         console.error("Error:", error);
+        alert("Could not connect to the server. Please try again later.");
         setLoading(false);
       });
   };

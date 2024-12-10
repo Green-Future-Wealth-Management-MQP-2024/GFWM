@@ -15,6 +15,7 @@ function createWindow() {
   win.loadFile(path.join(__dirname,  'index.html'));
 
 
+
 const menu = Menu.buildFromTemplate([
   {
     label: 'Menu',
@@ -42,9 +43,7 @@ const menu = Menu.buildFromTemplate([
 
 Menu.setApplicationMenu(menu);
 
-mainWindow.on('closed', function () {
-  mainWindow = null;
-});
+
 }
 
 // This will be called once Electron is ready
