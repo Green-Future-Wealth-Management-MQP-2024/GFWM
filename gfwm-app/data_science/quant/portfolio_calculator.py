@@ -47,8 +47,8 @@ def calculate_portfolio(ticker_compatibility_df, cash_percent, use_markowitz, re
         # efficiency improvement:
         # calculate fewer target returns in the range most likely to contain the tangency portfolio
         # the tangent portfolio has returns around 15%, only worth calculating target returns in that range
-        target_returns = np.linspace(start=0.1/252,
-                                     stop=0.25/252, num=20)
+        target_returns = np.linspace(start=0.05/252,
+                                     stop=0.2/252, num=25)
 
         bounds = [0.5/n, 3.0/n]
         #TODO speed up: precalculate the markowitz ideal portfolio for all the combinations of factors
@@ -134,8 +134,6 @@ def portfolio_history(portfolio, include_spy = True):
     print("tickers are ", tickers)
     
     tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
-    
-    print(tickers_log_returns.head())
     
     # print(tickers_log_returns.head())
     
@@ -249,8 +247,6 @@ def calculate_esg_score(portfolio):
     data = pd.read_csv("data_science/preprocessed_refinitiv.csv")[['ticker', 'environment', 'social', 'governance']].set_index('ticker', drop = True)
     
     merged_data = data.merge(portfolio, how='inner', left_index=True, right_index=True)
-
-    print(merged_data)
     
     # Calculate the weighted esg score per row
     merged_data['weighted_score'] = (merged_data[['environment', 'social', 'governance']].sum(axis=1) / 3) * merged_data['weight']
@@ -260,6 +256,6 @@ def calculate_esg_score(portfolio):
     # Sum the weighted scores over all rows
     total_esg_score = merged_data['weighted_score'].sum()
 
-    print("Total Weighted Score:", total_esg_score)
+    #print("Total Weighted Score:", total_esg_score)
     
     return total_esg_score

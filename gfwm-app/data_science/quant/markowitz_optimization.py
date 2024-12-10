@@ -5,7 +5,7 @@ import cvxopt as opt
 from cvxopt import matrix, solvers, blas
 
 #True to display progress in console
-solvers.options["show_progress"] = False
+solvers.options["show_progress"] = True
 
 # use adjusted to optimize and true to report (vol, return) points
 def calculate_optimal_portfolios(true_mean_returns, adjusted_mean_returns, true_cov, adjusted_cov, 
@@ -90,10 +90,13 @@ def calculate_optimal_portfolios(true_mean_returns, adjusted_mean_returns, true_
         if solution['status'] == 'optimal':
             return solution['x']
     
+    print(len(optimal_portfolios))
     optimal_portfolios['weights'] = optimal_portfolios['target_return'].map(solve_qp)
     
     # remove the rows where weights are none, ie no solution found
     optimal_portfolios.dropna(subset=['weights'], inplace=True)
+    
+    print(len(optimal_portfolios))
 
     # Calculate annual return and annual volatility metrics based off of weights
     optimal_portfolios['annual_return'] = optimal_portfolios['weights'].map(
