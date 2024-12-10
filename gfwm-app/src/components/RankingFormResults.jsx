@@ -37,6 +37,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     timeseriesDates: [],
   });
 
+  // unpack server response and update state variables
   useEffect(() => {
     if (serverResponse) {
       setCompatibilityScores(serverResponse.sp500_compatibility);
@@ -84,23 +85,44 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     }
   }, [serverResponse]);
 
+  // serialized version of esg preferences, just to check if changes occured
+  const [esgPreferences, setESGPreferences] = useState("");
+
   const [riskAppetite, setRiskAppetite] = useState(0.1);
   const [weighingScheme, setWeighingScheme] = useState("");
 
+  const [isPortfolioOutdated, setIsPortfolioOutdated] = useState(false);
+
+  // unpack form results and update state variables
   useEffect(() => {
     if (formResults) {
+      console.log("form results changed ", formResults);
       // unpack form results
-      const { risk_appetite: riskAppetite, weighing_scheme: weighingScheme } = formResults;
+      const { risk_appetite: riskAppetite, weighing_scheme: weighingScheme, ...rest } = formResults;
+
+      console.log(rest);
 
       setRiskAppetite(riskAppetite);
       setWeighingScheme(weighingScheme);
+
+      const sortedString = Object.keys(rest)
+        .sort() // Sort keys alphabetically
+        .map((key) => `${key}:${rest[key]}`) // Create key:value pairs
+        .join("; "); // Join them into a single string
+
+      // Update state only if the string changes
+      if (sortedString !== esgPreferences) {
+        setESGPreferences(sortedString);
+        console.log("ESG preferences updated:", sortedString);
+      }
     }
   }, [formResults]);
 
   // real time updates of data based off changes to risk slider
   useEffect(() => {
     //check if server response is truthy, ie some data sent back already
-    if (serverResponse) {
+    // no point in updating risk if esg portfolio is outdated too
+    if (serverResponse && !isPortfolioOutdated) {
       // package up ticker and weight columns to send to server
       const clientPortfolio = portfolioData.map((row) => {
         return {
@@ -164,18 +186,26 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     }
   }, [riskAppetite]);
 
+  // real time updates of data based off weighing scheme changes
   useEffect(() => {
     //check if server response is truthy, ie some data sent back already
-    if (serverResponse) {
-      // package up ticker and weight columns to send to server
+    if (serverResponse && !isPortfolioOutdated) {
+      // package up tickers to update weights for
       const tickers = portfolioData.map((row) => row.ticker);
 
       if (tickers.length > 0) {
         console.log(tickers);
-        updatePortfolioWeights(tickers)
+        updatePortfolioWeights(tickers);
       }
     }
   }, [weighingScheme]);
+
+  useEffect(() => {
+    if(esgPreferences){
+      setIsPortfolioOutdated(true);
+      console.log("esg preferences changed ", esgPreferences);
+    }
+  }, [esgPreferences])
 
   // MANAGE STOCK DATA OBJECT
 
@@ -261,6 +291,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   // copies correct rows (tickers) from stockData and augments with given weight
   useEffect(() => {
     if (!portfolioWeights) return;
+
+    setIsPortfolioOutdated(false);
 
     const updatePortfolioData = async () => {
       console.log("updating portfolio data based off weights change: ", Object.keys(portfolioWeights).length);
@@ -529,8 +561,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     setSelectedTicker(ticker);
   };
 
-  return (
-    <div className="ranking-form-results">
+  return ( // grey out portfolio data if outdated
+    <div className={`${isPortfolioOutdated ? 'opacity-50' : ''}`}>
       <h2 className="text-2xl font-bold text-gray-800">Portfolio Summary</h2>
 
       {/* portfolio summary statistics */}
@@ -555,6 +587,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         </div>
       </div>
 
+      {/* portfolio results header and edit button */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-gray-800">Your Portfolio</h2>
         <button

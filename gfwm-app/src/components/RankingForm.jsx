@@ -57,12 +57,23 @@ const RankingForm = () => {
 
   // update risk and weighing scheme changes to send to results object
   useEffect(() => {
-    setFormResults((prevState) => ({
-      ...prevState,
-      risk_appetite: riskSlider / 100.0,
-      weighing_scheme: weighing_scheme_choices[weighingScheme],
-    }));
-  }, [riskSlider, weighingScheme]);
+    let results = {};
+
+    // collect dict of esg results from importance columns
+    for (const importance_level in columns) {
+      // For each factor in the current column, map it to the column name
+      columns[importance_level].forEach((factor) => {
+        results[factor] = importance_level_mapper(importance_level);
+      });
+    }
+    results["avoid_fossil_fuels"] = fossilFuelsChecked;
+    results["avoid_weapons"] = weaponsChecked;
+    results["risk_appetite"] = riskSlider / 100.0;
+    results["weighing_scheme"] = weighing_scheme_choices[weighingScheme];
+
+    setFormResults(results);
+
+  }, [columns, fossilFuelsChecked, weaponsChecked, riskSlider, weighingScheme]);
 
   const [serverResponse, setServerResponse] = useState({});
 
