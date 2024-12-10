@@ -116,7 +116,7 @@ def update_weights(request):
         
         use_markowitz = (update_request_dict['weighing_scheme'] == 'Markowitz Optimized')
         
-        print(client_portfolio.head())
+        # print(client_portfolio.head())
         
         if(not client_portfolio.empty):
         

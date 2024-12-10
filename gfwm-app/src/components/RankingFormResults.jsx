@@ -97,7 +97,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     }
   }, [formResults]);
 
-  //TODO fix
+  // real time updates of data based off changes to risk slider
   useEffect(() => {
     //check if server response is truthy, ie some data sent back already
     if (serverResponse) {
@@ -163,6 +163,19 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
       }
     }
   }, [riskAppetite]);
+
+  useEffect(() => {
+    //check if server response is truthy, ie some data sent back already
+    if (serverResponse) {
+      // package up ticker and weight columns to send to server
+      const tickers = portfolioData.map((row) => row.ticker);
+
+      if (tickers.length > 0) {
+        console.log(tickers);
+        updatePortfolioWeights(tickers)
+      }
+    }
+  }, [weighingScheme]);
 
   // MANAGE STOCK DATA OBJECT
 
@@ -519,7 +532,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   return (
     <div className="ranking-form-results">
       <h2 className="text-2xl font-bold text-gray-800">Portfolio Summary</h2>
-      
+
       {/* portfolio summary statistics */}
       <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
         {/* Comparison Table */}
@@ -659,7 +672,6 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
                       checked={isSelected}
                       onChange={() => handleSelectStock(item.ticker)}
                       onClick={(e) => e.stopPropagation()}
-                      
                     />
                   </td>
 

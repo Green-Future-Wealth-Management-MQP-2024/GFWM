@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 
 import RankingFormResults from "./RankingFormResults";
 import DragAndDrop from "./DragAndDrop";
-import CircularProgress from '@mui/material/CircularProgress';
-
+import CircularProgress from "@mui/material/CircularProgress";
 
 // factors to get answers for:
 // environment,
@@ -153,7 +152,6 @@ const RankingForm = () => {
 
   return (
     <div>
-    
       <form onSubmit={handleSubmit} className="ranking-form">
         {/* ESG preferences section */}
         <div className="mb-8 space-y-4">
@@ -195,7 +193,45 @@ const RankingForm = () => {
             </label>
           </div>
         </div>
-        <div className="mb-4">
+        <button type="submit" className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded mb-4">
+          Get Results
+        </button>{" "}
+        {loading && <CircularProgress />}
+        {/* Portfolio preferences section */}
+        <div className="mb-8">
+
+          <header className="mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Portfolio Preferences</h2>
+            <p className="text-lg text-gray-600">
+              You can modify these choices later and see how your portfolio changes in real time.
+            </p>
+          </header>
+
+          <div className="space-y-4 pl-4">
+            <div className = "mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Rate your risk tolerance on the spectrum below.
+              </h3>
+
+              {/* risk slider */}
+              <div className="w-3/4 flex items-center space-x-4">
+                <span className="text-gray-600 text-lg whitespace-nowrap">Conservative</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  defaultValue={riskSlider}
+                  onChange={handleSliderChange} // Capture every slider movement
+                  onMouseUp={handleSliderRelease} // For desktop devices
+                  onTouchEnd={handleSliderRelease} // For touch devices
+                  className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full slider-thumb"
+                />
+                <span className="text-gray-600 text-lg whitespace-nowrap">Growth</span>
+                {/* <div>Selected Value: {riskSlider}%</div> */}
+              </div>
+            </div>
+
+            <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
                 Select how your portfolio will be allocated between the large number of equities. It is recommended to
                 start with Equal Weights.
@@ -217,48 +253,8 @@ const RankingForm = () => {
                 ))}
               </div>
             </div>
-
-      
-
-        <button type="submit" className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded mb-4">
-          Get Results
-        </button>       {loading && <CircularProgress />}
-          {/* Portfolio preferences section */}
-          <div className="mb-8">
-          <header className="mb-4">
-            <h2 className="text-xl font-bold text-gray-800">Portfolio Preferences</h2>
-            <p className="text-lg text-gray-600">
-              You can modify these choices later and see how your portfolio changes in real time.
-            </p>
-          </header>
-          <div className="space-y-4 pl-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Rate your risk tolerance on the spectrum below.
-              </h3>
-              {/* risk slider */}
-              <div className="w-3/4 flex items-center space-x-4">
-                <span className="text-gray-600 text-lg whitespace-nowrap">Conservative</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="20"
-                  defaultValue={riskSlider}
-                  onChange={handleSliderChange} // Capture every slider movement
-                  onMouseUp={handleSliderRelease} // For desktop devices
-                  onTouchEnd={handleSliderRelease} // For touch devices
-                  className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full slider-thumb"
-                />
-                <span className="text-gray-600 text-lg whitespace-nowrap">Growth</span>
-                {/* <div>Selected Value: {riskSlider}%</div> */}
-              </div>
-            </div>
-
-          
           </div>
-      
         </div>
-      
       </form>
 
       {/* shorthand for if showResults, then ... */}
