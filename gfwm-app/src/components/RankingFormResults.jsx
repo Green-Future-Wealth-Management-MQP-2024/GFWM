@@ -201,11 +201,11 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   }, [weighingScheme]);
 
   useEffect(() => {
-    if(esgPreferences){
+    if (esgPreferences) {
       setIsPortfolioOutdated(true);
       console.log("esg preferences changed ", esgPreferences);
     }
-  }, [esgPreferences])
+  }, [esgPreferences]);
 
   // MANAGE STOCK DATA OBJECT
 
@@ -561,41 +561,162 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     setSelectedTicker(ticker);
   };
 
-  return ( // grey out portfolio data if outdated
-    <div className={`${isPortfolioOutdated ? 'opacity-50' : ''}`}>
-      <h2 className="text-2xl font-bold text-gray-800">Portfolio Summary</h2>
+  return (
+    // grey out portfolio data if outdated, blur when modal is open
+    <div>
+      <div className={`${isPortfolioOutdated ? "opacity-50" : ""} ${isModalOpen ? "blur-sm" : ""} transition`}>
+        <h2 className="text-2xl font-bold text-gray-800">Portfolio Summary</h2>
 
-      {/* portfolio summary statistics */}
-      <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
-        {/* Comparison Table */}
-        <div className="flex-none w-full sm:w-[30%] min-w-[200px]">
-          <ComparisonTable data={comparisonTableData} />
+        {/* portfolio summary statistics */}
+        <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
+          {/* Comparison Table */}
+          <div className="flex-none w-full sm:w-[35%] min-w-[200px]">
+            <ComparisonTable data={comparisonTableData} />
+          </div>
+
+          {/* Timeseries Chart */}
+          <div className="flex-1 w-[40%] min-w[200px]">
+            <TimeseriesChart
+              portfolio={portfolioSummaryStatistics.timeseries}
+              spy={sp500SummaryStatistics.timeseries}
+              dates={sp500SummaryStatistics.timeseriesDates}
+            />
+          </div>
+
+          {/* Pie Chart */}
+          <div className="flex-none w-[20%] min-w-[100px]">
+            <PieChart weights={portfolioData.map((item) => item.weight * 100)} />
+          </div>
         </div>
 
-        {/* Timeseries Chart */}
-        <div className="flex-grow w-[45%]">
-          <TimeseriesChart
-            portfolio={portfolioSummaryStatistics.timeseries}
-            spy={sp500SummaryStatistics.timeseries}
-            dates={sp500SummaryStatistics.timeseriesDates}
-          />
+        {/* portfolio results header and edit button */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Your Portfolio</h2>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded"
+          >
+            Edit Portfolio
+          </button>
         </div>
 
-        {/* Pie Chart */}
-        <div className="flex-none w-[20%] min-w-[100px]">
-          <PieChart weights={portfolioData.map((item) => item.weight * 100)} />
-        </div>
-      </div>
+        <div className="relative">
+          <table className="min-w-full bg-white mb-2 text-sm">
+            <thead className="sticky top-0 bg-white </tr>z-10">
+              <tr title="Sort data">
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
 
-      {/* portfolio results header and edit button */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-800">Your Portfolio</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded"
-        >
-          Edit Portfolio
-        </button>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("ticker")}
+                >
+                  Symbol {sortConfig.key === "ticker" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("name")}
+                >
+                  Name {sortConfig.key === "name" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("annual_return")}
+                >
+                  Annualized Return{" "}
+                  {sortConfig.key === "annual_return" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("volatility")}
+                >
+                  Standard Deviation{" "}
+                  {sortConfig.key === "volatility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("esg_combined")}
+                >
+                  Combined ESG {sortConfig.key === "esg_combined" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("environment")}
+                >
+                  Environment {sortConfig.key === "environment" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("social")}
+                >
+                  Social {sortConfig.key === "social" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("governance")}
+                >
+                  Governance {sortConfig.key === "governance" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("compatibility")}
+                >
+                  Compatibility{" "}
+                  {sortConfig.key === "compatibility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("weight")}
+                >
+                  Weight {sortConfig.key === "weight" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPortfolioData.map((item, index) => {
+                const isSelected = selectedTickers.includes(item.ticker);
+                return (
+                  <tr
+                    ref={(el) => (rowRefs.current[item.ticker] = el)}
+                    key={item.ticker}
+                    className={`hover:bg-gray-100 cursor-pointer ${
+                      selectedTicker === item.ticker ? "bg-gray-100" : ""
+                    }`}
+                    onClick={() => openTableauDashboard(item.ticker)}
+                    title="Show more"
+                  >
+                    <td
+                      className="border-b text-right pl-2 border-gray-300 cursor-pointer "
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectStock(item.ticker);
+                      }}
+                    >
+                      <input
+                        className="cursor-pointer h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded bg-white"
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleSelectStock(item.ticker)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+
+                    <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{(item.volatility * 100).toFixed(2)}%</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.esg_combined.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300 ">{item.compatibility.toFixed(0)}%</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{(item.weight * 100).toFixed(2)}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <StockSearchModal
@@ -610,120 +731,6 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         setSelectedTickers={setSelectedTickers}
         handleSelectStock={handleSelectStock}
       />
-      <div className="relative">
-        <table className="min-w-full bg-white mb-2 text-sm">
-          <thead className="sticky top-0 bg-white </tr>z-10">
-            <tr title="Sort data">
-              <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
-
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("ticker")}
-              >
-                Symbol {sortConfig.key === "ticker" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("name")}
-              >
-                Name {sortConfig.key === "name" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("annual_return")}
-              >
-                Annualized Return{" "}
-                {sortConfig.key === "annual_return" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("volatility")}
-              >
-                Standard Deviation{" "}
-                {sortConfig.key === "volatility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("esg_combined")}
-              >
-                Combined ESG {sortConfig.key === "esg_combined" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("environment")}
-              >
-                Environment {sortConfig.key === "environment" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("social")}
-              >
-                Social {sortConfig.key === "social" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("governance")}
-              >
-                Governance {sortConfig.key === "governance" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("compatibility")}
-              >
-                Compatibility {sortConfig.key === "compatibility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("weight")}
-              >
-                Weight {sortConfig.key === "weight" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedPortfolioData.map((item, index) => {
-              const isSelected = selectedTickers.includes(item.ticker);
-              return (
-                <tr
-                  ref={(el) => (rowRefs.current[item.ticker] = el)}
-                  key={item.ticker}
-                  className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? "bg-gray-100" : ""}`}
-                  onClick={() => openTableauDashboard(item.ticker)}
-                  title="Show more"
-                >
-                  <td
-                    className="border-b text-right pl-2 border-gray-300 cursor-pointer "
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectStock(item.ticker);
-                    }}
-                  >
-                    <input
-                      className="cursor-pointer h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded bg-white"
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleSelectStock(item.ticker)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </td>
-
-                  <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{(item.volatility * 100).toFixed(2)}%</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.esg_combined.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300 ">{item.compatibility.toFixed(0)}%</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{(item.weight * 100).toFixed(2)}%</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 };

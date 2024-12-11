@@ -13,6 +13,8 @@ const StockSearchModal = ({
   setSelectedTickers,
   handleSelectStock,
 }) => {
+  if (!isOpen) return null;
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -57,8 +59,6 @@ const StockSearchModal = ({
           .sort((a, b) => (b[selectedCategory] || 0) - (a[selectedCategory] || 0))
           .slice(0, 25);
 
-  if (!isOpen) return null;
-
   const handleAddSelected = () => {
     const addStockNumber = selectedTickers.filter((ticker) => !currentStocks.some((cs) => cs.ticker === ticker)).length;
     var addStockMessage = `Are you sure you want to add the ${addStockNumber} selected stock(s) to your portfolio?`;
@@ -100,15 +100,23 @@ const StockSearchModal = ({
   };
 
   return (
+    // place modal at z 50 above rest of app and position on page
     <div className="fixed inset-0 flex items-center justify-center z-50">
+      {/* click outside modal to close */}
       <div className="fixed inset-0 bg-black opacity-50" onClick={onClose}></div>
-      <div className="bg-white rounded-lg shadow-lg p-6 z-50 max-w-3xl w-full">
+
+      {/* wrapper for modal content. p-6 padding applies to everything inside
+      pt-2 limits top padding so top row is closer to top edge
+       */}
+      <div className="bg-white rounded-lg shadow-lg p-6 pt-2 z-50 max-w-3xl w-full">
+        {/* top row of modal */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Portfolio Edit</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="text-4xl text-gray-500 hover:text-gray-700">
             &times;
           </button>
         </div>
+
         <div className="flex items-center mb-3">
           <input
             type="text"

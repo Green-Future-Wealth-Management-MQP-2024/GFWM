@@ -14,7 +14,7 @@ const ComparisonTable = ({ data }) => {
         <tbody>
           {data.map((row, index) => (
             <tr key={index} className="border-b">
-              <td className="w-[35%] px-2">{row.field}</td>
+              <td className="w-[50%] px-2">{row.field}</td>
               <td className="w-[30%] px-4">
                 <span className="text-green-700 text-xl font-bold">
                   {row.portfolio}
