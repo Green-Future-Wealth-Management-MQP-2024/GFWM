@@ -40,17 +40,35 @@ const PieChart = ({ weights }) => {
 
   // Define the background colors for the slices
   const backgroundColors = [
-    "#4D6F3E", // Muted dark green for Top
-    "#8CBB70", // Muted light green for Less Important
+    "#3e7738",
+    "#84c225",
     "#F1E5A9", // Brighter yellow for Rest (Vibrant)
   ];
 
-  // Define the hover colors
-  const hoverColors = [
-    "#3A5A40", // Darker green for Top
-    "#7A9D5E", // Slightly darker light green for Less Important
-    "#E1D77A", // Darker yellow for Rest (Vibrant)
-  ];
+  // Function to darken a hex color by a certain factor
+const darkenColor = (hex, factor = 0.1) => {
+  // Ensure the factor is between 0 and 1
+  factor = Math.min(Math.max(factor, 0), 1);
+
+  // Remove the '#' if it's there
+  hex = hex.replace(/^#/, "");
+
+  // Parse the hex string into RGB components
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+
+  // Darken each RGB component
+  r = Math.floor(r * (1 - factor));
+  g = Math.floor(g * (1 - factor));
+  b = Math.floor(b * (1 - factor));
+
+  // Convert back to hex
+  const toHex = (x) => x.toString(16).padStart(2, "0");
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
 
   const chartData = {
     labels: labels,
@@ -59,7 +77,7 @@ const PieChart = ({ weights }) => {
         label: "Percent of portfolio",
         data: values,
         backgroundColor: backgroundColors,
-        hoverBackgroundColor: hoverColors,
+        hoverBackgroundColor: backgroundColors.map(color => darkenColor(color, 0.2)),
       },
     ],
   };

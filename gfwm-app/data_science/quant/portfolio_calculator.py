@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import data_science.quant.markowitz_optimization as markowitz_optimization
-from math import floor
 
 # TODO move this to .env
 # risk free rate based of historical average of 30d yield
@@ -9,7 +8,6 @@ ANNUAL_RISK_FREE_RATE = 0.0153
 
 def map_risk_appetite_to_cash_percent(risk_appetite):
     return 0.5 - 2 * risk_appetite
-
 
 def calculate_portfolio(ticker_compatibility_df, cash_percent, use_markowitz, return_summary_statistics = True):
 
@@ -49,8 +47,8 @@ def calculate_portfolio(ticker_compatibility_df, cash_percent, use_markowitz, re
         # efficiency improvement:
         # calculate fewer target returns in the range most likely to contain the tangency portfolio
         # the tangent portfolio has returns around 15%, only worth calculating target returns in that range
-        target_returns = np.linspace(start=0.1/252,
-                                     stop=0.25/252, num=20)
+        target_returns = np.linspace(start=0.05/252,
+                                     stop=0.2/252, num=25)
 
         bounds = [0.5/n, 3.0/n]
         #TODO speed up: precalculate the markowitz ideal portfolio for all the combinations of factors
@@ -109,14 +107,34 @@ def extract_value(var):
         return var[0]
     return var
 
-# TODO handle include_spy = False better
+# calculate max drawdown as a percent
+# https://quant.stackexchange.com/a/43544/78596
+def get_max_drawdown(nvs: pd.Series, window=None) -> float:
+    """
+    :param nvs: net value series
+    :param window: lookback window, int or None
+    if None, look back entire history
+    """
+    n = len(nvs)
+    if window is None:
+        window = n
+    # rolling peak values
+    peak_series = nvs.rolling(window=window, min_periods=1).max()
+    return (nvs / peak_series - 1.0).min()
+
 def portfolio_history(portfolio, include_spy = True):
     
     spy_log_returns = pd.read_csv("data_science/quant/spy_timeseries_13-24.csv")['SPY']
     
-    tickers = portfolio.index.tolist()
+    if(portfolio.empty):
+        tickers = []
+    else:
+        tickers = portfolio.index.tolist()
+    
+    print("tickers are ", tickers)
     
     tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
+    
     # print(tickers_log_returns.head())
     
     # TODO clean this up using pandas objects instead of python lists
@@ -176,21 +194,6 @@ def portfolio_history(portfolio, include_spy = True):
     # add cash to both portfolios
     spy_timeseries = [spy + cash for spy, cash in zip(spy_timeseries, cash_portion)]
     portfolio_timeseries = [p + cash for p, cash in zip(portfolio_timeseries, cash_portion)]
-        
-    # calculate max drawdown as a percent
-    # https://quant.stackexchange.com/a/43544/78596
-    def get_max_drawdown(nvs: pd.Series, window=None) -> float:
-        """
-        :param nvs: net value series
-        :param window: lookback window, int or None
-        if None, look back entire history
-        """
-        n = len(nvs)
-        if window is None:
-            window = n
-        # rolling peak values
-        peak_series = nvs.rolling(window=window, min_periods=1).max()
-        return (nvs / peak_series - 1.0).min()
     
     spy_max_drawdown = get_max_drawdown(pd.Series(spy_timeseries))
     portfolio_max_drawdown = get_max_drawdown(pd.Series(portfolio_timeseries))
@@ -208,7 +211,7 @@ def portfolio_history(portfolio, include_spy = True):
 
 def calculate_summary_statistics(timeseries, return_as_range = False):
     '''
-    Given a timeseries (Python list), calculate return and volatility
+    Given a timeseries (Python list), calculate return range,  volatility, sharpe
     '''
     
     log_returns = np.log(np.array(timeseries[1:]) / np.array(timeseries[:-1]))
@@ -235,3 +238,24 @@ def calculate_summary_statistics(timeseries, return_as_range = False):
         return (lower_bound, upper_bound), volatility, sharpe
     
     return average_return, volatility, sharpe
+
+def calculate_esg_score(portfolio):
+    
+    if(portfolio.empty):
+        return 0
+    
+    data = pd.read_csv("data_science/preprocessed_refinitiv.csv")[['ticker', 'environment', 'social', 'governance']].set_index('ticker', drop = True)
+    
+    merged_data = data.merge(portfolio, how='inner', left_index=True, right_index=True)
+    
+    # Calculate the weighted esg score per row
+    merged_data['weighted_score'] = (merged_data[['environment', 'social', 'governance']].sum(axis=1) / 3) * merged_data['weight']
+
+    merged_data['weight'] / merged_data['weight'].sum()
+    
+    # Sum the weighted scores over all rows
+    total_esg_score = merged_data['weighted_score'].sum()
+
+    #print("Total Weighted Score:", total_esg_score)
+    
+    return total_esg_score

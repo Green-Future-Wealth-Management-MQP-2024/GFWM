@@ -67,7 +67,7 @@ def submit_form(request):
         spy_return, spy_volatility, spy_sharpe = pc.calculate_summary_statistics(spy_timeseries, return_as_range=False)
            
         summary_statistics = {
-            "portfolio_esg_score": portfolio[['environment', 'social', 'governance']].to_numpy().mean(),
+            "portfolio_esg_score": pc.calculate_esg_score(portfolio[['ticker','weight']].set_index('ticker', drop = True)),
             
             "portfolio_return_range": portfolio_return,
             
@@ -116,20 +116,51 @@ def update_weights(request):
         
         use_markowitz = (update_request_dict['weighing_scheme'] == 'Markowitz Optimized')
         
-        # calculate best fit portfolio for the client
-        ideal_portfolio_weights = pc.calculate_portfolio(client_portfolio[['ticker', 'compatibility']],
-                                                      cash_percent=cash_percent,
-                                                      use_markowitz=use_markowitz,
-                                                      return_summary_statistics=False)
+        # print(client_portfolio.head())
         
-        client_portfolio['weight'] = ideal_portfolio_weights
+        if(not client_portfolio.empty):
         
-        portfolio_timeseries, dates, portfolio_max_dd = pc.portfolio_history(client_portfolio[['ticker','weight']].set_index('ticker', drop = True),
-                                                                          include_spy=False)
+            # calculate best fit portfolio for the client
+            ideal_portfolio_weights = pc.calculate_portfolio(client_portfolio[['ticker', 'compatibility']],
+                                                             cash_percent=cash_percent,
+                                                             use_markowitz=use_markowitz,
+                                                             return_summary_statistics=False)
+            
+            # set weights column to new weights
+            client_portfolio['weight'] = ideal_portfolio_weights
+            
+            # reformat portfolio to single weight column indexed by ticker
+            client_portfolio = client_portfolio[['ticker','weight']].set_index('ticker', drop = True)
+            
+            # read weights into dict format that is later returned to client
+            weights_dict = client_portfolio['weight'].to_dict()
+        
+            # calculate updated portfolio timeseries
+            portfolio_timeseries, dates, portfolio_max_dd = pc.portfolio_history(client_portfolio, 
+                                                                                 include_spy=False)
+            
+            #calculate summary statistics   
+            portfolio_return, portfolio_volatility, portfolio_sharpe = pc.calculate_summary_statistics(portfolio_timeseries, 
+                                                                                                       return_as_range=True)
+            portfolio_esg_score = pc.calculate_esg_score(client_portfolio)
+            
+        else:
+            # empty portfolio case
+            empty_portfolio = pd.DataFrame(columns=['ticker', 'weight'])
+            empty_portfolio.set_index('ticker', inplace=True)
+            
+            # calculate timeseries which is only cash
+            portfolio_timeseries, dates, portfolio_max_dd = pc.portfolio_history(empty_portfolio, include_spy=False)
+            portfolio_esg_score = 0
+            weights_dict = {}
         
         #calculate summary statistics   
         
         portfolio_return, portfolio_volatility, portfolio_sharpe = pc.calculate_summary_statistics(portfolio_timeseries, return_as_range=True)
+        
+        if(client_portfolio.empty):
+            # overwrite calculation which overflows
+            portfolio_sharpe = 0
         
              
         summary_statistics = {            
@@ -140,6 +171,8 @@ def update_weights(request):
             
             "portfolio_max_dd": portfolio_max_dd,
             
+            "portfolio_esg_score": portfolio_esg_score,
+            
             "portfolio_timeseries": portfolio_timeseries[::5],
             "timeseries_dates": dates[::5],
             
@@ -148,7 +181,7 @@ def update_weights(request):
         
         # return format for updated_portfolio: {ticker: weight, ticker: weight etc}
         return JsonResponse({
-            "updated_portfolio": client_portfolio[['ticker','weight']].set_index('ticker', drop = True)['weight'].to_dict(),
+            "updated_portfolio": weights_dict,
             "updated_summary_statistics": summary_statistics
         })
     

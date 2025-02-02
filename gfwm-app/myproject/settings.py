@@ -18,6 +18,8 @@ import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+VITE_API_DOMAIN = config('VITE_API_DOMAIN', default='http://localhost:8000')
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -30,7 +32,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
-    config('VITE_API_DOMAIN'),
+    VITE_API_DOMAIN,
 ]
 
 
@@ -87,11 +89,10 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        ssl_require=True
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',  # Or other database engine
+        'NAME': BASE_DIR / 'db.sqlite3',         # Path to your database
+    }
 }
 
 
@@ -136,7 +137,8 @@ STATIC_URL = '/static/'
 # Allow all origins
 CORS_ALLOW_ALL_ORIGINS = True
 
-# # Or allow specific origins
+# Or allow specific origins
 # CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
+#     "localhost:3000",
+#     config('VITE_API_DOMAIN_2'),
 # ]
