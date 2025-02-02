@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 import RankingFormResults from "./RankingFormResults";
 import DragAndDrop from "./DragAndDrop";
-import BinaryChoice from "./BinaryChoice";
 
 // factors to get answers for:
 // environment,
@@ -47,7 +46,7 @@ const RankingForm = () => {
   };
 
   const [riskSlider, setRiskSliderValue] = useState(10);
-  const [flexibilitySlider, setFlexibilitySliderValue] = useState(5);
+  const riskSliderTemp = useRef(10);
 
   const weighing_scheme_choices = {
     choice1: "Equal Weights",
@@ -56,6 +55,17 @@ const RankingForm = () => {
   const [weighingScheme, setWeighingScheme] = useState("choice1"); //equal weights (choice1) as the default
 
   const [formResults, setFormResults] = useState({});
+
+  // update risk and weighing scheme changes to send to results object
+  useEffect(() => {
+
+    setFormResults(prevState => ({
+      ...prevState,
+      "risk_appetite": riskSlider / 100.0,
+      "weighing_scheme": weighing_scheme_choices[weighingScheme],
+    }));
+
+  }, [riskSlider, weighingScheme])
 
   const [serverResponse, setServerResponse] = useState({});
 
@@ -93,7 +103,6 @@ const RankingForm = () => {
     }
     results["avoid_fossil_fuels"] = fossilFuelsChecked;
     results["avoid_weapons"] = weaponsChecked;
-    results["flexibility"] = flexibilitySlider / 100.0;
     results["risk_appetite"] = riskSlider / 100.0;
     results["weighing_scheme"] = weighing_scheme_choices[weighingScheme];
 
@@ -125,6 +134,17 @@ const RankingForm = () => {
       .catch((error) => {
         console.error("Error:", error);
       });
+  };
+
+  const handleSliderChange = (e) => {
+    riskSliderTemp.current = e.target.value; // Update temp value on slider movement
+    console.log('Slider moving:', riskSliderTemp.current); // Debugging
+  };
+
+  const handleSliderRelease = () => {
+    const newValue = Number(riskSliderTemp.current);
+    console.log('Slider dropped with value:', newValue); // Debugging
+    setRiskSliderValue(newValue); // Commit the value to state
   };
 
   return (
@@ -162,24 +182,7 @@ const RankingForm = () => {
           </span>
         </label>
 
-        {/* flexiblity slider*/}
-        <p>Rate your flexibility with these ESG preferences.</p>
-        <div className="w-3/4 flex items-center space-x-4">
-          <span className="text-gray-600 text-lg whitespace-nowrap">
-            Not flexible
-          </span>
-          <input
-            type="range"
-            min="0"
-            max="30"
-            value={flexibilitySlider}
-            onChange={(e) => setFlexibilitySliderValue(e.target.value)}
-            className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
-          />
-          <span className="text-gray-600 text-lg whitespace-nowrap">
-            Most flexible
-          </span>
-        </div>
+        
         <p>Rate your risk level.</p>
         {/* risk slider */}
         <div className="w-3/4 flex items-center space-x-4">
@@ -190,8 +193,10 @@ const RankingForm = () => {
             type="range"
             min="0"
             max="20"
-            value={riskSlider}
-            onChange={(e) => setRiskSliderValue(e.target.value)}
+            defaultValue={riskSlider}
+            onChange={handleSliderChange} // Capture every slider movement
+            onMouseUp={handleSliderRelease} // For desktop devices
+            onTouchEnd={handleSliderRelease} // For touch devices
             className="mx-4 w-full h-2 appearance-none bg-gray-300 rounded-full focus:outline-none slider-thumb"
           />
           <span className="text-gray-600 text-lg whitespace-nowrap">
