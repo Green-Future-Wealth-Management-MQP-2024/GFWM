@@ -314,8 +314,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   const comparisonTableData = [
     {
       field: "Annual Return",
-      portfolio: `${(portfolioSummaryStatistics.returnRange[0] * 100).toFixed(2)}%,
-      ${(portfolioSummaryStatistics.returnRange[1] * 100).toFixed(2)}%`,
+      portfolio: `${(portfolioSummaryStatistics.averageReturn * 100).toFixed(2)}%`,
       sp500: `${(sp500SummaryStatistics.averageReturn * 100).toFixed(2)}%`,
     },
     {
