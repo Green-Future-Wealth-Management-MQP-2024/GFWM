@@ -37,6 +37,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     timeseriesDates: [],
   });
 
+  // unpack server response and update state variables
   useEffect(() => {
     if (serverResponse) {
       setCompatibilityScores(serverResponse.sp500_compatibility);
@@ -84,23 +85,44 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     }
   }, [serverResponse]);
 
+  // serialized version of esg preferences, just to check if changes occured
+  const [esgPreferences, setESGPreferences] = useState("");
+
   const [riskAppetite, setRiskAppetite] = useState(0.1);
   const [weighingScheme, setWeighingScheme] = useState("");
 
+  const [isPortfolioOutdated, setIsPortfolioOutdated] = useState(false);
+
+  // unpack form results and update state variables
   useEffect(() => {
     if (formResults) {
+      console.log("form results changed ", formResults);
       // unpack form results
-      const { risk_appetite: riskAppetite, weighing_scheme: weighingScheme } = formResults;
+      const { risk_appetite: riskAppetite, weighing_scheme: weighingScheme, ...rest } = formResults;
+
+      console.log(rest);
 
       setRiskAppetite(riskAppetite);
       setWeighingScheme(weighingScheme);
+
+      const sortedString = Object.keys(rest)
+        .sort() // Sort keys alphabetically
+        .map((key) => `${key}:${rest[key]}`) // Create key:value pairs
+        .join("; "); // Join them into a single string
+
+      // Update state only if the string changes
+      if (sortedString !== esgPreferences) {
+        setESGPreferences(sortedString);
+        console.log("ESG preferences updated:", sortedString);
+      }
     }
   }, [formResults]);
 
-  //TODO fix
+  // real time updates of data based off changes to risk slider
   useEffect(() => {
     //check if server response is truthy, ie some data sent back already
-    if (serverResponse) {
+    // no point in updating risk if esg portfolio is outdated too
+    if (serverResponse && !isPortfolioOutdated) {
       // package up ticker and weight columns to send to server
       const clientPortfolio = portfolioData.map((row) => {
         return {
@@ -116,7 +138,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         });
 
         // Send the necessary data to the server
-        fetch(`//${import.meta.env.VITE_API_DOMAIN}/updateRisk/`, {
+        fetch(`http://${import.meta.env.VITE_API_DOMAIN}/updateRisk/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -148,7 +170,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
             } = updatedSummaryStatistics;
 
             setPortfolioSummaryStatistics({
-              ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score
+              ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score when modifying risk
               returnRange: portfolioReturnRange,
               averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
               volatility: portfolioVolatility,
@@ -163,6 +185,27 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
       }
     }
   }, [riskAppetite]);
+
+  // real time updates of data based off weighing scheme changes
+  useEffect(() => {
+    //check if server response is truthy, ie some data sent back already
+    if (serverResponse && !isPortfolioOutdated) {
+      // package up tickers to update weights for
+      const tickers = portfolioData.map((row) => row.ticker);
+
+      if (tickers.length > 0) {
+        console.log(tickers);
+        updatePortfolioWeights(tickers);
+      }
+    }
+  }, [weighingScheme]);
+
+  useEffect(() => {
+    if (esgPreferences) {
+      setIsPortfolioOutdated(true);
+      console.log("esg preferences changed ", esgPreferences);
+    }
+  }, [esgPreferences]);
 
   // MANAGE STOCK DATA OBJECT
 
@@ -179,7 +222,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
 
     const augmentStockData = async () => {
       try {
-        const preprocessedCSV = await fetch("/preprocessed_refinitiv.csv"); //public version of preprocessed
+        const preprocessedCSV = await fetch("./preprocessed_refinitiv.csv"); //public version of preprocessed
         const preprocessedCSVText = await preprocessedCSV.text();
         const parseResult = Papa.parse(preprocessedCSVText, {
           header: true,
@@ -249,6 +292,8 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   useEffect(() => {
     if (!portfolioWeights) return;
 
+    setIsPortfolioOutdated(false);
+
     const updatePortfolioData = async () => {
       console.log("updating portfolio data based off weights change: ", Object.keys(portfolioWeights).length);
 
@@ -313,8 +358,10 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   // VALUES FOR COMPARISON TABLE
   const comparisonTableData = [
     {
+
       field: "Annual Return",
       portfolio: `${(portfolioSummaryStatistics.averageReturn * 100).toFixed(2)}%`,
+
       sp500: `${(sp500SummaryStatistics.averageReturn * 100).toFixed(2)}%`,
     },
     {
@@ -345,7 +392,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
       sp500: `${(sp500SummaryStatistics.maxDD * 100).toFixed(2)}%`,
     },
     {
-      field: "Average ESG Score",
+      field: "Portfolio ESG Score",
       portfolio: `${portfolioSummaryStatistics.ESGScore.toFixed(2)}`,
       sp500: "66.66",
     },
@@ -362,9 +409,10 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   const openTableauDashboard = (ticker) => {
     setSelectedTicker(ticker);
 
-    const popup = window.open("", "_blank", "width=1600,height=950");
+    const popup = window.open("", "_blank", "width=1300,height=800");
     const embedCode = `
     <div class='tableauPlaceholder' id='viz1731438480314' style='position: relative'>
+    <head><title>Individual Stock View</title></head>
         <noscript>
           <a href='#'>
             <img alt='Dashboard 1' src='https://public.tableau.com/static/images/In/IndividualStock3_0/Dashboard1/1_rss.png' style='border: none' />
@@ -374,7 +422,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
           <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
           <param name='embed_code_version' value='3' />
           <param name='site_root' value='' />
-          <param name='name' value='IndividualStock3_0/PrimaryDashboard' />
+          <param name='name' value='IndividualStock3_0_17337605280590/PrimaryDashboard' />
           <param name='tabs' value='no' />
           <param name='toolbar' value='yes' />
           <param name='static_image' value='https://public.tableau.com/static/images/In/IndividualStock3_0/Dashboard1/1.png' />
@@ -435,7 +483,7 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
     });
 
     // Send the necessary data to the server
-    fetch(`//${import.meta.env.VITE_API_DOMAIN}/updateWeights/`, {
+    fetch(`http://${import.meta.env.VITE_API_DOMAIN}/updateWeights/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -463,11 +511,12 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
           portfolio_volatility: portfolioVolatility,
           portfolio_sharpe: portfolioSharpe,
           portfolio_max_dd: portfolioMaxDD,
+          portfolio_esg_score: portfolioESGScore,
           portfolio_timeseries: portfolioTimeseries,
         } = updatedSummaryStatistics;
 
         setPortfolioSummaryStatistics({
-          ESGScore: portfolioSummaryStatistics.ESGScore, //unchanged esg score
+          ESGScore: portfolioESGScore, // TODO MUST CHANGE ESG SCORE
           returnRange: portfolioReturnRange,
           averageReturn: (portfolioReturnRange[0] + portfolioReturnRange[1]) / 2.0,
           volatility: portfolioVolatility,
@@ -514,44 +563,163 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
   };
 
   return (
-    <div className="ranking-form-results p-4 bg-white rounded-lg">
-      <h2 className="text-xl font-bold mb-2">Results Summary</h2>
-      <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
-        {/* Comparison Table */}
-        <div className="flex-none w-full sm:w-[30%] min-w-[200px]">
-          <ComparisonTable data={comparisonTableData} />
+    // grey out portfolio data if outdated, blur when modal is open
+    <div>
+      <div className={`${isPortfolioOutdated ? "opacity-50" : ""} ${isModalOpen ? "blur-sm" : ""} transition`}>
+        <h2 className="text-2xl font-bold text-gray-800">Portfolio Summary</h2>
+
+        {/* portfolio summary statistics */}
+        <div className="flex flex-wrap flex-col lg:flex-row gap-4 items-start w-full">
+          {/* Comparison Table */}
+          <div className="flex-none w-full sm:w-[35%] min-w-[200px]">
+            <ComparisonTable data={comparisonTableData} />
+          </div>
+
+          {/* Timeseries Chart */}
+          <div className="flex-1 w-[40%] min-w[200px]">
+            <TimeseriesChart
+              portfolio={portfolioSummaryStatistics.timeseries}
+              spy={sp500SummaryStatistics.timeseries}
+              dates={sp500SummaryStatistics.timeseriesDates}
+            />
+          </div>
+
+          {/* Pie Chart */}
+          <div className="flex-none w-[20%] min-w-[100px]">
+            <PieChart weights={portfolioData.map((item) => item.weight * 100)} />
+          </div>
         </div>
 
-        {/* Timeseries Chart */}
-        <div className="flex-grow w-[45%]">
-          <TimeseriesChart
-            portfolio={portfolioSummaryStatistics.timeseries}
-            spy={sp500SummaryStatistics.timeseries}
-            dates={sp500SummaryStatistics.timeseriesDates}
-          />
+        {/* portfolio results header and edit button */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">Your Portfolio</h2>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="hover:opacity-75 bg-gfwmDarkGreen text-white px-4 py-2 rounded"
+          >
+            Edit Portfolio
+          </button>
         </div>
 
-        {/* Pie Chart */}
-        <div className="flex-none w-[20%] min-w-[100px]">
-          <PieChart weights={portfolioData.map((item) => item.weight * 100)} />
+        <div className="relative">
+          <table className="min-w-full bg-white mb-2 text-sm">
+            <thead className="sticky top-0 bg-white </tr>z-10">
+              <tr title="Sort data">
+                <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
+
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("ticker")}
+                >
+                  Symbol {sortConfig.key === "ticker" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("name")}
+                >
+                  Name {sortConfig.key === "name" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("annual_return")}
+                >
+                  Annualized Return{" "}
+                  {sortConfig.key === "annual_return" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("volatility")}
+                >
+                  Standard Deviation{" "}
+                  {sortConfig.key === "volatility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("esg_combined")}
+                >
+                  Combined ESG {sortConfig.key === "esg_combined" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("environment")}
+                >
+                  Environment {sortConfig.key === "environment" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("social")}
+                >
+                  Social {sortConfig.key === "social" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("governance")}
+                >
+                  Governance {sortConfig.key === "governance" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("compatibility")}
+                >
+                  Compatibility{" "}
+                  {sortConfig.key === "compatibility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+                <th
+                  className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
+                  onClick={() => requestSort("weight")}
+                >
+                  Weight {sortConfig.key === "weight" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPortfolioData.map((item, index) => {
+                const isSelected = selectedTickers.includes(item.ticker);
+                return (
+                  <tr
+                    ref={(el) => (rowRefs.current[item.ticker] = el)}
+                    key={item.ticker}
+                    className={`hover:bg-gray-100 cursor-pointer ${
+                      selectedTicker === item.ticker ? "bg-gray-100" : ""
+                    }`}
+                    onClick={() => openTableauDashboard(item.ticker)}
+                    title="Show more"
+                  >
+                    <td
+                      className="border-b text-right pl-2 border-gray-300 cursor-pointer "
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectStock(item.ticker);
+                      }}
+                    >
+                      <input
+                        className="cursor-pointer h-5 w-5 text-gfwmDarkGreen focus:ring-gfwmLightGreen border-gray-300 rounded bg-white"
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleSelectStock(item.ticker)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
+
+                    <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{(item.volatility * 100).toFixed(2)}%</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.esg_combined.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
+                    <td className="py-1 px-2 border-b border-gray-300 ">{item.compatibility.toFixed(0)}%</td>
+                    <td className="py-1 px-2 border-b border-gray-300">{(item.weight * 100).toFixed(2)}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
-      <h2 className="text-xl font-bold mb-2">Your Portfolio</h2>
-      <div className="flex gap-4 mb-4">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="hover:opacity-75 bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Edit Portfolio
-        </button>
 
-        {/* <button
-          disabled={true} // Disables the button
-          className="bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
-        >
-          Recalculate Weights
-        </button> */}
-      </div>
       <StockSearchModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -564,120 +732,6 @@ const RankingFormResults = ({ serverResponse, formResults }) => {
         setSelectedTickers={setSelectedTickers}
         handleSelectStock={handleSelectStock}
       />
-      <div className="relative">
-        <table className="min-w-full bg-white mb-2 text-sm">
-          <thead className="sticky top-0 bg-white </tr>z-10">
-            <tr title="Sort data">
-              <th className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider"></th>
-
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("ticker")}
-              >
-                Symbol {sortConfig.key === "ticker" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("name")}
-              >
-                Name {sortConfig.key === "name" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("annual_return")}
-              >
-                Annualized Return{" "}
-                {sortConfig.key === "annual_return" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("volatility")}
-              >
-                Standard Deviation{" "}
-                {sortConfig.key === "volatility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("esg_combined")}
-              >
-                Combined ESG {sortConfig.key === "esg_combined" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("environment")}
-              >
-                Environment {sortConfig.key === "environment" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("social")}
-              >
-                Social {sortConfig.key === "social" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("governance")}
-              >
-                Governance {sortConfig.key === "governance" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("compatibility")}
-              >
-                Compatibility {sortConfig.key === "compatibility" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-              <th
-                className="py-1 px-2 border-b-2 border-gray-300 text-left leading-4 text-gray-600 tracking-wider cursor-pointer"
-                onClick={() => requestSort("weight")}
-              >
-                Weight {sortConfig.key === "weight" && (sortConfig.direction === "ascending" ? "▲" : "▼")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedPortfolioData.map((item, index) => {
-              const isSelected = selectedTickers.includes(item.ticker);
-              return (
-                <tr
-                  ref={(el) => (rowRefs.current[item.ticker] = el)}
-                  key={item.ticker}
-                  className={`hover:bg-gray-100 cursor-pointer ${selectedTicker === item.ticker ? "bg-gray-100" : ""}`}
-                  onClick={() => openTableauDashboard(item.ticker)}
-                  title="Show more"
-                >
-                  <td
-                    className="border-b text-right pl-2 border-gray-300 cursor-pointer "
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelectStock(item.ticker);
-                    }}
-                  >
-                    <input
-                      className="cursor-pointer"
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleSelectStock(item.ticker)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </td>
-
-                  <td className="py-1 px-2 border-b border-gray-300">{item.ticker}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.name}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{(item.annual_return * 100).toFixed(2)}%</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{(item.volatility * 100).toFixed(2)}%</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.esg_combined.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.environment.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.social.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{item.governance.toFixed(2)}</td>
-                  <td className="py-1 px-2 border-b border-gray-300 ">{item.compatibility.toFixed(0)}%</td>
-                  <td className="py-1 px-2 border-b border-gray-300">{(item.weight * 100).toFixed(2)}%</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 };

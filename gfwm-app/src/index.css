@@ -23,7 +23,7 @@ code {
   width: 20px;
   height: 20px;
   border-radius: 50%; /* Circular thumb */
-  background: #14532d; /* Darker green */
+  background: #3e7738; /* Darker green */
   cursor: pointer;
   transition: background 0.3s ease;
 }
@@ -36,7 +36,7 @@ code {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #14532d; /* Darker green */
+  background: #3e7738; /* Darker green */
   cursor: pointer;
   transition: background 0.3s ease;
 }
@@ -49,7 +49,7 @@ code {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #14532d; /* Darker green */
+  background: #3e7738; /* Darker green */
   cursor: pointer;
   transition: background 0.3s ease;
 }
