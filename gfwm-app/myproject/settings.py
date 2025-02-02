@@ -12,8 +12,10 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 import os
 from pathlib import Path
-from decouple import config
+from decouple import Config, RepositoryEnv
 import dj_database_url
+
+config = Config(RepositoryEnv('.env.local'))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +32,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
-    config('VITE_API_DOMAIN'),
+    Config('VITE_API_DOMAIN'),
 ]
 
 
