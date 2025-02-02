@@ -116,6 +116,8 @@ def portfolio_history(portfolio, include_spy = True):
     
     tickers = portfolio.index.tolist()
     
+    #print("tickers are ", tickers)
+    
     tickers_log_returns = pd.read_csv("data_science/quant/sp500_timeseries_13-24.csv")[['date'] + tickers]
     # print(tickers_log_returns.head())
     
