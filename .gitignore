@@ -707,3 +707,4 @@ gfwm-app/data_science/quant/SP500_timeseries_1-1-19--11-1-24.csv
 # files derived from ycharts data, also not publicly available on github
 #gfwm-app/data_science/quant/sp500_timeseries_13-24.csv
 #gfwm-app/data_science/quant/sp500_adjusted_cov_matrix.csv
+gfwm-app/.env.production

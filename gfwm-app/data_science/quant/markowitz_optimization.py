@@ -96,7 +96,8 @@ def calculate_optimal_portfolios(true_mean_returns, adjusted_mean_returns, true_
     # remove the rows where weights are none, ie no solution found
     optimal_portfolios.dropna(subset=['weights'], inplace=True)
     
-    print(len(optimal_portfolios))
+    #print(len(optimal_portfolios))
+
 
     # Calculate annual return and annual volatility metrics based off of weights
     optimal_portfolios['annual_return'] = optimal_portfolios['weights'].map(
