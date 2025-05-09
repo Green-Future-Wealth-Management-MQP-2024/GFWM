@@ -48,7 +48,7 @@ def calculate_portfolio(ticker_compatibility_df, cash_percent, use_markowitz, re
         # calculate fewer target returns in the range most likely to contain the tangency portfolio
         # the tangent portfolio has returns around 15%, only worth calculating target returns in that range
         target_returns = np.linspace(start=0.05/252,
-                                     stop=0.2/252, num=25)
+                                     stop=0.35/252, num=25)
 
         bounds = [0.5/n, 3.0/n]
         #TODO speed up: precalculate the markowitz ideal portfolio for all the combinations of factors
