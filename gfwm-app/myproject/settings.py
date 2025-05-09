@@ -17,7 +17,8 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-VITE_API_DOMAIN = config('VITE_API_DOMAIN', default='http://localhost:8000')
+#VITE_API_DOMAIN = config('VITE_API_DOMAIN', default='http://localhost:8000')
+VITE_REACT_DOMAIN = config('VITE_REACT_DOMAIN', default="https://green-future-esg.herokuapp.com")
 
 
 # Quick-start development settings - unsuitable for production
@@ -31,8 +32,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
-    VITE_API_DOMAIN,
-]
+    VITE_REACT_DOMAIN,]
 
 
 # Application definition
